@@ -96,7 +96,24 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() { super.onResume();app().activity=new java.lang.ref.WeakReference<>(this);if(app().backend!=null)app().backend.setDark(app().isDark());app().main.post(tick); }
     @Override protected void onPause() { app().main.removeCallbacks(tick);super.onPause(); }
     @Override protected void onDestroy() { app().main.removeCallbacks(tick);if(app().activity.get()==this)app().activity.clear();if(web!=null){web.removeJavascriptInterface("FoxAndroid");web.destroy();}super.onDestroy(); }
-    void receive(String state) { if(loaded&&web!=null)web.evaluateJavascript("window.fox.receive("+state+")",null); }
+    void receive(String state) {
+        if(!loaded||web==null)return;
+        try{
+            JSONObject settings=new JSONObject(state).getJSONObject("settings");
+            String theme=settings.optString("theme","system");
+            boolean light="light".equals(theme)||"system".equals(theme)&&!app().isDark();
+            int color=light?Color.rgb(247,248,250):Color.rgb(16,17,23);
+            web.setBackgroundColor(color);getWindow().setStatusBarColor(color);getWindow().setNavigationBarColor(color);
+            if(Build.VERSION.SDK_INT>=30){
+                android.view.WindowInsetsController controller=getWindow().getInsetsController();
+                if(controller!=null){int flags=android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS|android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;controller.setSystemBarsAppearance(light?flags:0,flags);}
+            }else{
+                android.view.View decor=getWindow().getDecorView();int flags=android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                decor.setSystemUiVisibility(light?decor.getSystemUiVisibility()|flags:decor.getSystemUiVisibility()&~flags);
+            }
+        }catch(Exception ignored){}
+        web.evaluateJavascript("window.fox.receive("+state+")",null);
+    }
     private void respond(String id,String value) { app().main.post(() -> {if(web!=null&&loaded)web.evaluateJavascript("window.fox.resolve("+JSONObject.quote(id)+","+value+")",null);}); }
     private String envelope(boolean ok,String error) {try {JSONObject result=new JSONObject().put("ok",ok).put("data",JSONObject.NULL);if(error!=null)result.put("error",error);return result.toString();}catch(Exception e){return "{\"ok\":false,\"error\":\"Request failed\"}";}}
     final class Bridge {
