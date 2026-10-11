@@ -48,7 +48,12 @@ public final class MainActivity extends Activity {
             android.widget.TextView error = new android.widget.TextView(this);
             error.setText(app().initializationError); error.setTextColor(Color.WHITE); error.setPadding(24,48,24,24); setContentView(error); return;
         }
-        web = new WebView(this); setContentView(web);
+        web = new WebView(this);
+        android.widget.FrameLayout container=new android.widget.FrameLayout(this);
+        container.setBackgroundColor(Color.rgb(16,17,23));
+        container.addView(web,new android.widget.FrameLayout.LayoutParams(-1,-1));setContentView(container);
+        if(Build.VERSION.SDK_INT>=30)getWindow().setDecorFitsSystemWindows(false);
+        else getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE|android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         web.setBackgroundColor(Color.rgb(16,17,23));
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(false);
@@ -58,12 +63,14 @@ public final class MainActivity extends Activity {
         web.getSettings().setSupportMultipleWindows(false);
         web.getSettings().setMediaPlaybackRequiresUserGesture(true);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
-        web.setOnApplyWindowInsetsListener((view,insets) -> {
+        container.setOnApplyWindowInsetsListener((view,insets) -> {
+            android.widget.FrameLayout.LayoutParams layout=(android.widget.FrameLayout.LayoutParams)web.getLayoutParams();
             if (Build.VERSION.SDK_INT >= 30) {
                 android.graphics.Insets bars = insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.ime());
-                view.setPadding(bars.left,bars.top,bars.right,bars.bottom);
-            } else view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
-            return insets;
+                layout.setMargins(bars.left,bars.top,bars.right,bars.bottom);
+            } else layout.setMargins(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
+            web.setLayoutParams(layout);
+            return Build.VERSION.SDK_INT>=30?android.view.WindowInsets.CONSUMED:insets.consumeSystemWindowInsets();
         });
         WebViewAssetLoader assets = new WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
@@ -103,7 +110,7 @@ public final class MainActivity extends Activity {
             String theme=settings.optString("theme","system");
             boolean light="light".equals(theme)||"system".equals(theme)&&!app().isDark();
             int color=light?Color.rgb(247,248,250):Color.rgb(16,17,23);
-            web.setBackgroundColor(color);getWindow().setStatusBarColor(color);getWindow().setNavigationBarColor(color);
+            web.setBackgroundColor(color);((android.view.View)web.getParent()).setBackgroundColor(color);getWindow().setStatusBarColor(color);getWindow().setNavigationBarColor(color);
             if(Build.VERSION.SDK_INT>=30){
                 android.view.WindowInsetsController controller=getWindow().getInsetsController();
                 if(controller!=null){int flags=android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS|android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;controller.setSystemBarsAppearance(light?flags:0,flags);}

@@ -227,7 +227,9 @@ func TestConnectionLifecycleWithRealEdge(t *testing.T) {
 }
 func TestStaleTunnelFailureCannotDisconnectNewSession(t *testing.T) {
 	tunnel, _ := protocolTunnel(t)
-	if err := tunnel.start(); err != nil { t.Fatal(err) }
+	if err := tunnel.start(); err != nil {
+		t.Fatal(err)
+	}
 	b := tunnel.b
 	b.mu.Lock()
 	b.tunnel = tunnel
@@ -237,7 +239,9 @@ func TestStaleTunnelFailureCannotDisconnectNewSession(t *testing.T) {
 	b.failTunnel(&proxyTunnel{}, "Delayed failure from a previous session")
 	var state object
 	json.Unmarshal([]byte(b.Snapshot()), &state)
-	if str(state, "connection") != "connected" { t.Fatal("Stale failure stopped the new connection") }
+	if str(state, "connection") != "connected" {
+		t.Fatal("Stale failure stopped the new connection")
+	}
 	b.Disconnect()
 }
 func TestUnreachableLatencyAndValidation(t *testing.T) {

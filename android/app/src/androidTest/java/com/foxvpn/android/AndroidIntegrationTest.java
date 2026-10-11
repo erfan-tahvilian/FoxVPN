@@ -51,7 +51,9 @@ public class AndroidIntegrationTest {
         js("window.fox.call('theme','dark')");Thread.sleep(500);
         assertEquals("false",js("document.body.classList.contains('light')"));
         java.io.File screenshot=new java.io.File(activity.getActivity().getFilesDir(),"android-overview.png");
-        js("navigate('home')");assertTrue(UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(screenshot));
+        js("navigate('home')");Thread.sleep(500);
+        assertTrue("System bars overlap the interface",activity.getActivity().web.getTop()>0);
+        assertTrue(UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(screenshot));
     }
     @Test public void secureStorageRejectsTampering()throws Exception{
         Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
