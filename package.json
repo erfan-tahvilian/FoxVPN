@@ -1,0 +1,67 @@
+{
+  "name": "fox-vpn",
+  "productName": "Fox VPN",
+  "version": "1.0.0",
+  "description": "Independent Windows client for Firefox VPN's HTTP/2 proxy service",
+  "author": "Erfan Tahvilian",
+  "license": "MIT",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node scripts/test.cjs",
+    "engine": "node scripts/download-engine.cjs",
+    "dist": "electron-builder --win nsis zip --x64",
+    "check": "node scripts/check.cjs",
+    "smoke": "node scripts/smoke-runner.cjs"
+  },
+  "dependencies": {
+    "socks": "2.8.10"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "flag-icons": "7.5.0"
+  },
+  "build": {
+    "appId": "com.foxvpn.desktop",
+    "productName": "Fox VPN",
+    "artifactName": "FoxVPN-${version}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "electronDist": "node_modules/electron/dist",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "licenses/**/*",
+      "LICENSE",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "engine",
+        "to": "engine",
+        "filter": [
+          "sing-box.exe",
+          "wintun.dll",
+          "LICENSE*",
+          "*.txt"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator",
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Fox VPN"
+    }
+  }
+}

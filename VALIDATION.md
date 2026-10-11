@@ -1,0 +1,21 @@
+# v1.0.0 verification record
+
+Checked on Windows x64 on 2026-10-11.
+
+## Passed
+
+- **14 automated protocol/storage tests**: key derivation and Hawk request signing, deferred email verification, permanent/transient token refresh failures, server filtering, proof of work, input validation, DNS/split-routing configuration, encrypted vault rollback and password redaction, fragmented SOCKS5 negotiation, and rejected unsupported authentication.
+- **Actual local TLS + HTTP/2 integration**: a trusted localhost test certificate, authenticated HTTP/2 CONNECT, nested HTTPS with certificate validation, and bidirectional byte accounting. The test CA and key are test fixtures only and are not bundled in the application.
+- **Renderer smoke test**: all five pages, dark/light switching, unique DOM IDs, offline country flag loading in the list and selected-location card, no Node.js access, and no renderer console errors. Screenshots were visually reviewed.
+- **Real Electron main process**: sandboxed preload IPC, Windows DPAPI vault persistence, invalid settings rejection, signed-out account behavior, and external URL allowlist. Uses an isolated test profile.
+- **Live Mozilla Remote Settings**: 34 usable endpoints across 34 countries at the time of verification. No account credentials used.
+- **Actual sing-box 1.12.0 binary validation**: generated configurations for automatic DNS, custom TCP DNS, network resolver, Google and Quad9 accepted by `sing-box check`.
+- **Pinned downloads**: Electron package checksum, GitHub sing-box asset SHA-256 digest and Wintun 0.14.1 SHA-256 checked. Wintun is copied without modification.
+- **Runtime dependency audit**: no reported advisories for production npm dependencies at the time of verification. Build dependencies have 8 moderate advisories reported by npm; they are excluded from the shipped application.
+- JavaScript syntax checks and packaged source/resource comparison.
+
+## Not verified with an actual account
+
+Firefox Accounts acceptance, email-code delivery, Guardian production entitlement/allowance, a live Fastly VPN tunnel, Administrator TUN traffic/routing restoration, and executable exclusions under a live connection. These require an eligible Firefox account and network access. Local protocol fixtures and configuration acceptance do not substitute for that verification.
+
+The installer is unsigned. This release makes no claim of a persistent kill switch or general UDP/QUIC support. See README and release notes for the exact scope.

@@ -1,0 +1,42 @@
+const {app,BrowserWindow}=require('electron');
+const fs=require('node:fs');
+const path=require('node:path');
+const assert=require('node:assert/strict');
+fs.mkdirSync('test-results',{recursive:true});
+app.setPath('userData',path.resolve('test-results/smoke-profile'));
+app.setPath('sessionData',path.resolve('test-results/smoke-profile'));
+function status(step){fs.writeFileSync('test-results/smoke-status.txt',step);}
+status('Waiting for Electron readiness');
+app.disableHardwareAcceleration();
+app.whenReady().then(async()=>{
+  status('Electron ready');
+  const win=new BrowserWindow({width:1180,height:820,show:false,webPreferences:{preload:path.join(__dirname,'smoke-preload.cjs'),sandbox:false,contextIsolation:true,nodeIntegration:false}});
+  const errors=[];win.webContents.on('console-message',details=>{if(details.level==='error')errors.push(details.message);});
+  try {
+    await win.loadFile(path.join(__dirname,'../src/ui/index.html'));
+    status('Renderer loaded');
+    await win.webContents.executeJavaScript(`new Promise(r=>setTimeout(r,250))`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('status-label').textContent`),'Disconnected');
+    assert(await win.webContents.executeJavaScript(`new Set([...document.querySelectorAll('[id]')].map(e=>e.id)).size===document.querySelectorAll('[id]').length`));
+    fs.mkdirSync('test-results',{recursive:true});
+    fs.writeFileSync('test-results/overview-dark.png',(await win.webContents.capturePage()).toPNG());
+    await win.webContents.executeJavaScript(`document.getElementById('theme-toggle').click();new Promise(r=>setTimeout(r,100))`);
+    assert(await win.webContents.executeJavaScript(`document.body.classList.contains('light')`));
+    fs.writeFileSync('test-results/overview-light.png',(await win.webContents.capturePage()).toPNG());
+    for(const page of ['locations','account','settings','logs']) {
+      await win.webContents.executeJavaScript(`document.querySelector('[data-page="${page}"]').click()`);
+      await win.webContents.executeJavaScript(`new Promise(r=>setTimeout(r,100))`);
+      assert(await win.webContents.executeJavaScript(`document.getElementById('${page}').classList.contains('active')`));
+      if(page==='locations')assert(await win.webContents.executeJavaScript(`document.querySelectorAll('.server-row .country-flag').length>0 && [...document.querySelectorAll('.server-row .country-flag')].every(i=>i.complete&&i.naturalWidth>0)`));
+      fs.writeFileSync(`test-results/${page}.png`,(await win.webContents.capturePage()).toPNG());
+    }
+    await win.webContents.executeJavaScript(`document.querySelector('[data-page="locations"]').click(); document.querySelector('.server-row').click(); new Promise(r=>setTimeout(r,100))`);
+    assert(await win.webContents.executeJavaScript(`document.querySelector('#selected-symbol .country-flag').naturalWidth>0`));
+    fs.writeFileSync('test-results/selected-location.png',(await win.webContents.capturePage()).toPNG());
+    assert.equal(await win.webContents.executeJavaScript(`typeof require`),'undefined');
+    assert.deepEqual(errors,[]);
+    status('PASS: navigation, themes, renderer isolation and console checks');
+    console.log('Renderer smoke checks passed: navigation, theme, account form, isolated renderer, no console errors.');
+    app.exit(0);
+  } catch(e){status('FAIL: '+e.stack);console.error(e);app.exit(1);}
+});
