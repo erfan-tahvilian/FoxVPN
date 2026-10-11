@@ -112,3 +112,11 @@ System VPN requests administrator authorization through macOS when connecting. T
 Build on the matching native Mac with Node.js 22 or newer: `npm ci`, `npm run engine:mac`, `npm test`, `npm run check`, `node scripts/validate-engine.cjs`, `npm run smoke`, `npm run dist:mac`, `node scripts/validate-mac-package.cjs`. CI uses `macos-15-intel` for x64 and `macos-15` for arm64. It also exercises real privileged utun creation and cleanup without changing the runner’s default route. Production Firefox sign-in and full service-backed VPN traffic are not verified by this test.
 
 The **Manage account** button opens [Firefox account settings](https://accounts.firefox.com/settings) on every platform.
+
+## Donate
+
+If you would like to support Fox VPN development, you can donate to one of these addresses:
+
+- **Tron (TRX) Address:** `TL8WyZLLGu8UraHAT8dCoeMsnzGpX2oAYn`
+- **Binance Coin (BNB - BEP20) Address:** `0xeC4F61F21238685cC842bC236D86684e5fc2Bc57`
+- **Bitcoin (BTC) Address:** `bc1q2y9m8y02fqgsr4c6533duwmqtmrhadc8k8mkt4`
