@@ -1,0 +1,28 @@
+name: Android build
+on:
+  push:
+    branches: [main]
+    paths: ['android/**', 'src/ui/**', 'assets/**', 'scripts/*android*', '.github/workflows/android.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.3'
+          cache: false
+      - name: Verify Android core
+        working-directory: android/core
+        run: |
+          go mod tidy
+          go test -race -v ./mobile
+          go vet ./mobile
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-core-lockfile
+          path: android/core/go.*
