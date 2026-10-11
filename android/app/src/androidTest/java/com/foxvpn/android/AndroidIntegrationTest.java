@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 import android.webkit.WebView;
+import com.foxvpn.nativebridge.libbox.Libbox;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
@@ -22,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONObject;
 
 @RunWith(AndroidJUnit4.class)
 public class AndroidIntegrationTest {
@@ -64,6 +66,18 @@ public class AndroidIntegrationTest {
     }
     @Test public void nativeVpnPermissionProtectAndCleanup()throws Exception{
         ready();Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        FoxApp app=(FoxApp)context.getApplicationContext();
+        JSONObject original=new JSONObject(app.state.getJSONObject("settings").toString());
+        try{
+            for(String dns:new String[]{"automatic","cloudflare","google","quad9","off","custom"}){
+                JSONObject settings=new JSONObject(original.toString());
+                settings.put("doh",dns.equals("custom")?"automatic":dns);
+                settings.put("customDns",dns.equals("custom")?"1.1.1.1":"");
+                JSONObject response=new JSONObject(app.backend.call("settings","["+settings+"]"));
+                assertTrue("DNS settings rejected: "+dns,response.getBoolean("ok"));
+                Libbox.checkConfig(app.backend.engineConfig());
+            }
+        }finally{app.backend.call("settings","["+original+"]");}
         Intent permission=VpnService.prepare(context);
         if(permission!=null){
             InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> activity.getActivity().startActivityForResult(permission,90));
@@ -90,6 +104,6 @@ public class AndroidIntegrationTest {
         context.stopService(new Intent(context,NativeTestService.class));
         assertTrue("Native cleanup did not complete",NativeTestService.closed.await(30,TimeUnit.SECONDS));
         assertNull(NativeTestService.instance);
-        FoxApp app=(FoxApp)context.getApplicationContext();assertEquals("disconnected",app.connection());
+        assertEquals("disconnected",app.connection());
     }
 }
