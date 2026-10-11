@@ -1,6 +1,6 @@
 # Fox VPN v1.0.0
 
-Desktop VPN client for Windows and macOS.
+VPN client for Windows, macOS and Android.
 
 ## Downloads
 
@@ -11,6 +11,11 @@ Desktop VPN client for Windows and macOS.
 | Windows | Windows on ARM | `FoxVPN-1.0.0-Windows-arm64.exe` or `.zip` |
 | macOS | Intel | `FoxVPN-1.0.0-macOS-x64.dmg` or `.zip` |
 | macOS | Apple Silicon | `FoxVPN-1.0.0-macOS-arm64.dmg` or `.zip` |
+| Android | Current ARM devices | `FoxVPN-1.0.0-Android-arm64-v8a.apk` |
+| Android | Older ARM devices | `FoxVPN-1.0.0-Android-armeabi-v7a.apk` |
+| Android | Intel 64-bit | `FoxVPN-1.0.0-Android-x86_64.apk` |
+| Android | Intel 32-bit | `FoxVPN-1.0.0-Android-x86.apk` |
+| Android | All supported architectures | `FoxVPN-1.0.0-Android-universal.apk` |
 
 `SHA256SUMS.txt` provides download checksums. `sing-box-1.12.0-source.tar.gz` contains the corresponding source for the bundled network engine.
 
@@ -22,9 +27,11 @@ Desktop VPN client for Windows and macOS.
 
 ## Connection support
 
+**Android:** Requires Android 8.0 or later and a current Android System WebView. Install the APK, sign in and approve the system VPN request. Add Fox VPN to Quick Settings to connect or disconnect from the panel. The persistent notification provides connection status and a disconnect control.
+
 Sign in with a Firefox account, select a location and connect. Account eligibility, regional availability and data allowances depend on the service.
 
-TCP and DNS are supported. General UDP/QUIC and a persistent kill switch are not supported. Closing the window keeps the app running in the tray; use **Quit** to exit.
+TCP and DNS are supported. General UDP/QUIC and a persistent kill switch are not supported. Desktop apps remain in the tray when their window is closed; Android connections remain active in the background.
 
 Production sign-in and VPN traffic have not been verified with a live user account. See the [verification record](https://github.com/erfan-tahvilian/FoxVPN/blob/main/VALIDATION.md) for test coverage.
 

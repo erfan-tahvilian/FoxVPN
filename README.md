@@ -9,11 +9,12 @@
 
 **Your connection. Your control.**
 
-A desktop VPN client for Windows and macOS.
+A VPN client for Windows, macOS and Android.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-ff741f?style=flat-square)
 ![Windows](https://img.shields.io/badge/Windows-x64%20%7C%20x86%20%7C%20ARM64-20232a?style=flat-square)
 ![macOS](https://img.shields.io/badge/macOS-Intel%20%7C%20Apple%20Silicon-20232a?style=flat-square)
+![Android](https://img.shields.io/badge/Android-ARM%20%7C%20x86-20232a?style=flat-square)
 
 [Download](#download) · [Features](#features) · [Get started](#getting-started) · [Support development](#donate)
 
@@ -46,6 +47,18 @@ Requires **Windows 10 or later** for x64/x86, or **Windows 11** for ARM64.
 
 Requires **macOS 13 Ventura or later**.
 
+### Android
+
+| Device | Package |
+| :--- | :---: |
+| **Most current phones and tablets** · ARM64 | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk) |
+| **Older ARM devices** · ARM 32-bit | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-armeabi-v7a.apk) |
+| **Intel 64-bit devices and emulators** · x86_64 | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86_64.apk) |
+| **Intel 32-bit devices and emulators** · x86 | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86.apk) |
+| **All supported architectures** · Universal | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-universal.apk) |
+
+Requires **Android 8.0 or later** and an up-to-date Android System WebView. Choose **Universal** if you are unsure which architecture your device uses.
+
 Verify downloads against [SHA256SUMS.txt](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt).
 
 ## Features
@@ -57,6 +70,8 @@ Verify downloads against [SHA256SUMS.txt](https://github.com/erfan-tahvilian/Fox
 | HTTP / SOCKS5 upstream support | Configurable DNS | Diagnostic log export |
 
 Firefox account sign-in and email verification are supported. Light, dark and system appearance are available.
+
+On Android, connect from Quick Settings and manage an active connection from the persistent notification.
 
 <details>
 <summary><strong>View more screenshots</strong></summary>
@@ -77,13 +92,19 @@ Screenshots are interface test previews. Latency values in the location preview 
 
 **macOS:** Open the DMG and drag **Fox VPN** into **Applications**, or extract the complete app bundle from the ZIP. Packages are ad-hoc signed and are not notarized. If Gatekeeper blocks first launch, verify the download and approve it in **System Settings → Privacy & Security → Open Anyway**. System VPN requests administrator authorization when connecting.
 
+**Android:** Download an APK and allow installation from your browser or file manager when prompted. Open Fox VPN and approve the system VPN request on your first connection. Allow notifications to keep connection controls visible.
+
 ### Connect
 
 1. Launch Fox VPN and sign in from **My account**.
 2. Complete email verification if requested.
 3. Choose a location and press the connect button.
 
-Press the connect button again to disconnect. Closing the window keeps Fox VPN running in the system tray; use **Quit** to exit.
+Press the connect button again to disconnect. On desktop, closing the window keeps Fox VPN running in the system tray; use **Quit** to exit. On Android, the connection remains active when the app is in the background.
+
+### Quick Settings on Android
+
+After signing in and approving your first VPN connection, add **Fox VPN** to your Quick Settings panel. Use **Add Quick Settings tile** in the app on supported Android versions, or edit the panel manually. Tap the tile to connect or disconnect; its highlighted state indicates an active connection.
 
 <details>
 <summary><strong>Use proxy-only mode</strong></summary>
@@ -107,11 +128,12 @@ Production sign-in and VPN traffic have not been verified with a live user accou
 | [Build guide](BUILDING.md) | Prerequisites and platform-specific build instructions |
 | [Verification record](VALIDATION.md) | Automated checks and remaining manual tests |
 | [Changelog](CHANGELOG.md) | Release history |
-| [License](LICENSE) | Fox VPN licensing |
+| [Desktop license](LICENSE) | MIT License |
+| [Android license](android/LICENSE) | GPL-3.0-or-later |
 
 ## Third-party licenses
 
-Fox VPN is distributed under the [MIT License](LICENSE). Bundled dependencies retain their own licenses.
+The desktop application is distributed under the [MIT License](LICENSE). The Android application is distributed under [GPL-3.0-or-later](android/LICENSE). Bundled dependencies retain their own licenses and notices.
 
 <details>
 <summary><strong>Dependency notices</strong></summary>

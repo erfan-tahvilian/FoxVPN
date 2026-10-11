@@ -91,7 +91,7 @@ gomobile bind -target android -androidapi 26 -javapkg=com.foxvpn.nativebridge -l
 cd ../..
 node scripts/prepare-android.cjs
 node scripts/android-notices.cjs
-gradle -p android :app:assembleRelease :app:lintRelease
+android/gradlew -p android :app:assembleRelease :app:lintRelease
 python scripts/validate-android.py
 ```
 

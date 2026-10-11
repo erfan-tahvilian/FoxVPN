@@ -36,3 +36,13 @@ The installer is unsigned. This release makes no claim of a persistent kill swit
 ## macOS validation
 
 Native Intel and Apple Silicon CI run the shared protocol suite and real Electron renderer/main smoke checks. Each native sing-box validates all generated DNS configurations. A privileged lifecycle test creates a real utun device, waits for its authenticated loopback controller and verifies that disconnect removes the device; it keeps auto-route disabled so the CI runner retains its default connection. Package verification checks every source/asset/license file, the application version, Mach-O CPU types, executable permissions, app icon and Info.plist. No macOS application is installed on the developer’s Windows host. Apple’s interactive authorization dialog and full production Firefox-account VPN traffic are not exercised in headless CI.
+
+## Android validation
+
+- Eight Go core tests pass under the race detector. Coverage includes desktop-compatible authentication derivation, encrypted-storage failure handling, renderer credential isolation, real TLS/HTTP2 CONNECT and nested HTTPS, fragmented SOCKS5, cancellation, connection lifecycle, stale-session failures and latency validation. `go vet` passes.
+- All five APK variants pass binary checks: exact ABI sets, ELF CPU types, uncompressed native libraries, 16 KB ZIP alignment and 16 KB ELF load-segment alignment for 64-bit targets. Required interface and license assets are present.
+- Android release lint reports no errors. Dependency-version suggestions, JavaScript use for packaged WebView assets and the supplied notification icon are reviewed warnings.
+- Three instrumentation tests pass on an Android 15 x86_64 emulator: interface navigation and theme switching, encrypted Keystore-backed storage with tamper rejection, and actual system VPN consent, native TUN startup, socket protection and cleanup. The native engine accepts all six generated DNS configurations. The TUN test leaves the default route unchanged.
+- Release APKs are signed locally with the persistent project certificate, verified with `apksigner`, and checked again for native alignment. The private signing key is excluded from source and CI.
+
+Physical ARM phones, vendor-specific power management, authenticated production VPN traffic and reconnecting after real Wi-Fi/mobile handovers require device testing. Cross-compilation and an x86_64 emulator do not establish those results. Debug integration services and test fixtures are excluded from release APKs.
