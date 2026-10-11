@@ -1,0 +1,48 @@
+name: Publish verified Windows build
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Windows build run for the v1.0.0 source tag
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v1.0.0
+      - name: Verify source and build identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FOX_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          [[ "$FOX_RUN_ID" =~ ^[0-9]+$ ]]
+          test "$(node -p 'require("./package.json").version')" = '1.0.0'
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_RUN_ID" > /tmp/fox-run.json
+          test "$(jq -r '.conclusion' /tmp/fox-run.json)" = 'success'
+          test "$(jq -r '.head_sha' /tmp/fox-run.json)" = "$(git rev-parse HEAD)"
+      - uses: actions/download-artifact@v4
+        with:
+          name: FoxVPN-Windows
+          path: verified-build
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Prepare release assets
+        run: |
+          mkdir release-assets
+          cp verified-build/dist/FoxVPN-1.0.0-x64.exe release-assets/
+          cp verified-build/dist/FoxVPN-1.0.0-x64.zip release-assets/
+          curl --fail --location --retry 3 'https://codeload.github.com/SagerNet/sing-box/tar.gz/refs/tags/v1.12.0' -o release-assets/sing-box-1.12.0-source.tar.gz
+          cd release-assets
+          sha256sum FoxVPN-1.0.0-x64.exe FoxVPN-1.0.0-x64.zip sing-box-1.12.0-source.tar.gz > SHA256SUMS.txt
+      - name: Publish fixed v1.0.0 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload v1.0.0 release-assets/* --clobber
+          gh release edit v1.0.0 --draft=false --title 'Fox VPN v1.0.0 — Windows' --notes-file RELEASE_NOTES.md
