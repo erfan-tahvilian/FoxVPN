@@ -164,13 +164,12 @@ $('verify-exit').addEventListener('click',action(async()=>{const result=await ca
 $('login-form').addEventListener('submit',action(async e=>{e.preventDefault();const email=$('email').value.trim(),password=$('password').value;$('password').value='';const result=await call('login',{email,password});needsCode=result.needsCode;render(await call('state'));if(needsCode){$('code').focus();toast('Enter the verification code sent to your Firefox account email.');}else{toast('Signed in successfully.');navigate('home');}}));
 $('code-form').addEventListener('submit',action(async e=>{e.preventDefault();await call('verify',$('code').value.trim());$('code').value='';needsCode=false;render(await call('state'));toast('Your account is ready.');navigate('home');}));
 $('restart-login').addEventListener('click',()=>{needsCode=false;render(currentState);});
-$('logout').addEventListener('click',action(async()=>{await call('logout');needsCode=false;$('account-stats').textContent='Refresh to view your current account entitlement.';toast('Signed out.');}));
+$('logout').addEventListener('click',action(async()=>{await call('logout');needsCode=false;$('account-stats').textContent='Refresh to view your account details and data allowance.';toast('Signed out.');}));
 function accountInfo(data) {
-  const parts=[`Entitlement: ${data.subscribed?'Active':'Not active'}`,`Account ID: ${data.uid||'Not reported'}`,`Monthly allowance: ${data.maxBytes==null?'Not reported':bytes(data.maxBytes)}`,`Data remaining: ${!data.limited_bandwidth?'Unlimited':data.quotaRemaining==null?'Not reported':bytes(data.quotaRemaining)}`];
+  const parts=[`Account ID: ${data.uid||'Not reported'}`,`Monthly allowance: ${data.maxBytes==null?'Not reported':bytes(data.maxBytes)}`,`Data remaining: ${!data.limited_bandwidth?'Unlimited':data.quotaRemaining==null?'Not reported':bytes(data.quotaRemaining)}`];
   $('account-stats').replaceChildren(...parts.map(text=>{const p=document.createElement('div');p.textContent=text;return p;}));
 }
 $('refresh-account').addEventListener('click',action(async()=>accountInfo(await call('account'))));
-$('activate-account').addEventListener('click',action(async()=>{accountInfo(await call('activate'));toast('Entitlement activation requested.');}));
 $('settings-form').addEventListener('submit',action(async e=>{
   e.preventDefault();const settings={...currentState.settings};
   for(const key of ['theme','bind','doh','customDns','edge'])settings[key]=$(key).value.trim();

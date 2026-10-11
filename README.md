@@ -31,7 +31,7 @@ Get **v1.0.0** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/release
 | Dark / light / system | Orange-accented themes throughout all five screens |
 | Exit verification | Cloudflare trace through the tunnel; selected country must match before connection |
 | In-app logs | Bounded, sanitized diagnostics, filter, export and clear |
-| Advanced options | Custom edge with original TLS identity, SOCKS port/bind address, entitlement activation |
+| Advanced options | Custom edge with original TLS identity, SOCKS port/bind address |
 
 ## First connection
 
@@ -99,4 +99,4 @@ To build a target, set `FOX_TARGET_ARCH` to `x64`, `ia32` (x86), or `arm64`, the
 
 Locations can be sorted by name or TCP latency in either direction. Unknown and unreachable latency results stay last. The small waveform button on each row checks only that endpoint without selecting it or changing an active VPN session.
 
-“Activate entitlement” requests activation of the signed-in account’s VPN access via Mozilla. Eligibility and allowance are controlled by the service; it does not purchase a subscription. Connection setup also attempts activation automatically if the pass endpoint requires it.
+Account refresh displays your account ID and data allowance. Connection setup requests service activation automatically when required; eligibility and allowance remain controlled by the service.

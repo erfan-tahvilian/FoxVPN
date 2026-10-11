@@ -14,6 +14,8 @@ Portable users must extract the entire ZIP, then run `Fox VPN.exe`.
 
 ### Latest changes in v1.0.0
 
+- Simplified account details: removed the subscription-derived entitlement status and manual activation button; automatic activation during connection remains available.
+
 - Black Fox wordmark logo in light mode; white Fox wordmark logo in dark mode. The executable icon retains the supplied white-wordmark version.
 - Removed the sidebar “Built for Windows” card.
 - Name and ping sorting, ascending and descending; unmeasured/unreachable results stay at the bottom when sorting by ping.
