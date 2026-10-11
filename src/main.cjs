@@ -160,7 +160,7 @@ else {
     handle('exit',async()=>{if(connection!=='connected')throw Error('Connect before verifying your exit.');exit=await tunnel.exit(store.settings.serverId==='REC'?null:tunnel.candidate.code);emit();return exit;});
     handle('clearLogs',()=>{logs=[];emit();});
     handle('exportLogs',async()=>{const result=await dialog.showSaveDialog(window,{defaultPath:'FoxVPN-diagnostics.txt',filters:[{name:'Text files',extensions:['txt']}]});if(!result.canceled)fs.writeFileSync(result.filePath,logs.map(l=>`${l.time} [${l.level}] ${l.message}`).join('\n'));});
-    handle('openLink',id=>{const urls={source:'https://github.com/erfan-tahvilian/FoxVPN',account:'https://accounts.firefox.com/',subscription:'https://vpn.mozilla.org/',upstream:'https://github.com/Vauth/FoxyVPN'};if(!urls[id])throw Error('Unknown link');return shell.openExternal(urls[id]);});
+    handle('openLink',id=>{const urls={source:'https://github.com/erfan-tahvilian/FoxVPN',account:'https://accounts.firefox.com/',subscription:'https://vpn.mozilla.org/'};if(!urls[id])throw Error('Unknown link');return shell.openExternal(urls[id]);});
     nativeTheme.on('updated',emit);setInterval(emit,1000).unref();
     if(store.loadError)log('warn',store.loadError);
     refreshServers().catch(()=>log('warn','Server list is currently unreachable. Use Refresh in Locations to try again.'));

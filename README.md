@@ -76,7 +76,6 @@ Architecture: Electron main process owns authentication, encrypted storage, netw
 ## Third-party licenses
 
 - Fox VPN code: MIT, see [LICENSE](LICENSE).
-- FoxyVPN protocol source: MIT, original attribution in [licenses/FoxyVPN-MIT.txt](licenses/FoxyVPN-MIT.txt).
 - Separately bundled sing-box executable: GPL-3.0-or-later with upstream's additional naming condition. License, exact version, source location and binary hashes are included in the engine directory. Corresponding source for the exact bundled version is provided alongside release assets. Build instructions: [sing-box source build](https://sing-box.sagernet.org/installation/build-from-source/).
 - Wintun redistributable: supplied under its included `LICENSE-wintun.txt`. [Official source and download](https://www.wintun.net/).
 - Electron / Chromium / Node.js and npm dependencies retain their included notices.

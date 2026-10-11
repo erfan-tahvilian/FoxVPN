@@ -1,4 +1,3 @@
-// Protocol ported from Vauth/FoxyVPN (MIT); see licenses/FoxyVPN-MIT.txt.
 const crypto = require('node:crypto');
 const PREFIX = 'identity.mozilla.com/picl/v1/';
 const CLIENT = '5882386c6d801776';
