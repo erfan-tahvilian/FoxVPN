@@ -20,7 +20,7 @@ Firefox Accounts acceptance, email-code delivery, Guardian production entitlemen
 
 The installer is unsigned. This release makes no claim of a persistent kill switch or general UDP/QUIC support. See README and release notes for the exact scope.
 
-## v1.0.1 update validation
+## v1.0.0 update validation
 
 - 16 protocol/storage/latency tests pass. Real local TCP listeners validate reachable and refused endpoint results; scheduler tests verify bounded concurrency and incremental completion.
 - Electron renderer smoke checks cover supplied theme logos, sun/moon glyphs, circular globe geometry, all custom select controls, selecting options, duplicate service recommendations, incremental latency badges and a simulated automatic connection with an authoritative Canadian exit. These fixtures do not claim a live VPN connection.

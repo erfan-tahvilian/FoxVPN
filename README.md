@@ -14,7 +14,7 @@ Screenshots are UI test previews; latency values in the location preview are ill
 
 ## Download
 
-Get **v1.0.1** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/releases). The Windows x64 installer and portable ZIP include the network engine and driver. Windows 10/11 x64 is required. The executable requests Administrator access for system VPN mode. Builds are currently unsigned.
+Get **v1.0.0** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/releases). The Windows x64 installer and portable ZIP include the network engine and driver. Windows 10/11 x64 is required. The executable requests Administrator access for system VPN mode. Builds are currently unsigned.
 
 ## Features
 

@@ -43,8 +43,15 @@ if ($Mode -eq 'Inspect') {
   $foxRelease = $null
   try { $foxRelease = Invoke-FoxApi ('/releases/tags/' + $foxTag) } catch { if ([int]$_.Exception.Response.StatusCode -ne 404) { throw } }
   if ($null -eq $foxRelease) {
+    $foxRelease = (Invoke-FoxApi '/releases?per_page=30') | Where-Object tag_name -eq $foxTag | Select-Object -First 1
+  }
+  if ($null -eq $foxRelease) {
     $foxRelease = Invoke-FoxApi '/releases' 'POST' @{tag_name=$foxTag; target_commitish=$foxCommit; name=('Fox VPN ' + $foxTag + ' — Windows'); body=$foxNotes; draft=$true; prerelease=$false}
-  } elseif (!$foxRelease.draft) { throw ($foxTag + ' is already published; refusing to replace its assets.') }
+  } elseif (!$foxRelease.draft) {
+    if ($foxTag -ne 'v1.0.0') { throw ($foxTag + ' is already published; refusing to replace its assets.') }
+    # The owner explicitly requested ongoing updates under the fixed v1.0.0 release.
+    $foxRelease = Invoke-FoxApi ('/releases/' + $foxRelease.id) 'PATCH' @{draft=$true; body=$foxNotes; name=('Fox VPN ' + $foxTag + ' — Windows')}
+  }
   foreach ($foxAsset in $foxAssets) {
     $foxExisting = $foxRelease.assets | Where-Object name -eq $foxAsset.Name
     if ($foxExisting) { Invoke-FoxApi ('/releases/assets/' + $foxExisting.id) 'DELETE' | Out-Null }

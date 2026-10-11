@@ -2,12 +2,12 @@ Windows x64 maintenance release of **Fox VPN**, an independent desktop applicati
 
 ### Downloads
 
-- `FoxVPN-1.0.1-x64.exe` — Windows installer.
-- `FoxVPN-1.0.1-x64.zip` — portable application; extract the entire ZIP and run `Fox VPN.exe`.
+- `FoxVPN-1.0.0-x64.exe` — Windows installer.
+- `FoxVPN-1.0.0-x64.zip` — portable application; extract the entire ZIP and run `Fox VPN.exe`.
 - `sing-box-1.12.0-source.tar.gz` — corresponding source of the separately bundled GPL network engine.
 - `SHA256SUMS.txt` — checksums for the downloadable files.
 
-### Changes in v1.0.1
+### Changes in v1.0.0
 
 - Light-theme logo and matching Windows executable/installer icon.
 - Sun/moon appearance toggle, circular globe and corrected account icons.

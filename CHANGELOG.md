@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.1 — 2026-10-11
+## v1.0.0 — UI update, 2026-10-11
 
 - Added location TCP latency checks and clear automatic connection destinations.
 - Added the supplied light logo for light mode and Windows application icons.
