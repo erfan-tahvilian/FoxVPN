@@ -69,7 +69,14 @@ public class AndroidIntegrationTest {
             InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> activity.getActivity().startActivityForResult(permission,90));
             UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
             UiObject2 okay=device.wait(Until.findObject(By.res("android:id/button1")),10000);
-            assertNotNull("VPN permission dialog did not appear",okay);okay.click();
+            assertNotNull("VPN permission dialog did not appear",okay);
+            // System consent is asynchronous and may briefly suppress clicks after the dialog opens.
+            long deadline=System.currentTimeMillis()+10000;
+            while(VpnService.prepare(context)!=null&&System.currentTimeMillis()<deadline){
+                okay=device.findObject(By.res("android:id/button1"));
+                if(okay!=null&&okay.isEnabled())okay.click();
+                Thread.sleep(500);
+            }
             device.waitForIdle();
         }
         assertNull(VpnService.prepare(context));

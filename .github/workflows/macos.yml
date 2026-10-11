@@ -2,6 +2,7 @@ name: macOS build
 on:
   push:
     branches: [main]
+    paths: ['src/**', 'assets/**', 'licenses/**', 'package*.json', 'scripts/**', '!scripts/*android*', '.github/workflows/macos.yml']
   pull_request:
   workflow_dispatch:
 permissions:

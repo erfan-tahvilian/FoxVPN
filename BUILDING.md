@@ -64,3 +64,43 @@ The local SOCKS5 bridge carries authenticated HTTP/2 CONNECT streams. DNS uses t
 Platform CI validates generated engine configurations, packaged resources and binary architectures. macOS CI also exercises privileged utun creation and cleanup without changing the runner's default route.
 
 See [VALIDATION.md](VALIDATION.md) for the verification record and remaining manual checks.
+
+## Android
+
+Build on Linux with Go 1.24.13, JDK 17, Node.js and the Android SDK. The project uses Gradle 8.11.1, Android Gradle Plugin 8.10.1, SDK 36, Build Tools 35.0.0 and NDK 28.0.13004108. Minimum Android version is API 26.
+
+Install the required SDK components:
+
+```sh
+sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;28.0.13004108'
+export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.0.13004108"
+```
+
+Prepare the combined native library:
+
+```sh
+cd android/core
+go mod download
+go test -race -timeout 90s ./mobile
+go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.7
+go install github.com/sagernet/gomobile/cmd/gobind@v0.1.7
+export PATH="$(go env GOPATH)/bin:$PATH"
+gomobile init
+mkdir -p ../app/libs
+gomobile bind -target android -androidapi 26 -javapkg=com.foxvpn.nativebridge -libname=foxvpn -trimpath -tags with_gvisor,with_clash_api,with_conntrack -ldflags '-X github.com/sagernet/sing-box/constant.Version=1.12.0 -s -w -buildid= -extldflags=-Wl,-z,max-page-size=16384' -o ../app/libs/foxvpn.aar ./mobile github.com/sagernet/sing-box/experimental/libbox
+cd ../..
+node scripts/prepare-android.cjs
+node scripts/android-notices.cjs
+gradle -p android :app:assembleRelease :app:lintRelease
+python scripts/validate-android.py
+```
+
+The build produces unsigned release APKs for arm64-v8a, armeabi-v7a, x86_64, x86 and all four ABIs in a universal APK. Sign release APKs with a persistent project signing key. Never distribute unsigned APKs or substitute the debug certificate.
+
+The project release workflow builds and tests APKs in CI, then signs them locally on the maintainer's Windows computer using `scripts/sign-android.ps1 -RunId <successful-run-id>`. The private key and its DPAPI-protected password remain in the ignored local tools directory. The public certificate SHA-256 fingerprint is recorded in `android/signing-certificate.sha256`.
+
+Android uses a permission-protected `VpnService`, the same HTML interface with a mobile layout, and one native Go library containing the authentication/HTTP2 bridge and sing-box libbox. The WebView loads packaged HTTPS assets only; it cannot browse external pages or read local files. Named actions cross the native bridge. Android Keystore protects local session encryption keys.
+
+Split tunneling excludes Android package names through the platform VPN builder. Quick Settings and the foreground notification read the core connection state. VPN consent is required before the first system connection. The debug-only integration service creates a real TUN interface without changing the default route; it is excluded from release APKs.
+
+Android application code is licensed under [GPL-3.0-or-later](android/LICENSE). The native library's dependency notices and exact module versions are included in APK assets; Go dependencies are pinned in `android/core/go.mod` and `go.sum`.

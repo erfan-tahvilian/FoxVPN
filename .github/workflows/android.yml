@@ -80,21 +80,11 @@ jobs:
           key: ${{ steps.native-cache.outputs.cache-primary-key }}
       - name: Prepare interface
         run: node scripts/prepare-android.cjs
-      - name: Generate pinned Gradle wrapper
-        working-directory: android
-        run: gradle wrapper --gradle-version 8.11.1 --distribution-type bin --gradle-distribution-sha256-sum f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Android-gradle-wrapper
-          path: |
-            android/gradlew
-            android/gradlew.bat
-            android/gradle/wrapper/
       - name: Bundle dependency notices
         run: node scripts/android-notices.cjs
       - name: Compile and inspect Android packages
         working-directory: android
-        run: gradle :app:assembleRelease :app:assembleDebug :app:lintRelease --stacktrace
+        run: ./gradlew :app:assembleRelease :app:assembleDebug :app:lintRelease --stacktrace
       - name: Verify all native architectures and 16 KB alignment
         run: python scripts/validate-android.py > android/app/build/reports/package-validation.json
       - name: Enable emulator acceleration
