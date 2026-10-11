@@ -5,6 +5,8 @@ const root=path.resolve(__dirname,'..'),core=path.join(root,'android/core');
 const target=path.join(root,'android/app/src/main/assets/third-party/go');
 fs.mkdirSync(target,{recursive:true});
 const lines=execFileSync('go',['list','-deps','-tags=with_gvisor,with_clash_api,with_conntrack','-f','{{if .Module}}{{.Module.Path}}|{{.Module.Version}}|{{.Module.Dir}}{{end}}','./mobile','github.com/sagernet/sing-box/experimental/libbox'],{cwd:core,encoding:'utf8',maxBuffer:8*1024*1024,env:{...process.env,GOOS:'android',GOARCH:'arm64',CGO_ENABLED:'1'}}).split(/\r?\n/).filter(Boolean);
+// A cached AAR does not run gomobile install, so explicitly fetch its runtime notices.
+execFileSync('go',['mod','download','github.com/sagernet/gomobile'],{cwd:core,stdio:'inherit'});
 lines.push(execFileSync('go',['list','-m','-f','{{.Path}}|{{.Version}}|{{.Dir}}','github.com/sagernet/gomobile'],{cwd:core,encoding:'utf8'}).trim());
 const seen=new Set(),modules=[];
 for(const line of lines){

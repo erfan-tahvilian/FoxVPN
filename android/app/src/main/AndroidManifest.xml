@@ -8,6 +8,7 @@
     <queries><intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent></queries>
     <application android:name=".FoxApp" android:label="Fox VPN" android:icon="@drawable/ic_launcher"
         android:theme="@style/AppTheme" android:allowBackup="false" android:usesCleartextTraffic="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:supportsRtl="false">
         <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
