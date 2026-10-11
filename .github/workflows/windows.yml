@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - run: node scripts/prepare-electron.cjs
       - run: npm run engine
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm test
       - run: npm run check
       - name: Validate Windows engine configuration

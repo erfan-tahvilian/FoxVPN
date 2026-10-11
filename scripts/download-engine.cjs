@@ -15,7 +15,11 @@ async function main() {
   if(process.platform!=='win32')throw Error('Run engine preparation on Windows.');
   fs.mkdirSync(root,{recursive:true});
   const name=`sing-box-${VERSION}-windows-amd64.zip`;
-  const release=await (await fetch(`https://api.github.com/repos/SagerNet/sing-box/releases/tags/v${VERSION}`,{headers:{Accept:'application/vnd.github+json'}})).json();
+  const apiHeaders={Accept:'application/vnd.github+json'};
+  if(process.env.GITHUB_TOKEN)apiHeaders.Authorization='Bearer '+process.env.GITHUB_TOKEN;
+  const releaseResponse=await fetch(`https://api.github.com/repos/SagerNet/sing-box/releases/tags/v${VERSION}`,{headers:apiHeaders});
+  if(!releaseResponse.ok)throw Error(`Cannot resolve the pinned engine metadata (GitHub HTTP ${releaseResponse.status}). In CI, pass GITHUB_TOKEN to avoid shared-IP rate limits.`);
+  const release=await releaseResponse.json();
   const asset=release.assets?.find(a=>a.name===name);if(!asset)throw Error('Pinned sing-box release not found');
   // GitHub asset digest authenticates the pinned download. Older assets use checksums.txt.
   let checksum=asset.digest?.replace('sha256:','');
