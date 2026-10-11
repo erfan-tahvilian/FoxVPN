@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25.3'
+          go-version: '1.24.13'
           cache: false
       - name: Verify Android core
         working-directory: android/core
@@ -26,3 +26,54 @@ jobs:
         with:
           name: Android-core-lockfile
           path: android/core/go.*
+  android:
+    runs-on: ubuntu-latest
+    needs: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.13'
+          cache: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Prepare Android toolchain
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;28.0.13004108'
+      - name: Build native Android library
+        working-directory: android/core
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.0.13004108
+        run: |
+          go mod tidy
+          go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.7
+          go install github.com/sagernet/gomobile/cmd/gobind@v0.1.7
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.0.13004108"
+          gomobile init
+          mkdir -p ../app/libs
+          gomobile bind -v -target android -androidapi 26 -javapkg=com.foxvpn.nativebridge -libname=foxvpn -trimpath -tags with_gvisor,with_clash_api,with_conntrack -ldflags '-X github.com/sagernet/sing-box/constant.Version=1.12.0 -s -w -buildid= -extldflags=-Wl,-z,max-page-size=16384' -o ../app/libs/foxvpn.aar ./mobile github.com/sagernet/sing-box/experimental/libbox
+      - name: Prepare interface
+        run: node scripts/prepare-android.cjs
+      - name: Compile and inspect Android packages
+        working-directory: android
+        run: gradle :app:assembleRelease :app:assembleDebug :app:lintRelease --stacktrace
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-build-diagnostics
+          path: |
+            android/app/libs/*
+            android/app/build/reports/
+            android/core/go.*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Android-unsigned-build
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/debug/*.apk

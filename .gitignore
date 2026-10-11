@@ -5,3 +5,9 @@ upstream-foxy/
 .tools/
 *.log
 test-results/
+android/.gradle/
+android/**/build/
+android/app/libs/*.aar
+android/app/libs/*.jar
+android/app/src/main/assets/
+android/local.properties

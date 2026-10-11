@@ -1,0 +1,165 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+package com.foxvpn.android;
+
+import android.Manifest;
+import android.app.Activity;
+import android.app.StatusBarManager;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.graphics.Color;
+import android.graphics.drawable.Icon;
+import android.net.Uri;
+import android.net.VpnService;
+import android.os.Build;
+import android.os.Bundle;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
+import androidx.webkit.WebViewAssetLoader;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public final class MainActivity extends Activity {
+    private static final int VPN_PERMISSION = 1, NOTIFICATION_PERMISSION = 2, EXPORT = 3;
+    private static final String ORIGIN = "https://appassets.androidplatform.net";
+    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","addTile");
+    WebView web;
+    private boolean loaded, pendingConnect;
+    private String exportText;
+    private FoxApp app() { return (FoxApp) getApplication(); }
+    private final Runnable tick = new Runnable() {
+        @Override public void run() {
+            if (loaded && app().backend != null) receive(app().backend.snapshot());
+            app().main.postDelayed(this, 1000);
+        }
+    };
+    @Override public void onCreate(Bundle saved) {
+        super.onCreate(saved);
+        if (app().backend == null) {
+            android.widget.TextView error = new android.widget.TextView(this);
+            error.setText(app().initializationError); error.setTextColor(Color.WHITE); error.setPadding(24,48,24,24); setContentView(error); return;
+        }
+        web = new WebView(this); setContentView(web);
+        web.setBackgroundColor(Color.rgb(16,17,23));
+        web.getSettings().setJavaScriptEnabled(true);
+        web.getSettings().setDomStorageEnabled(false);
+        web.getSettings().setAllowFileAccess(false);
+        web.getSettings().setAllowContentAccess(false);
+        web.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        web.getSettings().setSupportMultipleWindows(false);
+        web.getSettings().setMediaPlaybackRequiresUserGesture(true);
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+        web.setOnApplyWindowInsetsListener((view,insets) -> {
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets bars = insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.ime());
+                view.setPadding(bars.left,bars.top,bars.right,bars.bottom);
+            } else view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
+            return insets;
+        });
+        WebViewAssetLoader assets = new WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
+        web.setWebViewClient(new WebViewClient() {
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (!ORIGIN.equals(request.getUrl().getScheme()+"://"+request.getUrl().getHost())) return new WebResourceResponse("text/plain","UTF-8",403,"Forbidden",java.util.Map.of(),new java.io.ByteArrayInputStream(new byte[0]));
+                return assets.shouldInterceptRequest(request.getUrl());
+            }
+            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return !request.getUrl().toString().startsWith(ORIGIN+"/assets/");
+            }
+            @Override public void onPageFinished(WebView view, String url) {
+                if (!url.equals(ORIGIN+"/assets/src/ui/index.html")) return;
+                loaded = true; receive(app().backend.snapshot());
+                if (pendingConnect) { pendingConnect = false; if (app().state.optBoolean("signedIn")) beginConnect(); else web.evaluateJavascript("navigate('account')",null); }
+            }
+        });
+        web.addJavascriptInterface(new Bridge(), "FoxAndroid");
+        app().activity = new java.lang.ref.WeakReference<>(this);
+        pendingConnect = getIntent().getBooleanExtra("connect",false);
+        web.loadUrl(ORIGIN+"/assets/src/ui/index.html");
+    }
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);setIntent(intent);
+        if (intent.getBooleanExtra("connect",false)) {
+            if (loaded) { if (app().state.optBoolean("signedIn")) beginConnect(); else web.evaluateJavascript("navigate('account')",null); }
+            else pendingConnect = true;
+        }
+    }
+    @Override protected void onResume() { super.onResume();app().activity=new java.lang.ref.WeakReference<>(this);if(app().backend!=null)app().backend.setDark(app().isDark());app().main.post(tick); }
+    @Override protected void onPause() { app().main.removeCallbacks(tick);super.onPause(); }
+    @Override protected void onDestroy() { app().main.removeCallbacks(tick);if(app().activity.get()==this)app().activity.clear();if(web!=null){web.removeJavascriptInterface("FoxAndroid");web.destroy();}super.onDestroy(); }
+    void receive(String state) { if(loaded&&web!=null)web.evaluateJavascript("window.fox.receive("+state+")",null); }
+    private void respond(String id,String value) { app().main.post(() -> {if(web!=null&&loaded)web.evaluateJavascript("window.fox.resolve("+JSONObject.quote(id)+","+value+")",null);}); }
+    private String envelope(boolean ok,String error) {try {JSONObject result=new JSONObject().put("ok",ok).put("data",JSONObject.NULL);if(error!=null)result.put("error",error);return result.toString();}catch(Exception e){return "{\"ok\":false,\"error\":\"Request failed\"}";}}
+    final class Bridge {
+        @JavascriptInterface public void request(String id,String channel,String arguments) {
+            if (id==null||id.length()>64||arguments==null||arguments.length()>131072||!ACTIONS.contains(channel))return;
+            app().actions.execute(() -> {
+                try {
+                    JSONArray args=new JSONArray(arguments);
+                    switch(channel){
+                        case "connect": app().main.post(MainActivity.this::beginConnect);respond(id,envelope(true,null));break;
+                        case "cancel":case "disconnect":app().stopVpn();respond(id,envelope(true,null));break;
+                        case "logout":app().stopVpn();respond(id,app().backend.call(channel,arguments));break;
+                        case "openLink":
+                            String target=switch(args.optString(0)){case "source" -> "https://github.com/erfan-tahvilian/FoxVPN";case "account" -> "https://accounts.firefox.com/signup";case "accountSettings" -> "https://accounts.firefox.com/settings";default -> throw new IllegalArgumentException("Unsupported link");};
+                            app().main.post(() -> startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(target))));respond(id,envelope(true,null));break;
+                        case "exportLogs":
+                            exportText=app().backend.logExport();
+                            app().main.post(() -> startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,"FoxVPN-diagnostics.txt"),EXPORT));
+                            respond(id,envelope(true,null));break;
+                        case "chooseApps": app().main.post(MainActivity.this::chooseApps);respond(id,envelope(true,null));break;
+                        case "addTile": app().main.post(MainActivity.this::addTile);respond(id,envelope(true,null));break;
+                        default:respond(id,app().backend.call(channel,arguments));break;
+                    }
+                }catch(Exception e){respond(id,envelope(false,e.getMessage()==null?"Request failed":e.getMessage()));}
+            });
+        }
+    }
+    private void beginConnect() {
+        if (!app().state.optBoolean("signedIn")) { if(web!=null)web.evaluateJavascript("navigate('account')",null);return; }
+        if (!"disconnected".equals(app().connection()))return;
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED&&!getPreferences(MODE_PRIVATE).getBoolean("notificationAsked",false)){
+            getPreferences(MODE_PRIVATE).edit().putBoolean("notificationAsked",true).apply();requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},NOTIFICATION_PERMISSION);return;
+        }
+        prepareVpn();
+    }
+    private void prepareVpn(){
+        if(app().state.optJSONObject("settings").optBoolean("proxyOnly")){FoxVpnService.connect(this);return;}
+        Intent permission=VpnService.prepare(this);if(permission!=null)startActivityForResult(permission,VPN_PERMISSION);else FoxVpnService.connect(this);
+    }
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){super.onRequestPermissionsResult(request,permissions,grants);if(request==NOTIFICATION_PERMISSION)prepareVpn();}
+    @Override protected void onActivityResult(int request,int result,Intent data){
+        super.onActivityResult(request,result,data);
+        if(request==VPN_PERMISSION){if(result==RESULT_OK)FoxVpnService.connect(this);else Toast.makeText(this,"VPN permission is required to connect.",Toast.LENGTH_SHORT).show();}
+        if(request==EXPORT&&result==RESULT_OK&&data!=null&&data.getData()!=null&&exportText!=null){String text=exportText;exportText=null;app().actions.execute(() -> {try(java.io.OutputStream stream=getContentResolver().openOutputStream(data.getData())){if(stream==null)throw new java.io.IOException();stream.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));}catch(Exception e){app().main.post(() -> Toast.makeText(this,"Could not export diagnostics.",Toast.LENGTH_SHORT).show());}});}
+    }
+    private void addTile(){
+        if(Build.VERSION.SDK_INT>=33)getSystemService(StatusBarManager.class).requestAddTileService(new ComponentName(this,FoxTileService.class),"Fox VPN",Icon.createWithResource(this,R.drawable.ic_fox_tile),getMainExecutor(),result -> {});
+        else Toast.makeText(this,"Edit Quick Settings and add the Fox VPN tile.",Toast.LENGTH_LONG).show();
+    }
+    private void chooseApps(){
+        List<ResolveInfo> installed=getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0);
+        installed.sort(Comparator.comparing(info -> info.loadLabel(getPackageManager()).toString(),String.CASE_INSENSITIVE_ORDER));
+        List<String> labels=new ArrayList<>(),packages=new ArrayList<>();
+        for(ResolveInfo info:installed){String pkg=info.activityInfo.packageName;if(pkg.equals(getPackageName())||packages.contains(pkg))continue;packages.add(pkg);labels.add(info.loadLabel(getPackageManager()).toString());}
+        JSONArray saved=app().state.optJSONObject("settings").optJSONArray("excludedApps");boolean[] checked=new boolean[packages.size()];
+        for(int i=0;i<checked.length;i++)for(int j=0;j<saved.length();j++)if(packages.get(i).equals(saved.optString(j)))checked[i]=true;
+        new android.app.AlertDialog.Builder(this).setTitle("Exclude apps")
+            .setMultiChoiceItems(labels.toArray(new String[0]),checked,(dialog,index,value)->checked[index]=value)
+            .setNegativeButton("Cancel",null).setPositiveButton("Apply",(dialog,which)->{
+                List<String> selected=new ArrayList<>();
+                for(int i=0;i<saved.length();i++)if(!packages.contains(saved.optString(i)))selected.add(saved.optString(i));
+                for(int i=0;i<checked.length;i++)if(checked[i])selected.add(packages.get(i));
+                web.evaluateJavascript("document.getElementById('excludedApps').value="+JSONObject.quote(String.join("\n",selected)),null);
+            }).show();
+    }
+}
