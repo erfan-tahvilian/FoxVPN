@@ -12,6 +12,7 @@ public final class NativeTestService extends FoxVpnService {
     static volatile Exception failure;
     static volatile CountDownLatch started = new CountDownLatch(1),closed = new CountDownLatch(1);
     private BoxService testEngine;
+    private final java.util.concurrent.atomic.AtomicBoolean closing=new java.util.concurrent.atomic.AtomicBoolean();
     @Override public void onCreate(){super.onCreate();instance=this;}
     @Override public int onStartCommand(Intent intent,int flags,int id){
         new Thread(() -> {
@@ -23,5 +24,14 @@ public final class NativeTestService extends FoxVpnService {
         return START_NOT_STICKY;
     }
     @Override public int openTun(TunOptions options)throws Exception{int fd=super.openTun(options);observedFd=fd;return fd;}
-    @Override public void onDestroy(){try{if(testEngine!=null)testEngine.close();}catch(Exception e){failure=e;}super.onDestroy();instance=null;closed.countDown();}
+    // This harness does not create a core session; unrelated signed-out UI updates must not stop its test engine.
+    @Override void stateChanged(){}
+    @Override void requestStop(){
+        if(!closing.compareAndSet(false,true))return;
+        new Thread(() -> {
+            try{if(testEngine!=null)testEngine.close();}catch(Exception e){failure=e;}
+            finally{testEngine=null;super.requestStop();}
+        },"FoxVPN-native-test-stop").start();
+    }
+    @Override public void onDestroy(){super.onDestroy();instance=null;closed.countDown();}
 }

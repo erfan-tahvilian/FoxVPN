@@ -105,6 +105,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
+          name: Android-device-results
+          path: test-results/android/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
           name: Android-build-diagnostics
           path: |
             android/app/libs/*

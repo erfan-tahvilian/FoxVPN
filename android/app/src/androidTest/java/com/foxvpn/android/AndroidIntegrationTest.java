@@ -50,8 +50,8 @@ public class AndroidIntegrationTest {
         assertEquals("true",js("document.body.classList.contains('light')"));
         js("window.fox.call('theme','dark')");Thread.sleep(500);
         assertEquals("false",js("document.body.classList.contains('light')"));
-        java.io.File screenshot=new java.io.File(activity.getActivity().getExternalFilesDir(null),"android-overview.png");
-        js("navigate('home')");UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(screenshot);
+        java.io.File screenshot=new java.io.File(activity.getActivity().getFilesDir(),"android-overview.png");
+        js("navigate('home')");assertTrue(UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(screenshot));
     }
     @Test public void secureStorageRejectsTampering()throws Exception{
         Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -101,8 +101,10 @@ public class AndroidIntegrationTest {
         assertTrue("Native TUN was not established",NativeTestService.observedFd>=0);
         java.net.DatagramSocket socket=new java.net.DatagramSocket();
         assertTrue("Socket protection failed",NativeTestService.instance.protect(socket));socket.close();
-        context.stopService(new Intent(context,NativeTestService.class));
+        // Android binds an established VPN service. Stop its engine/TUN first, as the real app does.
+        NativeTestService.instance.requestStop();
         assertTrue("Native cleanup did not complete",NativeTestService.closed.await(30,TimeUnit.SECONDS));
+        if(NativeTestService.failure!=null)throw NativeTestService.failure;
         assertNull(NativeTestService.instance);
         assertEquals("disconnected",app.connection());
     }
