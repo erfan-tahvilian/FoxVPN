@@ -33,13 +33,13 @@ jobs:
           test "$(jq -r '.conclusion' /tmp/fox-run.json)" = 'success'
           fox_windows_sha="$(jq -r '.head_sha' /tmp/fox-run.json)"
           git cat-file -e "$fox_windows_sha^{commit}"
-          git diff --exit-code "$fox_windows_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts .github/workflows/windows.yml .github/workflows/macos.yml
+          git diff --exit-code "$fox_windows_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts ':(exclude)scripts/*android*' .github/workflows/windows.yml .github/workflows/macos.yml
           [[ "$FOX_MAC_RUN_ID" =~ ^[0-9]+$ ]]
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_MAC_RUN_ID" > /tmp/fox-mac-run.json
           test "$(jq -r '.conclusion' /tmp/fox-mac-run.json)" = 'success'
           fox_mac_sha="$(jq -r '.head_sha' /tmp/fox-mac-run.json)"
           git cat-file -e "$fox_mac_sha^{commit}"
-          git diff --exit-code "$fox_mac_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts .github/workflows/windows.yml .github/workflows/macos.yml
+          git diff --exit-code "$fox_mac_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts ':(exclude)scripts/*android*' .github/workflows/windows.yml .github/workflows/macos.yml
       - uses: actions/download-artifact@v4
         with:
           pattern: FoxVPN-Windows-*
