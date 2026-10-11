@@ -32,3 +32,7 @@ The installer is unsigned. This release makes no claim of a persistent kill swit
 - Renderer assertions cover the corrected theme logos, absence of the platform badge, both directions of name/latency sorting, unknown results last, and individual ping without location selection or navigation.
 - PE architecture checks verify that Electron, sing-box and Wintun match each requested target, then verify the packaged app/engine/driver again.
 - CI executes x86 Electron smoke checks on x64 Windows via WOW64 and ARM64 smoke/config checks on a native ARM64 Windows runner. These checks do not represent an authenticated production VPN/TUN session.
+
+## macOS validation
+
+Native Intel and Apple Silicon CI run the shared protocol suite and real Electron renderer/main smoke checks. Each native sing-box validates all generated DNS configurations. A privileged lifecycle test creates a real utun device, waits for its authenticated loopback controller and verifies that disconnect removes the device; it keeps auto-route disabled so the CI runner retains its default connection. Package verification checks every source/asset/license file, the application version, Mach-O CPU types, executable permissions, app icon and Info.plist. No macOS application is installed on the developer’s Windows host. Apple’s interactive authorization dialog and full production Firefox-account VPN traffic are not exercised in headless CI.

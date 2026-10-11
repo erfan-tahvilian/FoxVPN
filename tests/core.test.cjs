@@ -67,3 +67,12 @@ test('credential vault encrypts on disk, redacts public passwords and rolls back
     safe.isEncryptionAvailable=()=>false;assert.throws(()=>store.setAuth(null));assert.equal(store.auth.access_token,'private-token');
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('macOS split tunneling uses native process names and automatic utun allocation',()=>{
+  const settings=validate({...DEFAULTS,excludedApps:['Google Chrome.app','Steam']},'darwin');
+  const config=engineConfig(settings,'203.0.113.2',null,'192.0.2.53','darwin');
+  assert.equal(config.inbounds[0].interface_name,undefined);
+  const bypass=config.route.rules.find(r=>r.process_name).process_name;
+  assert(bypass.includes('Google Chrome'));assert(bypass.includes('Steam'));assert(bypass.includes('sing-box'));
+  assert(!bypass.includes('sing-box.exe'));
+  for(const name of ['/Applications/App.app','bad; command','$(command)'])assert.throws(()=>validate({...DEFAULTS,excludedApps:[name]},'darwin'));
+});

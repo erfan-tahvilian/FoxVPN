@@ -1,18 +1,23 @@
-Windows maintenance release of **Fox VPN**, an independent desktop application.
+Desktop maintenance release of **Fox VPN**, an independent desktop application.
 
 ### Downloads
 
-Choose the installer (`.exe`) or portable archive (`.zip`) for your Windows architecture:
+Choose the installer (`.exe`) or portable archive (`.zip`) for your Windows architecture, or choose a macOS DMG/ZIP:
 
 - `FoxVPN-1.0.0-x64` — 64-bit Intel/AMD Windows PCs.
 - `FoxVPN-1.0.0-x86` — 32-bit Intel/AMD Windows; also runs under WOW64.
 - `FoxVPN-1.0.0-arm64` — native Windows on ARM devices.
+- `FoxVPN-1.0.0-macOS-x64` — Intel Macs, DMG and ZIP.
+- `FoxVPN-1.0.0-macOS-arm64` — Apple Silicon Macs, DMG and ZIP.
 - `sing-box-1.12.0-source.tar.gz` — corresponding source for the separate GPL engine.
 - `SHA256SUMS.txt` — checksums for all downloads.
 
 Portable users must extract the entire ZIP, then run `Fox VPN.exe`.
 
 ### Latest changes in v1.0.0
+
+- Native macOS Intel and Apple Silicon packages, macOS utun engine, administrator authorization, Keychain-backed session storage and process-name split tunneling.
+- **Manage account** opens `https://accounts.firefox.com/settings` on Windows and macOS.
 
 - Simplified account details: removed the subscription-derived entitlement status and manual activation button; automatic activation during connection remains available.
 
@@ -24,7 +29,7 @@ Portable users must extract the entire ZIP, then run `Fox VPN.exe`.
 
 ### Included
 
-English orange-accented UI, dark/light/system themes, Firefox account sign-in and email verification, live locations, HTTP/2 tunneling, Windows TUN VPN, executable-based split tunneling, private DNS/DoH, HTTP/SOCKS5 upstream chaining, proxy-only mode, exit verification, encrypted session storage, activity log export, statistics and tray controls.
+English orange-accented UI, dark/light/system themes, Firefox account sign-in and email verification, live locations, HTTP/2 tunneling, Windows/macOS TUN VPN, executable-based split tunneling, private DNS/DoH, HTTP/SOCKS5 upstream chaining, proxy-only mode, exit verification, encrypted session storage, activity log export, statistics and tray controls.
 
 ### Requirements and validation
 
@@ -35,3 +40,9 @@ Protocol tests include real local TLS + HTTP/2 CONNECT and tunneled HTTPS, fragm
 **Live Firefox account sign-in, production VPN traffic and a full Administrator TUN session have not been verified with a user account.** Service availability and allowances depend on Mozilla. General UDP/QUIC is unsupported; there is no persistent kill switch after exit. Closing the window leaves the app in the tray; use Quit to stop it.
 
 Fox VPN is not affiliated with Mozilla. Fox VPN is MIT licensed; the separate bundled engine and driver retain their own licenses and source notices. See the README for details.
+
+### macOS installation
+
+Requires macOS 13 or newer. Open the architecture-matched DMG and drag Fox VPN to Applications, or extract the entire app from the ZIP. macOS packages are ad-hoc signed, without Developer ID signing or Apple notarization. Gatekeeper may require approval in System Settings → Privacy & Security → Open Anyway after checking the download checksum. System VPN requests administrator authorization when connecting; proxy-only mode does not. Keychain access can require approval after updates.
+
+Native macOS CI verifies protocol tests, renderer/main startup, configuration acceptance, actual utun creation and disconnect cleanup (without replacing the runner’s default route), bundle resources and Mach-O architecture. The interactive administrator approval dialog and production service-backed VPN traffic still require a manual test with a real account.

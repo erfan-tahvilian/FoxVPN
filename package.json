@@ -2,7 +2,7 @@
   "name": "fox-vpn",
   "productName": "Fox VPN",
   "version": "1.0.0",
-  "description": "Independent Windows client for Firefox VPN's HTTP/2 proxy service",
+  "description": "Independent desktop client for Firefox VPN's HTTP/2 proxy service",
   "author": "Erfan Tahvilian",
   "license": "MIT",
   "main": "src/main.cjs",
@@ -12,7 +12,9 @@
     "engine": "node scripts/download-engine.cjs",
     "dist": "node scripts/build-windows.cjs",
     "check": "node scripts/check.cjs",
-    "smoke": "node scripts/smoke-runner.cjs"
+    "smoke": "node scripts/smoke-runner.cjs",
+    "engine:mac": "node scripts/download-mac-engine.cjs",
+    "dist:mac": "node scripts/build-mac.cjs"
   },
   "dependencies": {
     "socks": "2.8.10"

@@ -14,6 +14,7 @@ document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active
 function bytes(n) {n=Number(n)||0;const units=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++;}return `${n.toFixed(i&&n<10?1:0)} ${units[i]}`;}
 function time(n) {const s=Math.max(0,Math.floor(n/1000));return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(v=>String(v).padStart(2,'0')).join(':');}
 function applyTheme(s) {
+  if(s.platform==='darwin')$('excludedApps').placeholder='Google Chrome\nSteam';
   const light=s.settings.theme==='light'||s.settings.theme==='system'&&!s.systemDark;
   document.body.classList.toggle('light',light);
   $('theme-toggle').replaceChildren(icon(light?'moon':'sun'));
@@ -41,7 +42,7 @@ function render(s) {
   $('connect').className='power-button '+s.connection;$('connect').disabled=s.connection==='disconnecting'||s.busy&&s.connection!=='connecting';
   $('connect').setAttribute('aria-label',connected?'Disconnect VPN':s.connection==='connecting'?'Cancel connection':'Connect VPN');
   $('connection-title').textContent=connected?'You’re connected.':s.connection==='connecting'?'Finding your private path…':s.connection==='disconnecting'?'Closing your connection…':'Ready when you are.';
-  $('connection-description').textContent=connected?(s.settings.proxyOnly?'Your local SOCKS5 proxy is ready.':'Your Windows traffic is using the tunnel.'):s.connection==='connecting'?'Click again to cancel.':'One click to a more private connection.';
+  $('connection-description').textContent=connected?(s.settings.proxyOnly?'Your local SOCKS5 proxy is ready.':'Your system traffic is using the tunnel.'):s.connection==='connecting'?'Click again to cancel.':'One click to a more private connection.';
   $('mode-label').textContent=s.settings.proxyOnly?'PROXY ONLY':'SYSTEM VPN';
   $('connection-footnote').textContent=s.settings.proxyOnly?`SOCKS5 · ${s.settings.bind}:${s.settings.socksPort}`:`Encrypted tunnel · ${s.settings.doh==='off'&&!s.settings.customDns?'System DNS':'Private DNS'}`;
   const selected=s.activeServer||s.servers.find(server=>server.id===s.settings.serverId);
@@ -182,6 +183,6 @@ $('settings-form').addEventListener('submit',action(async e=>{
 $('log-filter').addEventListener('change',renderLogs);
 $('clear-logs').addEventListener('click',action(()=>call('clearLogs')));
 $('export-logs').addEventListener('click',action(()=>call('exportLogs')));
-$('manage-subscription').addEventListener('click',action(()=>call('openLink','subscription')));
+$('manage-account').addEventListener('click',action(()=>call('openLink','accountSettings')));
 window.fox.onState(render);
 call('state').then(render).catch(e=>toast(e.message));

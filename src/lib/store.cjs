@@ -11,11 +11,11 @@ class Store {
   read() {
     const file=path.join(this.directory,'vault.bin');
     if(!fs.existsSync(file))return null;
-    if(!this.safe.isEncryptionAvailable())throw Error('Windows credential encryption is unavailable');
+    if(!this.safe.isEncryptionAvailable())throw Error('System credential encryption is unavailable');
     return JSON.parse(this.safe.decryptString(fs.readFileSync(file)));
   }
   persist() {
-    if(!this.safe.isEncryptionAvailable())throw Error('Windows credential encryption is unavailable. No credentials have been saved.');
+    if(!this.safe.isEncryptionAvailable())throw Error('System credential encryption is unavailable. No credentials have been saved.');
     const file=path.join(this.directory,'vault.bin');
     fs.writeFileSync(file+'.tmp',this.safe.encryptString(JSON.stringify({auth:this.auth,settings:this.settings})));
     fs.renameSync(file+'.tmp',file);

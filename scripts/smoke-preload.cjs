@@ -1,7 +1,7 @@
 const {contextBridge}=require('electron');
 const {DEFAULTS}=require('../src/lib/settings.cjs');
 const fs=require('node:fs'),path=require('node:path');
-let state={version:'1.0.0',latencies:{},pinging:false,pingingIds:[],activeServer:null,settings:structuredClone(DEFAULTS),signedIn:false,email:'',servers:[],logs:[],connection:'disconnected',startedAt:null,exit:null,quota:null,lastError:null,up:0,down:0,systemDark:true,busy:false},listener;
+let state={version:'1.0.0',platform:process.platform,latencies:{},pinging:false,pingingIds:[],activeServer:null,settings:structuredClone(DEFAULTS),signedIn:false,email:'',servers:[],logs:[],connection:'disconnected',startedAt:null,exit:null,quota:null,lastError:null,up:0,down:0,systemDark:true,busy:false},listener;
 const live=path.join(__dirname,'../test-results/live-servers.json');
 state.servers=fs.existsSync(live)?JSON.parse(fs.readFileSync(live,'utf8')):[{id:'US/fixture/localhost:443',code:'US',country:'United States',city:'Fixture',cityCode:'fixture',host:'localhost',port:443}];
 state.servers.push({id:'XX/auto/fixture:443',code:'XX',country:'Recomended Location',city:'Recomended City',cityCode:'auto',host:'fixture',port:443});

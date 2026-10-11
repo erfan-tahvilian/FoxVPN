@@ -1,9 +1,13 @@
-name: Publish verified Windows build
+name: Publish verified desktop builds
 on:
   workflow_dispatch:
     inputs:
       run_id:
         description: Successful Windows build run for the v1.0.0 source tag
+        required: true
+        type: string
+      mac_run_id:
+        description: Successful native macOS build run for the same source tag
         required: true
         type: string
 permissions:
@@ -20,18 +24,30 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           FOX_RUN_ID: ${{ inputs.run_id }}
+          FOX_MAC_RUN_ID: ${{ inputs.mac_run_id }}
         run: |
           [[ "$FOX_RUN_ID" =~ ^[0-9]+$ ]]
           test "$(node -p 'require("./package.json").version')" = '1.0.0'
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_RUN_ID" > /tmp/fox-run.json
           test "$(jq -r '.conclusion' /tmp/fox-run.json)" = 'success'
           test "$(jq -r '.head_sha' /tmp/fox-run.json)" = "$(git rev-parse HEAD)"
+          [[ "$FOX_MAC_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_MAC_RUN_ID" > /tmp/fox-mac-run.json
+          test "$(jq -r '.conclusion' /tmp/fox-mac-run.json)" = 'success'
+          test "$(jq -r '.head_sha' /tmp/fox-mac-run.json)" = "$(git rev-parse HEAD)"
       - uses: actions/download-artifact@v4
         with:
           pattern: FoxVPN-Windows-*
           merge-multiple: true
           path: verified-build
           run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: FoxVPN-macOS-*
+          merge-multiple: true
+          path: verified-build
+          run-id: ${{ inputs.mac_run_id }}
           github-token: ${{ github.token }}
       - name: Prepare release assets
         run: |
@@ -42,12 +58,18 @@ jobs:
               cp "verified-build/dist/FoxVPN-1.0.0-$arch.$ext" release-assets/
             done
           done
+          for arch in x64 arm64; do
+            for ext in dmg zip; do
+              test -s "verified-build/dist/FoxVPN-1.0.0-macOS-$arch.$ext"
+              cp "verified-build/dist/FoxVPN-1.0.0-macOS-$arch.$ext" release-assets/
+            done
+          done
           curl --fail --location --retry 3 'https://codeload.github.com/SagerNet/sing-box/tar.gz/refs/tags/v1.12.0' -o release-assets/sing-box-1.12.0-source.tar.gz
           cd release-assets
-          sha256sum FoxVPN-1.0.0-*.exe FoxVPN-1.0.0-*.zip sing-box-1.12.0-source.tar.gz > SHA256SUMS.txt
+          sha256sum FoxVPN-1.0.0-*.exe FoxVPN-1.0.0-*.zip FoxVPN-1.0.0-*.dmg sing-box-1.12.0-source.tar.gz > SHA256SUMS.txt
       - name: Publish fixed v1.0.0 release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload v1.0.0 release-assets/* --clobber
-          gh release edit v1.0.0 --draft=false --title 'Fox VPN v1.0.0 — Windows' --notes-file RELEASE_NOTES.md
+          gh release edit v1.0.0 --draft=false --title 'Fox VPN v1.0.0 — Windows & macOS' --notes-file RELEASE_NOTES.md

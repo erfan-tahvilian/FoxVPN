@@ -1,0 +1,47 @@
+name: macOS build
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+    env:
+      FOX_TARGET_ARCH: ${{ matrix.arch }}
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run engine:mac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm test
+      - run: npm run check
+      - run: node scripts/validate-engine.cjs
+      - run: node scripts/validate-mac-tun.cjs
+      - run: npm run smoke
+      - run: npm run dist:mac
+      - run: node scripts/validate-mac-package.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoxVPN-macOS-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            test-results/*.png
