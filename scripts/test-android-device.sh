@@ -4,6 +4,8 @@ mkdir -p test-results/android
 collect() {
   adb logcat -d > test-results/android/logcat.txt || true
   adb exec-out run-as com.foxvpn.android.debug cat files/android-overview.png > test-results/android/overview.png || true
+  adb exec-out run-as com.foxvpn.android.debug cat files/vpn-consent.xml > test-results/android/vpn-consent.xml || true
+  adb exec-out run-as com.foxvpn.android.debug cat files/vpn-consent.png > test-results/android/vpn-consent.png || true
 }
 trap collect EXIT
 android/gradlew -p android :app:assembleDebugAndroidTest --stacktrace
