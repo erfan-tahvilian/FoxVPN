@@ -120,7 +120,7 @@ func NewBackend(host Host, vault string) *Backend {
 	}
 	resolver := &net.Resolver{PreferGo: true, Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
 		ip := host.DNSAddress()
-		if net.ParseIP(ip) == nil {
+		if net.ParseIP(strings.Split(ip, "%")[0]) == nil {
 			return nil, errors.New("Network DNS is unavailable")
 		}
 		return (&net.Dialer{Timeout: 10 * time.Second, Control: control}).DialContext(ctx, network, net.JoinHostPort(ip, "53"))
@@ -595,7 +595,7 @@ func (b *Backend) EngineConfig() string {
 	if str(s, "customDns") != "" {
 		dns = object{"tag": "private", "type": "tcp", "server": str(s, "customDns"), "detour": "fox"}
 	} else if str(s, "doh") == "off" {
-		dns = object{"tag": "private", "type": "tcp", "server": b.host.DNSAddress(), "detour": "direct"}
+		dns = object{"tag": "private", "type": "udp", "server": b.host.DNSAddress(), "detour": "direct"}
 	}
 	c := object{"log": object{"level": "warn"}, "dns": object{"servers": []any{dns}, "final": "private", "strategy": "prefer_ipv4"}, "inbounds": []any{object{"type": "tun", "tag": "tun", "address": []string{"172.29.0.1/30", "fdfe:dcba:9876::1/126"}, "mtu": 1500, "auto_route": true, "stack": "mixed", "exclude_package": s["excludedApps"]}}, "outbounds": []any{object{"type": "socks", "tag": "fox", "server": "127.0.0.1", "server_port": s["socksPort"], "version": "5"}, object{"type": "direct", "tag": "direct"}}, "route": object{"auto_detect_interface": true, "final": "fox", "rules": []any{object{"action": "sniff"}, object{"protocol": "dns", "action": "hijack-dns"}, object{"ip_is_private": true, "action": "route", "outbound": "direct"}, object{"network": "udp", "action": "reject"}}}}
 	v, _ := json.Marshal(c)

@@ -28,12 +28,16 @@ public final class FoxTileService extends TileService {
     }
     private void toggle() {
         if (!"disconnected".equals(app().connection())) { app().stopVpn(); refresh(); return; }
-        if (app().backend == null || !app().state.optBoolean("signedIn") || VpnService.prepare(this) != null) {
+        boolean needsPermission=app().state.optJSONObject("settings")==null||!app().state.optJSONObject("settings").optBoolean("proxyOnly")&&VpnService.prepare(this)!=null;
+        if (app().backend == null || !app().state.optBoolean("signedIn") || needsPermission) {
             Intent intent = new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("connect", true);
             if (Build.VERSION.SDK_INT >= 34) startActivityAndCollapse(PendingIntent.getActivity(this, 7, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-            else startActivityAndCollapse(intent);
+            else openLegacy(intent);
             return;
         }
         FoxVpnService.connect(this);
     }
+    // PendingIntent overload is unavailable before Android 14.
+    @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
+    private void openLegacy(Intent intent) { startActivityAndCollapse(intent); }
 }

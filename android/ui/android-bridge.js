@@ -14,6 +14,11 @@
     const choose=document.createElement('button');choose.type='button';choose.className='secondary';choose.textContent='Choose apps';choose.addEventListener('click',()=>window.fox.call('chooseApps'));field.after(choose);
     const tile=document.createElement('button');tile.type='button';tile.className='secondary';tile.textContent='Add Quick Settings tile';tile.addEventListener('click',()=>window.fox.call('addTile'));
     document.querySelector('.settings-card').append(tile);
+    const about=document.createElement('div');about.className='settings-card';
+    const heading=document.createElement('h3');heading.textContent='About Fox VPN';
+    const version=document.createElement('p');version.textContent='Version 1.0.0';
+    const source=document.getElementById('source');source.className='secondary';
+    about.append(heading,version,source);document.getElementById('settings-form').insertBefore(about,document.querySelector('.settings-footer'));
     document.querySelector('.account-story>p').textContent='A private connection, wherever you are.';
     document.getElementById('connect').setAttribute('aria-label','Connect VPN');
   });
