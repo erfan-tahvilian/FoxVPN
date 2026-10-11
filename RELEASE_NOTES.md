@@ -4,9 +4,9 @@ Desktop maintenance release of **Fox VPN**, an independent desktop application.
 
 Choose the installer (`.exe`) or portable archive (`.zip`) for your Windows architecture, or choose a macOS DMG/ZIP:
 
-- `FoxVPN-1.0.0-x64` — 64-bit Intel/AMD Windows PCs.
-- `FoxVPN-1.0.0-x86` — 32-bit Intel/AMD Windows; also runs under WOW64.
-- `FoxVPN-1.0.0-arm64` — native Windows on ARM devices.
+- `FoxVPN-1.0.0-Windows-x64` — 64-bit Intel/AMD Windows PCs.
+- `FoxVPN-1.0.0-Windows-x86` — 32-bit Intel/AMD Windows; also runs under WOW64.
+- `FoxVPN-1.0.0-Windows-arm64` — native Windows on ARM devices.
 - `FoxVPN-1.0.0-macOS-x64` — Intel Macs, DMG and ZIP.
 - `FoxVPN-1.0.0-macOS-arm64` — Apple Silicon Macs, DMG and ZIP.
 - `sing-box-1.12.0-source.tar.gz` — corresponding source for the separate GPL engine.

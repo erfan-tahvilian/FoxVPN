@@ -36,7 +36,7 @@ if ($Mode -eq 'Inspect') {
   $foxVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
   $foxTag = 'v' + $foxVersion
   $foxCommit = (git rev-parse HEAD).Trim()
-  $foxAssets = @(Get-ChildItem -LiteralPath dist -File | Where-Object { ($_.Name -in ('FoxVPN-' + $foxVersion + '-x64.exe'), ('FoxVPN-' + $foxVersion + '-x64.zip') -or $_.Extension -eq '.gz') -or $_.Name -eq 'SHA256SUMS.txt' })
+  $foxAssets = @(Get-ChildItem -LiteralPath dist -File | Where-Object { ($_.Name -in ('FoxVPN-' + $foxVersion + '-Windows-x64.exe'), ('FoxVPN-' + $foxVersion + '-Windows-x64.zip') -or $_.Extension -eq '.gz') -or $_.Name -eq 'SHA256SUMS.txt' })
   if ($foxAssets.Count -lt 4) { throw 'Build the installer, portable ZIP, source archive and checksums before publishing.' }
   if ((git status --porcelain).Length -gt 0) { throw 'Commit all source changes before publishing.' }
   $foxNotes = Get-Content -LiteralPath 'RELEASE_NOTES.md' -Raw

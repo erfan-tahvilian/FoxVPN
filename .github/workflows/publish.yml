@@ -54,8 +54,8 @@ jobs:
           mkdir release-assets
           for arch in x64 x86 arm64; do
             for ext in exe zip; do
-              test -s "verified-build/dist/FoxVPN-1.0.0-$arch.$ext"
-              cp "verified-build/dist/FoxVPN-1.0.0-$arch.$ext" release-assets/
+              test -s "verified-build/dist/FoxVPN-1.0.0-Windows-$arch.$ext"
+              cp "verified-build/dist/FoxVPN-1.0.0-Windows-$arch.$ext" release-assets/
             done
           done
           for arch in x64 arm64; do

@@ -8,5 +8,5 @@ for(const file of [path.join(electron,'electron.exe'),path.join(engineRoot(),'si
 }
 const config=path.resolve('.tools',`build-${t.arch}.json`);
 fs.mkdirSync(path.dirname(config),{recursive:true});
-fs.writeFileSync(config,JSON.stringify({...require('../package.json').build,electronVersion:t.electron,electronDist:electron,artifactName:`FoxVPN-\${version}-${t.label}.\${ext}`},null,2));
+fs.writeFileSync(config,JSON.stringify({...require('../package.json').build,electronVersion:t.electron,electronDist:electron,artifactName:`FoxVPN-\${version}-Windows-${t.label}.\${ext}`},null,2));
 execFileSync(process.execPath,[require.resolve('electron-builder/cli.js'),'--win','nsis','zip','--'+t.arch,'--config',config,'--publish','never'],{stdio:'inherit'});

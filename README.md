@@ -89,9 +89,9 @@ Location latency uses a bounded TCP connection check to every endpoint from the 
 
 | Architecture | Hardware | Download names | Electron |
 | --- | --- | --- | --- |
-| x64 | 64-bit Intel/AMD | `FoxVPN-1.0.0-x64.exe` / `.zip` | 44.7.0 |
-| x86 | 32-bit Intel/AMD, WOW64 | `FoxVPN-1.0.0-x86.exe` / `.zip` | 43.7.9 |
-| ARM64 | Windows on ARM | `FoxVPN-1.0.0-arm64.exe` / `.zip` | 44.7.0 |
+| x64 | 64-bit Intel/AMD | `FoxVPN-1.0.0-Windows-x64.exe` / `.zip` | 44.7.0 |
+| x86 | 32-bit Intel/AMD, WOW64 | `FoxVPN-1.0.0-Windows-x86.exe` / `.zip` | 43.7.9 |
+| ARM64 | Windows on ARM | `FoxVPN-1.0.0-Windows-arm64.exe` / `.zip` | 44.7.0 |
 
 Electron 44 removed Windows x86 builds. The x86 package uses the last supported 43 series, as documented by [Electron](https://www.electronjs.org/blog/electron-43-0). These are separate native Windows packages, each with a matching sing-box executable and Wintun DLL; architecture is verified through PE headers before and after packaging. ARM32 is not supported by Electron on Windows.
 
