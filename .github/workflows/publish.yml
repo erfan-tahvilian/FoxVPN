@@ -3,11 +3,11 @@ on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: Successful Windows build run for the v1.0.0 source tag
+        description: Successful Windows build run with matching desktop source
         required: true
         type: string
       mac_run_id:
-        description: Successful native macOS build run for the same source tag
+        description: Successful macOS build run with matching desktop source
         required: true
         type: string
 permissions:
@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: v1.0.0
+          fetch-depth: 0
       - name: Verify source and build identity
         env:
           GH_TOKEN: ${{ github.token }}
@@ -30,11 +31,15 @@ jobs:
           test "$(node -p 'require("./package.json").version')" = '1.0.0'
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_RUN_ID" > /tmp/fox-run.json
           test "$(jq -r '.conclusion' /tmp/fox-run.json)" = 'success'
-          test "$(jq -r '.head_sha' /tmp/fox-run.json)" = "$(git rev-parse HEAD)"
+          fox_windows_sha="$(jq -r '.head_sha' /tmp/fox-run.json)"
+          git cat-file -e "$fox_windows_sha^{commit}"
+          git diff --exit-code "$fox_windows_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts .github/workflows/windows.yml .github/workflows/macos.yml
           [[ "$FOX_MAC_RUN_ID" =~ ^[0-9]+$ ]]
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_MAC_RUN_ID" > /tmp/fox-mac-run.json
           test "$(jq -r '.conclusion' /tmp/fox-mac-run.json)" = 'success'
-          test "$(jq -r '.head_sha' /tmp/fox-mac-run.json)" = "$(git rev-parse HEAD)"
+          fox_mac_sha="$(jq -r '.head_sha' /tmp/fox-mac-run.json)"
+          git cat-file -e "$fox_mac_sha^{commit}"
+          git diff --exit-code "$fox_mac_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts .github/workflows/windows.yml .github/workflows/macos.yml
       - uses: actions/download-artifact@v4
         with:
           pattern: FoxVPN-Windows-*
