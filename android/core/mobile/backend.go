@@ -135,7 +135,7 @@ func (b *Backend) connect() error {
  if err==nil{err=errors.New("No location could be reached")};return err
 }
 // Ready is called only after Android's native VPN engine has started.
-func (b *Backend) Ready(){b.mu.Lock();if b.tunnel==nil||b.connection!="connecting"{b.mu.Unlock();return};b.connection="connected";b.started=millis();b.mu.Unlock();b.log("info","Connected · Fox VPN is active");go b.renew()}
+func (b *Backend) Ready(){b.mu.Lock();if b.tunnel==nil||b.connection!="connecting"{b.mu.Unlock();return};t:=b.tunnel;b.connection="connected";b.started=millis();b.mu.Unlock();b.log("info","Connected · Fox VPN is active");go b.renew();go t.monitor()}
 func (b *Backend) renew(){ticker:=time.NewTicker(time.Minute);defer ticker.Stop();for range ticker.C{b.mu.Lock();t:=b.tunnel;active:=b.connection=="connected";b.mu.Unlock();if !active||t==nil{return};if t.expiry.Load()>time.Now().Unix()+120{continue};b.action.Lock();token,_,err:=b.pass(t.ctx);if err==nil{t.setToken(token)};b.action.Unlock();if err!=nil{b.Failed("Proxy pass renewal failed. Reconnect after checking your account.");return};b.log("info","Proxy pass renewed")}}
 func (b *Backend) Failed(message string){b.mu.Lock();b.lastError=message;b.mu.Unlock();b.log("error",message);b.Disconnect()}
 func (b *Backend) Disconnect(){b.mu.Lock();b.epoch++;cancel:=b.cancel;b.cancel=nil;t:=b.tunnel;b.tunnel=nil;b.connection="disconnected";b.started=0;b.exit=nil;b.busy=false;b.mu.Unlock();if cancel!=nil{cancel()};if t!=nil{t.close();b.log("info","Disconnected · Android routes restored")};b.emit()}

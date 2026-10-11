@@ -85,6 +85,14 @@ func TestReadyRequiresLiveTunnelAndCancellation(t *testing.T){
  b:=NewBackend(&testHost{},"{}");b.connection="connecting";b.Ready();if b.connection=="connected"{t.Fatal("False connection state")}
  b.Disconnect();b.Ready();if b.connection!="disconnected"{t.Fatal("Ready revived a cancelled connection")}
 }
+func TestConnectionLifecycleWithRealEdge(t *testing.T){
+ tunnel,_:=protocolTunnel(t);if err:=tunnel.start();err!=nil{t.Fatal(err)}
+ b:=tunnel.b;b.mu.Lock();b.tunnel=tunnel;b.connection="connecting";b.mu.Unlock()
+ b.Ready();var state object;json.Unmarshal([]byte(b.Snapshot()),&state)
+ if str(state,"connection")!="connected"||num(state,"startedAt")==0{t.Fatal("Real edge did not activate connection state")}
+ b.Disconnect();json.Unmarshal([]byte(b.Snapshot()),&state)
+ if str(state,"connection")!="disconnected"||num(state,"startedAt")!=0||state["activeServer"]!=nil{t.Fatal("Disconnect did not clear connection state")}
+}
 func TestUnreachableLatencyAndValidation(t *testing.T){
  host:=&testHost{};b:=NewBackend(host,"{}");listener,err:=net.Listen("tcp","127.0.0.1:0");if err!=nil{t.Fatal(err)};port:=listener.Addr().(*net.TCPAddr).Port;listener.Close()
  b.servers=[]object{{"id":"unreachable","host":"127.0.0.1","port":port}}

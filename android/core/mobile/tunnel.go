@@ -14,7 +14,6 @@ import (
  "io"
  "net"
  "net/http"
- "net/url"
  "strconv"
  "strings"
  "sync"
@@ -30,6 +29,8 @@ type proxyTunnel struct {
  ctx context.Context
  cancel context.CancelFunc
  mu sync.Mutex
+ sessionMu sync.Mutex
+ current *http2.ClientConn
  token string
  expiry,up,down atomic.Int64
  listener net.Listener
@@ -49,6 +50,23 @@ func newTunnel(b *Backend,settings,server object,token string,ctx context.Contex
 func (t *proxyTunnel) setToken(token string){expiry:=time.Now().Unix()+3600;parts:=strings.Split(token,".");if len(parts)>1{raw,_:=base64.RawURLEncoding.DecodeString(parts[1]);var data object;if json.Unmarshal(raw,&data)==nil&&num(data,"exp")>0{expiry=int64(num(data,"exp"))}};t.mu.Lock();t.token=token;t.mu.Unlock();t.expiry.Store(expiry)}
 func (t *proxyTunnel) track(c io.Closer)bool{t.mu.Lock();if t.closed{t.mu.Unlock();c.Close();return false};t.sockets[c]=struct{}{};t.mu.Unlock();return true}
 func (t *proxyTunnel) untrack(c io.Closer){t.mu.Lock();delete(t.sockets,c);t.mu.Unlock()}
+func (t *proxyTunnel) session(ctx context.Context)(*http2.ClientConn,error){
+ t.sessionMu.Lock();defer t.sessionMu.Unlock()
+ t.mu.Lock();current,closed:=t.current,t.closed;t.mu.Unlock();if closed{return nil,context.Canceled}
+ if current!=nil&&current.CanTakeNewRequest(){return current,nil}
+ address:=net.JoinHostPort(str(t.server,"host"),strconv.Itoa(int(num(t.server,"port"))))
+ conn,err:=t.transport.DialTLSContext(ctx,"tcp",address,nil);if err!=nil{return nil,err}
+ session,err:=t.transport.NewClientConn(conn);if err!=nil{conn.Close();return nil,err}
+ t.mu.Lock();if t.closed{t.mu.Unlock();session.Close();return nil,context.Canceled};t.current=session;t.mu.Unlock();return session,nil
+}
+func (t *proxyTunnel) health(ctx context.Context)error{session,err:=t.session(ctx);if err!=nil{return err};return session.Ping(ctx)}
+func (t *proxyTunnel) monitor(){
+ ticker:=time.NewTicker(20*time.Second);defer ticker.Stop()
+ for{select{case <-t.ctx.Done():return;case <-ticker.C:
+  ctx,cancel:=context.WithTimeout(t.ctx,10*time.Second);err:=t.health(ctx);cancel()
+  if err!=nil&&t.ctx.Err()==nil{t.b.mu.Lock();active:=t.b.tunnel==t&&t.b.connection=="connected";t.b.mu.Unlock();if active{t.b.Failed("VPN connection interrupted. Reconnect to restore your connection.")};return}
+ }}
+}
 func (t *proxyTunnel) raw(ctx context.Context,address string)(net.Conn,error){
  upstream:=obj(t.settings,"upstream");if !yes(upstream,"enabled"){return t.b.dialer.DialContext(ctx,"tcp",address)}
  gateway:=net.JoinHostPort(str(upstream,"host"),strconv.Itoa(int(num(upstream,"port"))))
@@ -71,11 +89,12 @@ func (s *streamConn) SetWriteDeadline(time.Time)error{return nil}
 func (t *proxyTunnel) open(ctx context.Context,address string)(net.Conn,error){
  child,cancel:=context.WithCancel(ctx);reader,writer:=io.Pipe();endpoint:=net.JoinHostPort(str(t.server,"host"),strconv.Itoa(int(num(t.server,"port"))))
  req,err:=http.NewRequestWithContext(child,"CONNECT","https://"+endpoint,reader);if err!=nil{cancel();reader.Close();writer.Close();return nil,err};req.Host=address;req.ContentLength=-1;t.mu.Lock();token:=t.token;t.mu.Unlock();req.Header.Set("Proxy-Authorization","Bearer "+token)
- timer:=time.AfterFunc(15*time.Second,cancel);response,err:=t.transport.RoundTrip(req);timer.Stop();if err!=nil{cancel();reader.Close();writer.Close();return nil,err}
+ timer:=time.AfterFunc(15*time.Second,cancel);session,err:=t.session(child);var response *http.Response;if err==nil{response,err=session.RoundTrip(req)};timer.Stop();if err!=nil{cancel();reader.Close();writer.Close();return nil,err}
  if response.StatusCode<200||response.StatusCode>=300{response.Body.Close();cancel();reader.Close();writer.Close();if response.StatusCode==401||response.StatusCode==403||response.StatusCode==429{go t.b.Failed("The proxy pass was rejected or the account allowance was exhausted.")};return nil,fmt.Errorf("VPN edge rejected connection (%d)",response.StatusCode)}
  stream:=&streamConn{body:response.Body,writer:writer,cancel:cancel,t:t};if !t.track(stream){return nil,context.Canceled};return stream,nil
 }
 func (t *proxyTunnel) start()error{
+ ctx,cancel:=context.WithTimeout(t.ctx,15*time.Second);err:=t.health(ctx);cancel();if err!=nil{return err}
  listener,err:=net.Listen("tcp",net.JoinHostPort(str(t.settings,"bind"),strconv.Itoa(int(num(t.settings,"socksPort")))));if err!=nil{return err};t.mu.Lock();if t.closed{t.mu.Unlock();listener.Close();return context.Canceled};t.listener=listener;t.mu.Unlock()
  go func(){for{conn,err:=listener.Accept();if err!=nil{return};if !t.track(conn){return};go func(){defer conn.Close();defer t.untrack(conn);t.accept(conn)}()}}();return nil
 }
@@ -117,4 +136,3 @@ func (t *proxyTunnel) exit(ctx context.Context,expected string)(object,error){
  ip,country:=str(fields,"ip"),str(fields,"loc");if net.ParseIP(ip)==nil||len(country)!=2{return nil,errors.New("Exit verification returned no IP or country")};if expected!=""&&expected!="REC"&&!strings.EqualFold(expected,country){return nil,fmt.Errorf("Exit mismatch: expected %s, received %s",expected,country)};return object{"ip":ip,"country":country},nil
 }
 func (t *proxyTunnel) close(){t.cancel();t.mu.Lock();if t.closed{t.mu.Unlock();return};t.closed=true;listener:=t.listener;sockets:=make([]io.Closer,0,len(t.sockets));for s:=range t.sockets{sockets=append(sockets,s)};t.sockets=map[io.Closer]struct{}{};t.mu.Unlock();if listener!=nil{listener.Close()};for _,s:=range sockets{s.Close()};t.transport.CloseIdleConnections()}
-var _ = url.QueryEscape

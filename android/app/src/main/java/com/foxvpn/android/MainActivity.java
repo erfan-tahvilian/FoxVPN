@@ -153,7 +153,10 @@ public final class MainActivity extends Activity {
         for(ResolveInfo info:installed){String pkg=info.activityInfo.packageName;if(pkg.equals(getPackageName())||packages.contains(pkg))continue;packages.add(pkg);labels.add(info.loadLabel(getPackageManager()).toString());}
         JSONArray saved=app().state.optJSONObject("settings").optJSONArray("excludedApps");boolean[] checked=new boolean[packages.size()];
         for(int i=0;i<checked.length;i++)for(int j=0;j<saved.length();j++)if(packages.get(i).equals(saved.optString(j)))checked[i]=true;
-        new android.app.AlertDialog.Builder(this).setTitle("Exclude apps")
+        String theme=app().state.optJSONObject("settings").optString("theme","system");
+        boolean light="light".equals(theme)||"system".equals(theme)&&!app().isDark();
+        android.view.ContextThemeWrapper dialogContext=new android.view.ContextThemeWrapper(this,light?android.R.style.Theme_Material_Light_Dialog_Alert:android.R.style.Theme_Material_Dialog_Alert);
+        new android.app.AlertDialog.Builder(dialogContext).setTitle("Exclude apps")
             .setMultiChoiceItems(labels.toArray(new String[0]),checked,(dialog,index,value)->checked[index]=value)
             .setNegativeButton("Cancel",null).setPositiveButton("Apply",(dialog,which)->{
                 List<String> selected=new ArrayList<>();

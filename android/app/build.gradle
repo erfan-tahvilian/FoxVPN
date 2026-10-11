@@ -3,6 +3,7 @@ plugins { id 'com.android.application' }
 android {
     namespace 'com.foxvpn.android'
     compileSdk 36
+    buildFeatures { buildConfig true }
     defaultConfig {
         applicationId 'com.foxvpn.android'
         minSdk 26
@@ -38,6 +39,7 @@ android {
     }
     packaging { jniLibs { useLegacyPackaging false } }
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -45,6 +47,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation files('libs/foxvpn.aar')
     implementation 'androidx.webkit:webkit:1.13.0'
     androidTestImplementation 'androidx.test:runner:1.6.2'

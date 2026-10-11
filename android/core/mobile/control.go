@@ -16,8 +16,6 @@ import (
  "net/http"
  "net/url"
  "regexp"
- "strconv"
- "strings"
  "time"
 
  "golang.org/x/crypto/hkdf"
@@ -129,6 +127,3 @@ func (b *Backend) challenge(ctx context.Context)error{
   }
  };return errors.New("Could not complete service verification. Try again later")
 }
-// Keep protocol helpers private: only Backend and Host form the Java API.
-var _ = strconv.Itoa
-var _ = strings.TrimSpace
