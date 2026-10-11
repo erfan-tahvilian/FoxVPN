@@ -82,8 +82,8 @@ Prepare the combined native library:
 cd android/core
 go mod download
 go test -race -timeout 90s ./mobile
-go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.7
-go install github.com/sagernet/gomobile/cmd/gobind@v0.1.7
+go install github.com/sagernet/gomobile/cmd/gomobile
+go install github.com/sagernet/gomobile/cmd/gobind
 export PATH="$(go env GOPATH)/bin:$PATH"
 gomobile init
 mkdir -p ../app/libs
