@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import org.json.JSONObject;
 
-public final class FoxVpnService extends VpnService implements PlatformInterface {
+public class FoxVpnService extends VpnService implements PlatformInterface {
     static final String CHANNEL="foxvpn.connection";
     static final int NOTIFICATION=101;
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
