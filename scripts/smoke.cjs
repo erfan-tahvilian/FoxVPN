@@ -22,17 +22,36 @@ app.whenReady().then(async()=>{
     fs.writeFileSync('test-results/overview-dark.png',(await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`document.getElementById('theme-toggle').click();new Promise(r=>setTimeout(r,100))`);
     assert(await win.webContents.executeJavaScript(`document.body.classList.contains('light')`));
+    assert.equal(await win.webContents.executeJavaScript(`document.querySelector('#theme-toggle use').getAttribute('href')`),'#glyph-moon');
+    assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('[data-theme-logo]')].every(i=>i.getAttribute('src').endsWith('logo-light.png'))`));
+    assert(await win.webContents.executeJavaScript(`(()=>{const r=document.querySelector('.globe-visual svg').getBoundingClientRect();return Math.abs(r.width-r.height)<1})()`));
     fs.writeFileSync('test-results/overview-light.png',(await win.webContents.capturePage()).toPNG());
     for(const page of ['locations','account','settings','logs']) {
       await win.webContents.executeJavaScript(`document.querySelector('[data-page="${page}"]').click()`);
       await win.webContents.executeJavaScript(`new Promise(r=>setTimeout(r,100))`);
       assert(await win.webContents.executeJavaScript(`document.getElementById('${page}').classList.contains('active')`));
       if(page==='locations')assert(await win.webContents.executeJavaScript(`document.querySelectorAll('.server-row .country-flag').length>0 && [...document.querySelectorAll('.server-row .country-flag')].every(i=>i.complete&&i.naturalWidth>0)`));
+      if(page==='locations') {
+        assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.server-row').length`),await win.webContents.executeJavaScript(`new Set(currentState.servers.filter(s=>!automaticServer(s)).map(s=>s.code+'/'+s.cityCode)).size`));
+        await win.webContents.executeJavaScript(`document.getElementById('ping-servers').click();new Promise(r=>setTimeout(r,100))`);
+        assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.latency')].every(e=>e.textContent==='42 ms')`));
+      }
+      if(page==='settings') {
+        assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('select')].every(e=>e.hidden)&&document.querySelectorAll('[role=combobox]').length===document.querySelectorAll('select').length`));
+        await win.webContents.executeJavaScript(`document.getElementById('theme-trigger').click()`);
+        fs.writeFileSync('test-results/settings-dropdown.png',(await win.webContents.capturePage()).toPNG());
+        await win.webContents.executeJavaScript(`document.querySelector('#theme-menu .select-option:last-child').click()`);
+        assert.equal(await win.webContents.executeJavaScript(`document.getElementById('theme').value`),'light');
+        assert.equal(await win.webContents.executeJavaScript(`document.getElementById('theme-trigger').getAttribute('aria-expanded')`),'false');
+      }
       fs.writeFileSync(`test-results/${page}.png`,(await win.webContents.capturePage()).toPNG());
     }
     await win.webContents.executeJavaScript(`document.querySelector('[data-page="locations"]').click(); document.querySelector('.server-row').click(); new Promise(r=>setTimeout(r,100))`);
     assert(await win.webContents.executeJavaScript(`document.querySelector('#selected-symbol .country-flag').naturalWidth>0`));
     fs.writeFileSync('test-results/selected-location.png',(await win.webContents.capturePage()).toPNG());
+    await win.webContents.executeJavaScript(`window.fox.call('select','REC').then(()=>window.fox.call('connect'));new Promise(r=>setTimeout(r,100))`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('selected-location').textContent`),'Canada');
+    assert(await win.webContents.executeJavaScript(`document.getElementById('selected-detail').textContent.startsWith('Recommended · Connected to ')`));
     assert.equal(await win.webContents.executeJavaScript(`typeof require`),'undefined');
     assert.deepEqual(errors,[]);
     status('PASS: navigation, themes, renderer isolation and console checks');

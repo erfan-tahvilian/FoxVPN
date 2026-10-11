@@ -3,10 +3,10 @@ const asar=require('@electron/asar');
 const root=path.resolve('dist/win-unpacked'),archive=path.join(root,'resources/app.asar');
 function hash(buffer){return crypto.createHash('sha256').update(buffer).digest('hex');}
 function packaged(file){return asar.extractFile(archive,file.split('/').join(path.sep));}
-for(const file of ['src/main.cjs','src/preload.cjs','src/lib/auth.cjs','src/lib/control.cjs','src/lib/settings.cjs','src/lib/store.cjs','src/lib/tunnel.cjs','src/ui/index.html','src/ui/app.js','src/ui/styles.css','assets/logo.png','assets/icon.ico','licenses/FoxyVPN-MIT.txt','licenses/GPL-3.0.txt','LICENSE'])assert.equal(hash(packaged(file)),hash(fs.readFileSync(file)),`Packaged file differs: ${file}`);
+for(const file of ['src/main.cjs','src/preload.cjs','src/lib/auth.cjs','src/lib/control.cjs','src/lib/settings.cjs','src/lib/store.cjs','src/lib/tunnel.cjs','src/ui/index.html','src/ui/app.js','src/ui/styles.css','assets/logo.png','assets/logo-light.png','src/lib/latency.cjs','assets/icon.ico','licenses/FoxyVPN-MIT.txt','licenses/GPL-3.0.txt','LICENSE'])assert.equal(hash(packaged(file)),hash(fs.readFileSync(file)),`Packaged file differs: ${file}`);
 for(const file of fs.readdirSync('assets/flags'))assert.equal(hash(packaged('assets/flags/'+file)),hash(fs.readFileSync('assets/flags/'+file)));
 for(const file of ['sing-box.exe','wintun.dll','LICENSE-sing-box.txt','LICENSE-wintun.txt','provenance.txt'])assert.equal(hash(fs.readFileSync(path.join(root,'resources/engine',file))),hash(fs.readFileSync(path.join('engine',file))),`Engine resource differs: ${file}`);
 const executable=fs.readFileSync(path.join(root,'Fox VPN.exe'));
 assert(executable.includes(Buffer.from('requireAdministrator')),'Administrator manifest missing');
-assert.equal(JSON.parse(asar.extractFile(archive,'package.json')).version,'1.0.0');
+assert.equal(JSON.parse(asar.extractFile(archive,'package.json')).version,require('../package.json').version);
 console.log('Packaged source, logo, all country flags, engine, driver, licenses, version and Administrator manifest verified.');

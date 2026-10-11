@@ -1,11 +1,20 @@
-First Windows x64 release of **Fox VPN**, an independent desktop application.
+Windows x64 maintenance release of **Fox VPN**, an independent desktop application.
 
 ### Downloads
 
-- `FoxVPN-1.0.0-x64.exe` — Windows installer.
-- `FoxVPN-1.0.0-x64.zip` — portable application; extract the entire ZIP and run `Fox VPN.exe`.
+- `FoxVPN-1.0.1-x64.exe` — Windows installer.
+- `FoxVPN-1.0.1-x64.zip` — portable application; extract the entire ZIP and run `Fox VPN.exe`.
 - `sing-box-1.12.0-source.tar.gz` — corresponding source of the separately bundled GPL network engine.
 - `SHA256SUMS.txt` — checksums for the downloadable files.
+
+### Changes in v1.0.1
+
+- Light-theme logo and matching Windows executable/installer icon.
+- Sun/moon appearance toggle, circular globe and corrected account icons.
+- Custom keyboard-accessible dropdown menus in both themes.
+- Ping all locations with incremental TCP latency results and unreachable status.
+- Hide service-recommended/anycast entries from the country list while retaining automatic selection. Show the active endpoint and verified exit country after an automatic connection.
+- Repository link now reads “View on GitHub”.
 
 ### Included
 

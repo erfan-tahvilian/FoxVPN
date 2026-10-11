@@ -33,16 +33,18 @@ if ($Mode -eq 'Inspect') {
     }
   }
 } else {
+  $foxVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
+  $foxTag = 'v' + $foxVersion
   $foxCommit = (git rev-parse HEAD).Trim()
-  $foxAssets = @(Get-ChildItem -LiteralPath dist -File | Where-Object { $_.Extension -in '.exe', '.zip', '.gz' -or $_.Name -eq 'SHA256SUMS.txt' })
+  $foxAssets = @(Get-ChildItem -LiteralPath dist -File | Where-Object { ($_.Name -in ('FoxVPN-' + $foxVersion + '-x64.exe'), ('FoxVPN-' + $foxVersion + '-x64.zip') -or $_.Extension -eq '.gz') -or $_.Name -eq 'SHA256SUMS.txt' })
   if ($foxAssets.Count -lt 4) { throw 'Build the installer, portable ZIP, source archive and checksums before publishing.' }
   if ((git status --porcelain).Length -gt 0) { throw 'Commit all source changes before publishing.' }
   $foxNotes = Get-Content -LiteralPath 'RELEASE_NOTES.md' -Raw
   $foxRelease = $null
-  try { $foxRelease = Invoke-FoxApi '/releases/tags/v1.0.0' } catch { if ([int]$_.Exception.Response.StatusCode -ne 404) { throw } }
+  try { $foxRelease = Invoke-FoxApi ('/releases/tags/' + $foxTag) } catch { if ([int]$_.Exception.Response.StatusCode -ne 404) { throw } }
   if ($null -eq $foxRelease) {
-    $foxRelease = Invoke-FoxApi '/releases' 'POST' @{tag_name='v1.0.0'; target_commitish=$foxCommit; name='Fox VPN v1.0.0 — Windows'; body=$foxNotes; draft=$true; prerelease=$false}
-  } elseif (!$foxRelease.draft) { throw 'v1.0.0 is already published; refusing to replace its assets.' }
+    $foxRelease = Invoke-FoxApi '/releases' 'POST' @{tag_name=$foxTag; target_commitish=$foxCommit; name=('Fox VPN ' + $foxTag + ' — Windows'); body=$foxNotes; draft=$true; prerelease=$false}
+  } elseif (!$foxRelease.draft) { throw ($foxTag + ' is already published; refusing to replace its assets.') }
   foreach ($foxAsset in $foxAssets) {
     $foxExisting = $foxRelease.assets | Where-Object name -eq $foxAsset.Name
     if ($foxExisting) { Invoke-FoxApi ('/releases/assets/' + $foxExisting.id) 'DELETE' | Out-Null }

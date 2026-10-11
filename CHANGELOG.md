@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.1 — 2026-10-11
+
+- Added location TCP latency checks and clear automatic connection destinations.
+- Added the supplied light logo for light mode and Windows application icons.
+- Corrected sun/moon toggle, globe proportions and account glyphs.
+- Replaced default select menus with theme-aware accessible dropdowns.
+- Removed duplicate recommended entries from country listings; renamed repository link.
+
 ## v1.0.0 — 2026-10-11
 
 First independent Windows x64 release of Fox VPN.

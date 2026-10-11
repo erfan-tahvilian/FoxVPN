@@ -1,7 +1,7 @@
 {
   "name": "fox-vpn",
   "productName": "Fox VPN",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Independent Windows client for Firefox VPN's HTTP/2 proxy service",
   "author": "Erfan Tahvilian",
   "license": "MIT",
@@ -58,7 +58,9 @@
       ]
     },
     "nsis": {
-      "installerLanguages": ["en_US"],
+      "installerLanguages": [
+        "en_US"
+      ],
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,

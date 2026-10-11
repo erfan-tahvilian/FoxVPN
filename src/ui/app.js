@@ -8,10 +8,21 @@ async function call(channel,...args) {
   return result.data;
 }
 function action(fn) {return async event=>{try{await fn(event);}catch(e){toast(e.message);}};}
-function navigate(next) {page=next;document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id===page));document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));$('page-label').textContent=labels[page];if(page==='locations')renderServers();if(page==='logs')renderLogs();}
+function navigate(next) {page=next;document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id===page));
+
+document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));$('page-label').textContent=labels[page];if(page==='locations')renderServers();if(page==='logs')renderLogs();}
 function bytes(n) {n=Number(n)||0;const units=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++;}return `${n.toFixed(i&&n<10?1:0)} ${units[i]}`;}
 function time(n) {const s=Math.max(0,Math.floor(n/1000));return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(v=>String(v).padStart(2,'0')).join(':');}
-function applyTheme(s) {document.body.classList.toggle('light',s.settings.theme==='light'||s.settings.theme==='system'&&!s.systemDark);}
+function applyTheme(s) {
+  const light=s.settings.theme==='light'||s.settings.theme==='system'&&!s.systemDark;
+  document.body.classList.toggle('light',light);
+  $('theme-toggle').replaceChildren(icon(light?'moon':'sun'));
+  $('theme-toggle').title=light?'Switch to dark theme':'Switch to light theme';
+  $('theme-toggle').setAttribute('aria-label',$('theme-toggle').title);
+  document.querySelectorAll('[data-theme-logo]').forEach(img=>{const src=`../../assets/${light?'logo-light':'logo'}.png`;if(img.getAttribute('src')!==src)img.src=src;});
+}
+function countryName(code) {try{return new Intl.DisplayNames(['en'],{type:'region'}).of(code);}catch{return code;}}
+function automaticServer(server) {return /recom+end|anycast/i.test(server.country+' '+server.city)||server.code==='REC';}
 function fillSettings(s) {
   for(const key of ['theme','bind','socksPort','doh','customDns','edge'])$(key).value=s[key];
   for(const key of ['proxyOnly','exitCheck'])$(key).checked=s[key];
@@ -23,6 +34,7 @@ function fillSettings(s) {
 function render(s) {
   currentState=s;applyTheme(s);
   if(!initialized){fillSettings(s.settings);initialized=true;}
+  syncSelects();
   const connected=s.connection==='connected', transitional=['connecting','disconnecting'].includes(s.connection);
   $('status-label').className='status '+s.connection;
   $('status-label').replaceChildren(Object.assign(document.createElement('i'),{}),document.createTextNode(s.connection[0].toUpperCase()+s.connection.slice(1)));
@@ -32,25 +44,30 @@ function render(s) {
   $('connection-description').textContent=connected?(s.settings.proxyOnly?'Your local SOCKS5 proxy is ready.':'Your Windows traffic is using the tunnel.'):s.connection==='connecting'?'Click again to cancel.':'One click to a more private connection.';
   $('mode-label').textContent=s.settings.proxyOnly?'PROXY ONLY':'SYSTEM VPN';
   $('connection-footnote').textContent=s.settings.proxyOnly?`SOCKS5 · ${s.settings.bind}:${s.settings.socksPort}`:`Encrypted tunnel · ${s.settings.doh==='off'&&!s.settings.customDns?'System DNS':'Private DNS'}`;
-  const selected=s.servers.find(server=>server.id===s.settings.serverId);
-  $('selected-symbol').replaceChildren(selected?flag(selected.code,selected.country):icon('globe'));
-  $('selected-location').textContent=selected?`${selected.city}, ${selected.country}`:'Recommended location';
-  $('selected-detail').textContent=selected?`${selected.code} · HTTP/2 endpoint`:'Automatically choose an available server';
+  const selected=s.activeServer||s.servers.find(server=>server.id===s.settings.serverId);
+  const exitCountry=connected&&s.exit?.country?countryName(s.exit.country):null;
+  $('selected-symbol').replaceChildren(exitCountry?flag(s.exit.country,exitCountry):selected?flag(selected.code,selected.country):icon('globe'));
+  $('selected-location').textContent=exitCountry?(selected?.code===s.exit.country&&selected.city!==selected.country?`${selected.city}, ${exitCountry}`:exitCountry):selected?`${selected.city}, ${selected.country}`:'Recommended location';
+  $('selected-detail').textContent=connected&&selected?`${s.settings.serverId==='REC'?'Recommended · ':''}Connected to ${selected.city}, ${selected.country}`:selected?`${selected.code} · HTTP/2 endpoint`:'Automatically choose an available server';
   $('exit-ip').textContent=s.exit?.ip||(connected?'Not verified':'Not connected');
-  $('exit-country').textContent=s.exit?.country||'—';
+  $('exit-country').textContent=exitCountry||s.exit?.country||'—';
   $('verify-exit').disabled=!connected;
   $('downloaded').textContent=bytes(s.down);$('uploaded').textContent=bytes(s.up);
   const now=Date.now(), elapsed=(now-lastTick)/1000;
   if(elapsed>.5){$('download-speed').textContent=bytes(Math.max(0,s.down-lastDown)/elapsed)+'/s';$('upload-speed').textContent=bytes(Math.max(0,s.up-lastUp)/elapsed)+'/s';lastUp=s.up;lastDown=s.down;lastTick=now;}
   $('session-time').textContent=time(s.startedAt?now-s.startedAt:0);
-  $('location-count').textContent=new Set(s.servers.map(c=>c.code)).size || '—';
+  $('location-count').textContent=new Set(s.servers.filter(c=>!automaticServer(c)).map(c=>c.code)).size || '—';
   $('account-name').textContent=s.signedIn?s.email.split('@')[0]:'Sign in';
   $('signin-panel').hidden=s.signedIn;$('signedin-panel').hidden=!s.signedIn;$('signedin-email').textContent=s.email;
   $('login-form').hidden=needsCode;$('code-form').hidden=!needsCode;
   $('login-button').disabled=s.busy;
   $('home-info').textContent=s.lastError||(s.signedIn?(s.quota?.remaining?`${bytes(s.quota.remaining)} remaining in your current service allowance.`:'Your Firefox account is ready. Choose a location and connect.'):'Sign in with your Firefox account to get started.');
   $('settings-notice').textContent=s.connection==='disconnected'?'Credentials are encrypted on this device.':'Disconnect before saving network preferences.';
-  const serverKey=JSON.stringify(s.servers)+s.settings.serverId;if(serverKey!==lastServers){lastServers=serverKey;renderServers();}
+  $('ping-servers').disabled=s.pinging;
+  $('ping-servers').textContent=s.pinging?'Checking latency…':'Ping all locations';
+  const measured=Object.keys(s.latencies||{}).length;
+  $('ping-status').textContent=s.pinging?`Checking endpoints · ${measured} / ${s.servers.length}`:measured?'TCP latency · current network path · Refresh the check after changing networks.':'TCP latency from your current network path. Run a check to compare locations.';
+  const serverKey=JSON.stringify([s.servers,s.latencies,s.pinging])+s.settings.serverId;if(serverKey!==lastServers){lastServers=serverKey;renderServers();}
   const logKey=JSON.stringify(s.logs);if(logKey!==lastLogs){lastLogs=logKey;renderLogs();}
 }
 function icon(name) {const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#glyph-'+name);svg.append(use);return svg;}
@@ -62,13 +79,18 @@ function flag(code,country) {
 function renderServers() {
   if(!currentState)return;
   const query=$('server-search').value.toLowerCase(),seen=new Set();
-  const servers=currentState.servers.filter(s=>{const key=s.code+'/'+s.cityCode;if(seen.has(key))return false;seen.add(key);return `${s.country} ${s.city} ${s.code}`.toLowerCase().includes(query);}).sort((a,b)=>a.country.localeCompare(b.country)||a.city.localeCompare(b.city));
+  const servers=currentState.servers.filter(s=>{if(automaticServer(s))return false;const key=s.code+'/'+s.cityCode;if(seen.has(key))return false;seen.add(key);return `${s.country} ${s.city} ${s.code}`.toLowerCase().includes(query);}).sort((a,b)=>a.country.localeCompare(b.country)||a.city.localeCompare(b.city));
   $('server-list').replaceChildren();
   for(const server of servers) {
     const button=document.createElement('button');button.className='server-row'+(currentState.settings.serverId.startsWith(server.code+'/'+server.cityCode+'/')?' selected':'');
     const code=document.createElement('span');code.className='country-code';code.append(flag(server.code,server.country));
     const text=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=server.country;small.textContent=server.city;text.append(strong,small);
-    button.append(code,text,icon('arrow'));button.addEventListener('click',action(async()=>{await call('select',server.id);navigate('home');toast(`Selected ${server.city}, ${server.country}`);}));$('server-list').append(button);
+    const latency=document.createElement('span');latency.className='latency';
+    const result=currentState.latencies?.[server.id];
+    latency.textContent=result?(result.ms===null?'Unreachable':`${result.ms} ms`):currentState.pinging?'Checking…':'— ms';
+    if(result?.ms!=null)latency.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
+    latency.title='TCP connection time, including DNS, through your current network path';
+    button.append(code,text,latency,icon('arrow'));button.addEventListener('click',action(async()=>{await call('select',server.id);navigate('home');toast(`Selected ${server.city}, ${server.country}`);}));$('server-list').append(button);
   }
   $('server-empty').hidden=servers.length>0;$('server-empty').textContent=query?'No matching locations.':'No locations loaded. Refresh to fetch the live server list.';
 }
@@ -79,11 +101,49 @@ function renderLogs() {
   if(!logs.length){const empty=document.createElement('div');empty.className='empty-state';empty.textContent='No events to show. Your connection activity will appear here.';$('log-list').append(empty);return;}
   for(const log of logs){const row=document.createElement('div');row.className='log-row';const time=document.createElement('span');time.className='log-time';time.textContent=new Date(log.time).toLocaleTimeString('en-GB');const level=document.createElement('span');level.className='log-level '+log.level;level.textContent=log.level;const message=document.createElement('span');message.textContent=log.message;row.append(time,level,message);$('log-list').append(row);}
 }
+const selectControls=[];
+function syncSelects(){for(const control of selectControls)control.sync();}
+function setupSelects() {
+  for(const select of document.querySelectorAll('select')) {
+    const wrapper=document.createElement('div');wrapper.className='select-control';
+    select.before(wrapper);wrapper.append(select);select.hidden=true;
+    const trigger=document.createElement('button');trigger.type='button';trigger.className='select-trigger';
+    trigger.id=select.id+'-trigger';trigger.setAttribute('role','combobox');trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');
+    const label=select.getAttribute('aria-label')||document.querySelector(`label[for="${select.id}"]`)?.textContent||select.closest('label')?.childNodes[0]?.textContent||'Select option';
+    trigger.setAttribute('aria-label',label.trim());
+    const value=document.createElement('span');trigger.append(value,icon('arrow'));
+    const menu=document.createElement('div');menu.className='select-menu';menu.id=select.id+'-menu';menu.setAttribute('role','listbox');menu.setAttribute('aria-label',label.trim());menu.hidden=true;
+    trigger.setAttribute('aria-controls',menu.id);
+    const options=[...select.options].map((option,index)=>{
+      const button=document.createElement('button');button.type='button';button.className='select-option';button.id=select.id+'-option-'+index;button.setAttribute('role','option');button.textContent=option.textContent;button.disabled=option.disabled;
+      button.addEventListener('click',()=>choose(index));menu.append(button);return button;
+    });
+    function sync(){value.textContent=select.selectedOptions[0]?.textContent||'';options.forEach((button,i)=>{button.setAttribute('aria-selected',String(i===select.selectedIndex));});trigger.disabled=select.disabled;}
+    function close(){menu.hidden=true;trigger.setAttribute('aria-expanded','false');}
+    function open(){document.dispatchEvent(new Event('close-selects'));menu.hidden=false;trigger.setAttribute('aria-expanded','true');options[select.selectedIndex]?.focus();}
+    function choose(index){select.selectedIndex=index;sync();close();trigger.focus();select.dispatchEvent(new Event('change',{bubbles:true}));}
+    trigger.addEventListener('click',()=>menu.hidden?open():close());
+    wrapper.addEventListener('keydown',event=>{
+      const index=options.indexOf(document.activeElement);
+      if(event.key==='Escape'){event.preventDefault();close();trigger.focus();}
+      else if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();if(menu.hidden)open();else options[(index+(event.key==='ArrowDown'?1:-1)+options.length)%options.length].focus();}
+      else if(event.key==='Home'||event.key==='End'){if(!menu.hidden){event.preventDefault();options[event.key==='Home'?0:options.length-1].focus();}}
+      else if(event.key==='Tab')close();
+      else if(event.key.length===1&&!event.ctrlKey&&!event.altKey&&!menu.hidden){const match=options.find(b=>b.textContent.toLowerCase().startsWith(event.key.toLowerCase()));match?.focus();}
+    });
+    document.addEventListener('pointerdown',event=>{if(!wrapper.contains(event.target))close();});
+    document.addEventListener('close-selects',close);
+    const externalLabel=document.querySelector(`label[for="${select.id}"]`);if(externalLabel)externalLabel.htmlFor=trigger.id;
+    select.addEventListener('change',sync);wrapper.append(trigger,menu);selectControls.push({sync});sync();
+  }
+}
+setupSelects();
 document.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.page)));
 for(const id of ['account-shortcut','home-account'])$(id).addEventListener('click',()=>navigate('account'));
 $('choose-location').addEventListener('click',()=>navigate('locations'));
 $('connect').addEventListener('click',action(async()=>{if(!currentState.signedIn){navigate('account');return;}await call(currentState.connection==='connected'?'disconnect':currentState.connection==='connecting'?'cancel':'connect');}));
-$('theme-toggle').addEventListener('click',action(async()=>{const theme=document.body.classList.contains('light')?'dark':'light';await call('theme',theme);$('theme').value=theme;}));
+$('theme-toggle').addEventListener('click',action(async()=>{const theme=document.body.classList.contains('light')?'dark':'light';await call('theme',theme);$('theme').value=theme;syncSelects();}));
+$('ping-servers').addEventListener('click',action(async()=>{await call('ping');toast('Location latency check complete.');}));
 $('source').addEventListener('click',action(()=>call('openLink','source')));
 $('create-account').addEventListener('click',action(()=>call('openLink','account')));
 $('refresh-servers').addEventListener('click',action(async()=>{$('refresh-servers').disabled=true;try{await call('servers');toast('Locations updated.');}finally{$('refresh-servers').disabled=false;}}));

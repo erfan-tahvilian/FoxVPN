@@ -8,8 +8,10 @@ const {Store}=require('./lib/store.cjs');
 const {Control,Guardian}=require('./lib/control.cjs');
 const {Auth}=require('./lib/auth.cjs');
 const {Tunnel}=require('./lib/tunnel.cjs');
+const {measureAll}=require('./lib/latency.cjs');
 const {engineConfig}=require('./lib/settings.cjs');
 let window,tray,store,guardian,tunnel,pendingTunnel,engine,refreshTimer,busy=false,quitting=false,generation=0;
+let latencies={},pinging=false;
 let servers=[],logs=[],connection='disconnected',startedAt=null,exit=null,quota=null,lastError=null;
 const icon=path.join(__dirname,'../assets/icon.ico');
 function log(level,message) {
@@ -17,7 +19,7 @@ function log(level,message) {
   const entry={time:new Date().toISOString(),level,message:String(message).slice(0,1000)};
   logs.push(entry);if(logs.length>1000)logs.shift();emit();
 }
-function state() {return {version:app.getVersion(),settings:store.publicSettings(),signedIn:!!store.auth,email:store.auth?.email || '',servers,logs,connection,startedAt,exit,quota,lastError,up:tunnel?.up || 0,down:tunnel?.down || 0,systemDark:nativeTheme.shouldUseDarkColors,busy};}
+function state() {return {version:app.getVersion(),settings:store.publicSettings(),signedIn:!!store.auth,email:store.auth?.email || '',servers,latencies,pinging,activeServer:connection==='connected'?tunnel?.candidate:null,logs,connection,startedAt,exit,quota,lastError,up:tunnel?.up || 0,down:tunnel?.down || 0,systemDark:nativeTheme.shouldUseDarkColors,busy};}
 function emit() {if(window&&!window.isDestroyed())window.webContents.send('fox:state',state());}
 function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'engine'):path.join(__dirname,'../engine');}
 async function admin() {
@@ -99,7 +101,7 @@ async function connect() {
     for(const candidate of list.slice(0,5)) {
       const attempt=new Tunnel(structuredClone(store.settings),log,fail);
       pendingTunnel=attempt;
-      try{await attempt.start(candidate,pass);check();if(store.settings.exitCheck)exit=await attempt.exit(id==='REC'?null:candidate.code);check();tunnel=attempt;pendingTunnel=null;selected=candidate;break;}
+      try{await attempt.start(candidate,pass);check();if(store.settings.exitCheck||id==='REC')exit=await attempt.exit(id==='REC'?null:candidate.code);check();tunnel=attempt;pendingTunnel=null;selected=candidate;break;}
       catch(e){attempt.stop();pendingTunnel=null;check();lastError=e.message;log('warn',`Could not connect to ${candidate.city}, ${candidate.country}. Trying another endpoint.`);}
     }
     if(!selected)throw Error(lastError || 'No server could be reached.');
@@ -134,6 +136,13 @@ else {
     handle('verify',async code=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{return await guardian.auth.verify(code);}finally{busy=false;emit();}});
     handle('logout',async()=>{if(busy)throw Error('Wait for the current operation to finish.');await disconnect();store.setAuth(null);guardian.auth.pending=null;quota=null;emit();});
     handle('servers',refreshServers);
+    handle('ping',async()=>{
+      if(pinging)throw Error('Location latency checks are already running.');
+      if(!servers.length)await refreshServers();
+      pinging=true;latencies={};emit();
+      try{await measureAll([...servers],(id,result)=>{latencies[id]=result;emit();});return latencies;}
+      finally{pinging=false;emit();}
+    });
     handle('account',()=>guardian.account());
     handle('activate',async()=>{const data=await guardian.request('activate','POST');return data.data;});
     handle('settings',async settings=>{if(connection!=='disconnected')throw Error('Disconnect before changing connection settings.');if(settings.clearUpstreamPassword&&settings.upstream)settings.upstream.password='';else if(settings.upstream?.password==='')settings.upstream.password=store.settings.upstream.password;delete settings.clearUpstreamPassword;store.setSettings(settings);emit();});

@@ -10,9 +10,11 @@ Fox VPN is not affiliated with Mozilla, Firefox or Fastly. Access, supported reg
 
 ![Locations with offline country flags](docs/screenshots/locations.png)
 
+Screenshots are UI test previews; latency values in the location preview are illustrative.
+
 ## Download
 
-Get **v1.0.0** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/releases). The Windows x64 installer and portable ZIP include the network engine and driver. Windows 10/11 x64 is required. The executable requests Administrator access for system VPN mode. Builds are currently unsigned.
+Get **v1.0.1** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/releases). The Windows x64 installer and portable ZIP include the network engine and driver. Windows 10/11 x64 is required. The executable requests Administrator access for system VPN mode. Builds are currently unsigned.
 
 ## Features
 
@@ -81,3 +83,5 @@ Architecture: Electron main process owns authentication, encrypted storage, netw
 - Country flags: flag-icons 7.5.0 (MIT), bundled locally with attribution in `licenses/flag-icons-MIT.txt`.
 
 See [CHANGELOG.md](CHANGELOG.md) and [VALIDATION.md](VALIDATION.md).
+
+Location latency uses a bounded TCP connection check to every endpoint from the current network path (including DNS lookup), with results in milliseconds. It does not measure ICMP round-trip time or throughput. Service-recommended/anycast entries are hidden from the country list; the automatic card remains available and a connected automatic session displays the verified exit country.

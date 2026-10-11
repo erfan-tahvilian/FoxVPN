@@ -34,7 +34,7 @@ jobs:
         run: node scripts/validate-package.cjs
       - uses: actions/upload-artifact@v4
         with:
-          name: FoxVPN-Windows-v1.0.0
+          name: FoxVPN-Windows
           path: |
             dist/*.exe
             dist/*.zip
