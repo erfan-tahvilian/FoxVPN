@@ -1,7 +1,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
-const {DEFAULTS,engineConfig}=require('../src/core/settings.cjs');
+const {DEFAULTS,engineConfig}=require('../src/lib/settings.cjs');
 const engine=path.resolve('engine/sing-box.exe');
 fs.mkdirSync('test-results',{recursive:true});
 for(const [name,settings] of Object.entries({default:DEFAULTS,custom:{...DEFAULTS,customDns:'9.9.9.9',excludedApps:['chrome.exe']},off:{...DEFAULTS,doh:'off'},google:{...DEFAULTS,doh:'google'},quad9:{...DEFAULTS,doh:'quad9'}})){

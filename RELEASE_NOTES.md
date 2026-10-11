@@ -1,4 +1,4 @@
-First Windows x64 release of **Fox VPN**, an independent open-source desktop implementation based on FoxyVPN.
+First Windows x64 release of **Fox VPN**, an independent desktop application.
 
 ### Downloads
 
@@ -17,6 +17,6 @@ Windows 10/11 x64. System VPN needs Administrator access. The app includes the p
 
 Protocol tests include real local TLS + HTTP/2 CONNECT and tunneled HTTPS, fragmented SOCKS5 handshakes, token lifecycle and encrypted storage. Live Mozilla server discovery is verified, and the pinned Windows engine validates generated configurations. See `VALIDATION.md` in the source for the full verification record.
 
-**Live Firefox account sign-in, production VPN traffic and a full Administrator TUN session have not been verified with a user account.** Service availability and allowances depend on Mozilla. Like upstream, general UDP/QUIC is unsupported; there is no persistent kill switch after exit. Closing the window leaves the app in the tray; use Quit to stop it.
+**Live Firefox account sign-in, production VPN traffic and a full Administrator TUN session have not been verified with a user account.** Service availability and allowances depend on Mozilla. General UDP/QUIC is unsupported; there is no persistent kill switch after exit. Closing the window leaves the app in the tray; use Quit to stop it.
 
 Fox VPN is not affiliated with Mozilla. Fox VPN is MIT licensed; the separate bundled engine and driver retain their own licenses and source notices. See the README for details.

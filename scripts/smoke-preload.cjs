@@ -1,5 +1,5 @@
 const {contextBridge}=require('electron');
-const {DEFAULTS}=require('../src/core/settings.cjs');
+const {DEFAULTS}=require('../src/lib/settings.cjs');
 const fs=require('node:fs'),path=require('node:path');
 let state={version:'1.0.0',settings:structuredClone(DEFAULTS),signedIn:false,email:'',servers:[],logs:[],connection:'disconnected',startedAt:null,exit:null,quota:null,lastError:null,up:0,down:0,systemDark:true,busy:false},listener;
 const live=path.join(__dirname,'../test-results/live-servers.json');

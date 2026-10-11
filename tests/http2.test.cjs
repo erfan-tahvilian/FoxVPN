@@ -5,8 +5,8 @@ const net=require('node:net');
 const http2=require('node:http2');
 const https=require('node:https');
 const {once}=require('node:events');
-const {Tunnel}=require('../src/core/tunnel.cjs');
-const {DEFAULTS}=require('../src/core/settings.cjs');
+const {Tunnel}=require('../src/lib/tunnel.cjs');
+const {DEFAULTS}=require('../src/lib/settings.cjs');
 const cert=fs.readFileSync('tests/fixtures/localhost-cert.pem'),key=fs.readFileSync('tests/fixtures/localhost-test-key.pem');
 test('real TLS + HTTP/2 CONNECT carries authenticated streams and nested HTTPS with certificate verification',async()=>{
   const target=https.createServer({cert,key},(_req,res)=>res.end('private-response'));

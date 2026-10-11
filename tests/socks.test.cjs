@@ -2,8 +2,8 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const net=require('node:net');
 const {PassThrough}=require('node:stream');
-const {Tunnel,Reader}=require('../src/core/tunnel.cjs');
-const {DEFAULTS}=require('../src/core/settings.cjs');
+const {Tunnel,Reader}=require('../src/lib/tunnel.cjs');
+const {DEFAULTS}=require('../src/lib/settings.cjs');
 test('SOCKS5 handles fragmented negotiation, remote hostname and bidirectional data',async()=>{
   const tunnel=new Tunnel({...DEFAULTS,socksPort:0},()=>{},()=>{});
   tunnel.session=async()=>({});let requested;

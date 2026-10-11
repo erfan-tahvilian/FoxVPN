@@ -1,4 +1,4 @@
-param([ValidateSet('Inspect','Publish','Runs')][string]$Mode = 'Inspect')
+param([ValidateSet('Inspect','Publish','Runs','Jobs','Logs')][string]$Mode = 'Inspect')
 $ErrorActionPreference = 'Stop'
 $foxCredentials = "protocol=https`nhost=github.com`n`n" | git credential fill
 if ($LASTEXITCODE -ne 0) { throw 'GitHub credentials are unavailable. Sign in through Git Credential Manager.' }
@@ -18,9 +18,20 @@ function Invoke-FoxApi([string]$Path, [string]$Method = 'GET', $Body = $null) {
 if ($Mode -eq 'Inspect') {
   $foxRepo = Invoke-FoxApi ''
   [pscustomobject]@{Repository = $foxRepo.full_name; CanPush = $foxRepo.permissions.push; DefaultBranch = $foxRepo.default_branch}
-} elseif ($Mode -eq 'Runs') {
+} elseif ($Mode -in 'Runs','Jobs','Logs') {
   $foxRuns = Invoke-FoxApi '/actions/runs?per_page=5'
   $foxRuns.workflow_runs | Select-Object id, head_sha, status, conclusion, html_url
+  if ($Mode -in 'Jobs','Logs') {
+    $foxJobs = Invoke-FoxApi ('/actions/runs/' + $foxRuns.workflow_runs[0].id + '/jobs')
+    foreach ($foxJob in $foxJobs.jobs) { $foxJob.steps | Select-Object name,status,conclusion }
+    if ($Mode -eq 'Logs') {
+      $foxFailedJob = $foxJobs.jobs | Where-Object conclusion -eq 'failure' | Select-Object -First 1
+      if ($foxFailedJob) {
+        $foxJobLog = Invoke-WebRequest -Uri ($foxApi + '/actions/jobs/' + $foxFailedJob.id + '/logs') -Headers $foxHeaders
+        ($foxJobLog.Content -split "`n") | Select-Object -Last 65
+      }
+    }
+  }
 } else {
   $foxCommit = (git rev-parse HEAD).Trim()
   $foxAssets = @(Get-ChildItem -LiteralPath dist -File | Where-Object { $_.Extension -in '.exe', '.zip', '.gz' -or $_.Name -eq 'SHA256SUMS.txt' })
@@ -37,7 +48,7 @@ if ($Mode -eq 'Inspect') {
     if ($foxExisting) { Invoke-FoxApi ('/releases/assets/' + $foxExisting.id) 'DELETE' | Out-Null }
     $foxUploadUrl = $foxRelease.upload_url -replace '\{.*$', ''
     $foxUploadUrl += '?name=' + [uri]::EscapeDataString($foxAsset.Name)
-    Invoke-RestMethod -Uri $foxUploadUrl -Headers $foxHeaders -Method POST -ContentType 'application/octet-stream' -InFile $foxAsset.FullName | Select-Object name,size
+    Invoke-RestMethod -Uri $foxUploadUrl -Headers $foxHeaders -Method POST -ContentType 'application/octet-stream' -InFile $foxAsset.FullName -TimeoutSec 900 | Select-Object name,size
   }
   $foxPublished = Invoke-FoxApi ('/releases/' + $foxRelease.id) 'PATCH' @{draft=$false}
   [pscustomobject]@{Release=$foxPublished.html_url; Tag=$foxPublished.tag_name; Published=$foxPublished.published_at}

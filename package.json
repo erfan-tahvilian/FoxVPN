@@ -58,6 +58,7 @@
       ]
     },
     "nsis": {
+      "installerLanguages": ["en_US"],
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,

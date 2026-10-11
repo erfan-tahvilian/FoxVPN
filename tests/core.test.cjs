@@ -4,10 +4,10 @@ const crypto=require('node:crypto');
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
-const {Auth,hkdf,authPW,hawk}=require('../src/core/auth.cjs');
-const {candidates,solvePow}=require('../src/core/control.cjs');
-const {DEFAULTS,validate,engineConfig}=require('../src/core/settings.cjs');
-const {Store}=require('../src/core/store.cjs');
+const {Auth,hkdf,authPW,hawk}=require('../src/lib/auth.cjs');
+const {candidates,solvePow}=require('../src/lib/control.cjs');
+const {DEFAULTS,validate,engineConfig}=require('../src/lib/settings.cjs');
+const {Store}=require('../src/lib/store.cjs');
 test('HKDF expansion follows RFC 5869 semantics with a zero salt',()=>{
   const input=Buffer.alloc(22,0x0b),info=Buffer.from('test');
   const prk=crypto.createHmac('sha256',Buffer.alloc(32)).update(input).digest();

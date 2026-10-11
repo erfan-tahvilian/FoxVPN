@@ -1,8 +1,8 @@
 # Fox VPN for Windows
 
-An independent, open-source Windows desktop client based on the protocol and feature set of [Vauth/FoxyVPN](https://github.com/Vauth/FoxyVPN). English interface, orange accents, light/dark/system appearance, and the Fox VPN logo supplied by the project owner.
+An independent Windows desktop client with an English interface, orange accents, light/dark/system appearance, and Fox VPN branding.
 
-Fox VPN is not affiliated with Mozilla, Firefox, Fastly, or Vauth. Access, supported regions, entitlement and bandwidth allowances depend on Mozilla's service. This application does not grant or override a subscription or service entitlement.
+Fox VPN is not affiliated with Mozilla, Firefox or Fastly. Access, supported regions, entitlement and bandwidth allowances depend on Mozilla's service. This application does not grant or override a subscription or service entitlement.
 
 ![Fox VPN dark appearance](docs/screenshots/overview-dark.png)
 
@@ -16,7 +16,7 @@ Get **v1.0.0** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/release
 
 ## Features
 
-| FoxyVPN capability | Windows implementation |
+| Capability | Windows implementation |
 | --- | --- |
 | Firefox account sign-in | Password derivation, Hawk-authenticated exchange, email verification and renewable offline sessions |
 | System-wide VPN | Windows Wintun adapter managed by a separate sing-box process |
@@ -43,7 +43,7 @@ For proxy-only mode, turn it on in Settings and configure your client to use `so
 
 ## Scope and limitations
 
-- Like upstream, the HTTP/2 service supports **TCP and DNS**, not arbitrary UDP, QUIC, games or voice traffic. System VPN rejects general UDP rather than silently routing it directly.
+- The HTTP/2 service supports **TCP and DNS**, not arbitrary UDP, QUIC, games or voice traffic. System VPN rejects general UDP rather than silently routing it directly.
 - Disconnecting restores normal Windows routing. This release does **not** provide a persistent kill switch after the app exits or a process crashes.
 - Local/private network traffic, Fox VPN control traffic and excluded applications use the direct network. Firefox Accounts, Guardian and server discovery are control-plane requests made outside the tunnel.
 - Selecting **DNS off** in system VPN uses the system resolver. Custom DNS uses TCP through the tunnel and overrides DoH. Proxy-only DNS queries are relayed by the SOCKS UDP DNS bridge; general UDP is refused.
@@ -71,9 +71,7 @@ Run `npm run smoke` to verify navigation, theme switching, flags, renderer isola
 
 Architecture: Electron main process owns authentication, encrypted storage, network streams and the Windows engine. The sandboxed renderer has no Node.js access. A narrow preload API validates IPC senders and exposes named actions. Credentials and proxy passwords are protected with Electron `safeStorage` (Windows DPAPI); the Firefox password itself is never persisted. The vault is stored under the user's application data directory.
 
-## Provenance and licenses
-
-Ported protocol behavior was reviewed against FoxyVPN commit **f83d09e426ab4e63c49cc21056f11ee6ee774265**. Original Android code remains available in the upstream repository; this project is a separate Windows implementation.
+## Third-party licenses
 
 - Fox VPN code: MIT, see [LICENSE](LICENSE).
 - FoxyVPN protocol source: MIT, original attribution in [licenses/FoxyVPN-MIT.txt](licenses/FoxyVPN-MIT.txt).
