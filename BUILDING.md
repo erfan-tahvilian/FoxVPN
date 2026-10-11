@@ -67,7 +67,7 @@ See [VALIDATION.md](VALIDATION.md) for the verification record and remaining man
 
 ## Android
 
-Build on Linux with Go 1.24.13, JDK 17, Node.js and the Android SDK. The project uses Gradle 8.11.1, Android Gradle Plugin 8.10.1, SDK 36, Build Tools 35.0.0 and NDK 28.0.13004108. Minimum Android version is API 26.
+Build on Linux with Go 1.26.9, JDK 17, Node.js and the Android SDK. The project uses Gradle 8.11.1, Android Gradle Plugin 8.10.1, SDK 36, Build Tools 35.0.0 and NDK 28.0.13004108. Minimum Android version is API 26.
 
 Install the required SDK components:
 

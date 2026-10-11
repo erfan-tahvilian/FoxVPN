@@ -96,6 +96,7 @@ public class AndroidIntegrationTest {
             device.waitForIdle();
         }
         assertNull(VpnService.prepare(context));
+        for(int cycle=0;cycle<5;cycle++){
         NativeTestService.started=new CountDownLatch(1);NativeTestService.closed=new CountDownLatch(1);NativeTestService.failure=null;NativeTestService.observedFd=-1;
         context.startService(new Intent(context,NativeTestService.class));
         assertTrue("Native engine did not start",NativeTestService.started.await(30,TimeUnit.SECONDS));
@@ -109,5 +110,6 @@ public class AndroidIntegrationTest {
         if(NativeTestService.failure!=null)throw NativeTestService.failure;
         assertNull(NativeTestService.instance);
         assertEquals("disconnected",app.connection());
+        }
     }
 }
