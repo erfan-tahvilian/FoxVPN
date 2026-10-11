@@ -10,7 +10,7 @@
     "start": "electron .",
     "test": "node scripts/test.cjs",
     "engine": "node scripts/download-engine.cjs",
-    "dist": "electron-builder --win nsis zip --x64",
+    "dist": "node scripts/build-windows.cjs",
     "check": "node scripts/check.cjs",
     "smoke": "node scripts/smoke-runner.cjs"
   },
@@ -39,7 +39,7 @@
     ],
     "extraResources": [
       {
-        "from": "engine",
+        "from": "engine/${arch}",
         "to": "engine",
         "filter": [
           "sing-box.exe",

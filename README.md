@@ -14,7 +14,7 @@ Screenshots are UI test previews; latency values in the location preview are ill
 
 ## Download
 
-Get **v1.0.0** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/releases). The Windows x64 installer and portable ZIP include the network engine and driver. Windows 10/11 x64 is required. The executable requests Administrator access for system VPN mode. Builds are currently unsigned.
+Get **v1.0.0** from [Releases](https://github.com/erfan-tahvilian/FoxVPN/releases). The Windows x64 installer and portable ZIP include the network engine and driver. Windows 10/11 x86/x64 or Windows 11 ARM64 is required. The executable requests Administrator access for system VPN mode. Builds are currently unsigned.
 
 ## Features
 
@@ -85,3 +85,19 @@ Architecture: Electron main process owns authentication, encrypted storage, netw
 See [CHANGELOG.md](CHANGELOG.md) and [VALIDATION.md](VALIDATION.md).
 
 Location latency uses a bounded TCP connection check to every endpoint from the current network path (including DNS lookup), with results in milliseconds. It does not measure ICMP round-trip time or throughput. Service-recommended/anycast entries are hidden from the country list; the automatic card remains available and a connected automatic session displays the verified exit country.
+
+## Windows architectures
+
+| Architecture | Hardware | Download names | Electron |
+| --- | --- | --- | --- |
+| x64 | 64-bit Intel/AMD | `FoxVPN-1.0.0-x64.exe` / `.zip` | 44.7.0 |
+| x86 | 32-bit Intel/AMD, WOW64 | `FoxVPN-1.0.0-x86.exe` / `.zip` | 43.7.9 |
+| ARM64 | Windows on ARM | `FoxVPN-1.0.0-arm64.exe` / `.zip` | 44.7.0 |
+
+Electron 44 removed Windows x86 builds. The x86 package uses the last supported 43 series, as documented by [Electron](https://www.electronjs.org/blog/electron-43-0). These are separate native Windows packages, each with a matching sing-box executable and Wintun DLL; architecture is verified through PE headers before and after packaging. ARM32 is not supported by Electron on Windows.
+
+To build a target, set `FOX_TARGET_ARCH` to `x64`, `ia32` (x86), or `arm64`, then run `node scripts/prepare-electron.cjs`, `npm run engine`, `npm run smoke`, and `npm run dist`. Run smoke/config checks on a compatible host (ARM64 needs Windows on ARM). The CI matrix uses x64 Windows hosts for x64/x86 and a native ARM64 Windows host for ARM64.
+
+Locations can be sorted by name or TCP latency in either direction. Unknown and unreachable latency results stay last. The small waveform button on each row checks only that endpoint without selecting it or changing an active VPN session.
+
+“Activate entitlement” requests activation of the signed-in account’s VPN access via Mozilla. Eligibility and allowance are controlled by the service; it does not purchase a subscription. Connection setup also attempts activation automatically if the pass endpoint requires it.

@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.0 — Multi-architecture and locations update, 2026-10-11
+
+- Corrected light/dark logo mapping while keeping the executable icon.
+- Removed the sidebar platform badge.
+- Added ascending/descending name and latency sorting and per-location TCP checks.
+- Added native ARM64 and x86 packages with matching engine/driver resources and PE validation.
+
 ## v1.0.0 — UI update, 2026-10-11
 
 - Added location TCP latency checks and clear automatic connection destinations.

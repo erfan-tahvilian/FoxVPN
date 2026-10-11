@@ -1,20 +1,24 @@
-Windows x64 maintenance release of **Fox VPN**, an independent desktop application.
+Windows maintenance release of **Fox VPN**, an independent desktop application.
 
 ### Downloads
 
-- `FoxVPN-1.0.0-x64.exe` — Windows installer.
-- `FoxVPN-1.0.0-x64.zip` — portable application; extract the entire ZIP and run `Fox VPN.exe`.
-- `sing-box-1.12.0-source.tar.gz` — corresponding source of the separately bundled GPL network engine.
-- `SHA256SUMS.txt` — checksums for the downloadable files.
+Choose the installer (`.exe`) or portable archive (`.zip`) for your Windows architecture:
 
-### Changes in v1.0.0
+- `FoxVPN-1.0.0-x64` — 64-bit Intel/AMD Windows PCs.
+- `FoxVPN-1.0.0-x86` — 32-bit Intel/AMD Windows; also runs under WOW64.
+- `FoxVPN-1.0.0-arm64` — native Windows on ARM devices.
+- `sing-box-1.12.0-source.tar.gz` — corresponding source for the separate GPL engine.
+- `SHA256SUMS.txt` — checksums for all downloads.
 
-- Light-theme logo and matching Windows executable/installer icon.
-- Sun/moon appearance toggle, circular globe and corrected account icons.
-- Custom keyboard-accessible dropdown menus in both themes.
-- Ping all locations with incremental TCP latency results and unreachable status.
-- Hide service-recommended/anycast entries from the country list while retaining automatic selection. Show the active endpoint and verified exit country after an automatic connection.
-- Repository link now reads “View on GitHub”.
+Portable users must extract the entire ZIP, then run `Fox VPN.exe`.
+
+### Latest changes in v1.0.0
+
+- Black Fox wordmark logo in light mode; white Fox wordmark logo in dark mode. The executable icon retains the supplied white-wordmark version.
+- Removed the sidebar “Built for Windows” card.
+- Name and ping sorting, ascending and descending; unmeasured/unreachable results stay at the bottom when sorting by ping.
+- Individual location ping buttons, alongside the existing all-location check.
+- x86, x64 and ARM64 packages with architecture-matched Electron, sing-box and Wintun binaries. x86 uses Electron 43.7.9, the final Electron major series supporting Windows 32-bit; x64/ARM64 use Electron 44.7.0.
 
 ### Included
 
@@ -22,7 +26,7 @@ English orange-accented UI, dark/light/system themes, Firefox account sign-in an
 
 ### Requirements and validation
 
-Windows 10/11 x64. System VPN needs Administrator access. The app includes the pinned engine and Wintun driver; binaries are unsigned.
+Windows 10/11 for x86/x64; Windows 11 for ARM64. System VPN needs Administrator access. The app includes the pinned engine and Wintun driver; binaries are unsigned.
 
 Protocol tests include real local TLS + HTTP/2 CONNECT and tunneled HTTPS, fragmented SOCKS5 handshakes, token lifecycle and encrypted storage. Live Mozilla server discovery is verified, and the pinned Windows engine validates generated configurations. See `VALIDATION.md` in the source for the full verification record.
 

@@ -8,10 +8,10 @@ const {Store}=require('./lib/store.cjs');
 const {Control,Guardian}=require('./lib/control.cjs');
 const {Auth}=require('./lib/auth.cjs');
 const {Tunnel}=require('./lib/tunnel.cjs');
-const {measureAll}=require('./lib/latency.cjs');
+const {measure,measureAll}=require('./lib/latency.cjs');
 const {engineConfig}=require('./lib/settings.cjs');
 let window,tray,store,guardian,tunnel,pendingTunnel,engine,refreshTimer,busy=false,quitting=false,generation=0;
-let latencies={},pinging=false;
+let latencies={},pinging=false;const pingingIds=new Set();
 let servers=[],logs=[],connection='disconnected',startedAt=null,exit=null,quota=null,lastError=null;
 const icon=path.join(__dirname,'../assets/icon.ico');
 function log(level,message) {
@@ -19,9 +19,9 @@ function log(level,message) {
   const entry={time:new Date().toISOString(),level,message:String(message).slice(0,1000)};
   logs.push(entry);if(logs.length>1000)logs.shift();emit();
 }
-function state() {return {version:app.getVersion(),settings:store.publicSettings(),signedIn:!!store.auth,email:store.auth?.email || '',servers,latencies,pinging,activeServer:connection==='connected'?tunnel?.candidate:null,logs,connection,startedAt,exit,quota,lastError,up:tunnel?.up || 0,down:tunnel?.down || 0,systemDark:nativeTheme.shouldUseDarkColors,busy};}
+function state() {return {version:app.getVersion(),settings:store.publicSettings(),signedIn:!!store.auth,email:store.auth?.email || '',servers,latencies,pinging,pingingIds:[...pingingIds],activeServer:connection==='connected'?tunnel?.candidate:null,logs,connection,startedAt,exit,quota,lastError,up:tunnel?.up || 0,down:tunnel?.down || 0,systemDark:nativeTheme.shouldUseDarkColors,busy};}
 function emit() {if(window&&!window.isDestroyed())window.webContents.send('fox:state',state());}
-function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'engine'):path.join(__dirname,'../engine');}
+function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'engine'):path.join(__dirname,'../engine',process.arch);}
 async function admin() {
   return new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command','([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)'],{windowsHide:true},(e,out)=>resolve(!e&&out.trim()==='True')));
 }
@@ -136,11 +136,17 @@ else {
     handle('verify',async code=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{return await guardian.auth.verify(code);}finally{busy=false;emit();}});
     handle('logout',async()=>{if(busy)throw Error('Wait for the current operation to finish.');await disconnect();store.setAuth(null);guardian.auth.pending=null;quota=null;emit();});
     handle('servers',refreshServers);
-    handle('ping',async()=>{
-      if(pinging)throw Error('Location latency checks are already running.');
-      if(!servers.length)await refreshServers();
+    handle('ping',async id=>{
+      if(id!==undefined){
+        const server=servers.find(s=>s.id===id);if(!server)throw Error('Unknown location.');
+        if(pinging||pingingIds.has(id))throw Error('A latency check is already running for this location.');
+        pingingIds.add(id);delete latencies[id];emit();
+        try{const result=await measure(server);latencies[id]=result;return result;}
+        finally{pingingIds.delete(id);emit();}
+      }
+      if(pinging||pingingIds.size)throw Error('Wait for the current location latency checks.');
       pinging=true;latencies={};emit();
-      try{await measureAll([...servers],(id,result)=>{latencies[id]=result;emit();});return latencies;}
+      try{if(!servers.length)await refreshServers();await measureAll([...servers],(id,result)=>{latencies[id]=result;emit();});return latencies;}
       finally{pinging=false;emit();}
     });
     handle('account',()=>guardian.account());

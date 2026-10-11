@@ -19,11 +19,13 @@ app.whenReady().then(async()=>{
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('status-label').textContent`),'Disconnected');
     assert(await win.webContents.executeJavaScript(`new Set([...document.querySelectorAll('[id]')].map(e=>e.id)).size===document.querySelectorAll('[id]').length`));
     fs.mkdirSync('test-results',{recursive:true});
+    assert.equal(await win.webContents.executeJavaScript(`document.querySelector('.engine-badge')`),null);
+    assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('[data-theme-logo]')].every(i=>i.getAttribute('src').endsWith('logo-light.png'))`));
     fs.writeFileSync('test-results/overview-dark.png',(await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`document.getElementById('theme-toggle').click();new Promise(r=>setTimeout(r,100))`);
     assert(await win.webContents.executeJavaScript(`document.body.classList.contains('light')`));
     assert.equal(await win.webContents.executeJavaScript(`document.querySelector('#theme-toggle use').getAttribute('href')`),'#glyph-moon');
-    assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('[data-theme-logo]')].every(i=>i.getAttribute('src').endsWith('logo-light.png'))`));
+    assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('[data-theme-logo]')].every(i=>i.getAttribute('src').endsWith('logo.png'))`));
     assert(await win.webContents.executeJavaScript(`(()=>{const r=document.querySelector('.globe-visual svg').getBoundingClientRect();return Math.abs(r.width-r.height)<1})()`));
     fs.writeFileSync('test-results/overview-light.png',(await win.webContents.capturePage()).toPNG());
     for(const page of ['locations','account','settings','logs']) {
@@ -34,7 +36,18 @@ app.whenReady().then(async()=>{
       if(page==='locations') {
         assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.server-row').length`),await win.webContents.executeJavaScript(`new Set(currentState.servers.filter(s=>!automaticServer(s)).map(s=>s.code+'/'+s.cityCode)).size`));
         await win.webContents.executeJavaScript(`document.getElementById('ping-servers').click();new Promise(r=>setTimeout(r,100))`);
-        assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.latency')].every(e=>e.textContent==='42 ms')`));
+        assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.latency')].every(e=>/ms$|Unreachable/.test(e.textContent))`));
+        for(const mode of ['name-asc','name-desc','ping-asc','ping-desc']) {
+          await win.webContents.executeJavaScript(`document.getElementById('server-sort').value='${mode}';document.getElementById('server-sort').dispatchEvent(new Event('change'))`);
+          assert(await win.webContents.executeJavaScript(`(()=>{const rows=[...document.querySelectorAll('.server-choice')],mode='${mode}';if(mode.startsWith('name')){const names=rows.map(e=>e.querySelector('strong').textContent);return names.every((name,i)=>i===0||(mode==='name-asc'?names[i-1].localeCompare(name)<=0:names[i-1].localeCompare(name)>=0));}const values=rows.map(e=>currentState.latencies[e.dataset.serverId]?.ms).filter(Number.isFinite);return values.every((value,i)=>i===0||(mode==='ping-asc'?values[i-1]<=value:values[i-1]>=value))&&rows.slice(values.length).every(e=>!Number.isFinite(currentState.latencies[e.dataset.serverId]?.ms));})()`));
+        }
+        assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.server-row')].every(row=>row.children[1].classList.contains('server-ping')&&row.children[2].classList.contains('server-select'))`));
+        const beforeSelection=await win.webContents.executeJavaScript(`currentState.settings.serverId`);
+        await win.webContents.executeJavaScript(`document.querySelector('.server-ping').click();new Promise(r=>setTimeout(r,100))`);
+        assert.equal(await win.webContents.executeJavaScript(`page`),'locations');
+        assert.equal(await win.webContents.executeJavaScript(`currentState.settings.serverId`),beforeSelection);
+        assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.latency')].some(e=>e.textContent==='7 ms')`));
+        await win.webContents.executeJavaScript(`document.getElementById('server-sort').value='name-asc';document.getElementById('server-sort').dispatchEvent(new Event('change'));new Promise(r=>setTimeout(r,150))`);
       }
       if(page==='settings') {
         assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('select')].every(e=>e.hidden)&&document.querySelectorAll('[role=combobox]').length===document.querySelectorAll('select').length`));
@@ -46,7 +59,7 @@ app.whenReady().then(async()=>{
       }
       fs.writeFileSync(`test-results/${page}.png`,(await win.webContents.capturePage()).toPNG());
     }
-    await win.webContents.executeJavaScript(`document.querySelector('[data-page="locations"]').click(); document.querySelector('.server-row').click(); new Promise(r=>setTimeout(r,100))`);
+    await win.webContents.executeJavaScript(`document.querySelector('[data-page="locations"]').click(); document.querySelector('.server-choice').click(); new Promise(r=>setTimeout(r,100))`);
     assert(await win.webContents.executeJavaScript(`document.querySelector('#selected-symbol .country-flag').naturalWidth>0`));
     fs.writeFileSync('test-results/selected-location.png',(await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`window.fox.call('select','REC').then(()=>window.fox.call('connect'));new Promise(r=>setTimeout(r,100))`);

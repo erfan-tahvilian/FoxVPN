@@ -2,7 +2,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
 const {DEFAULTS,engineConfig}=require('../src/lib/settings.cjs');
-const engine=path.resolve('engine/sing-box.exe');
+const {engineRoot}=require('./windows-target.cjs');
+const engine=path.join(engineRoot(),'sing-box.exe');
 fs.mkdirSync('test-results',{recursive:true});
 for(const [name,settings] of Object.entries({default:DEFAULTS,custom:{...DEFAULTS,customDns:'9.9.9.9',excludedApps:['chrome.exe']},off:{...DEFAULTS,doh:'off'},google:{...DEFAULTS,doh:'google'},quad9:{...DEFAULTS,doh:'quad9'}})){
   const file=path.resolve(`test-results/engine-${name}.json`);

@@ -19,7 +19,7 @@ function applyTheme(s) {
   $('theme-toggle').replaceChildren(icon(light?'moon':'sun'));
   $('theme-toggle').title=light?'Switch to dark theme':'Switch to light theme';
   $('theme-toggle').setAttribute('aria-label',$('theme-toggle').title);
-  document.querySelectorAll('[data-theme-logo]').forEach(img=>{const src=`../../assets/${light?'logo-light':'logo'}.png`;if(img.getAttribute('src')!==src)img.src=src;});
+  document.querySelectorAll('[data-theme-logo]').forEach(img=>{const src=`../../assets/${light?'logo':'logo-light'}.png`;if(img.getAttribute('src')!==src)img.src=src;});
 }
 function countryName(code) {try{return new Intl.DisplayNames(['en'],{type:'region'}).of(code);}catch{return code;}}
 function automaticServer(server) {return /recom+end|anycast/i.test(server.country+' '+server.city)||server.code==='REC';}
@@ -63,11 +63,11 @@ function render(s) {
   $('login-button').disabled=s.busy;
   $('home-info').textContent=s.lastError||(s.signedIn?(s.quota?.remaining?`${bytes(s.quota.remaining)} remaining in your current service allowance.`:'Your Firefox account is ready. Choose a location and connect.'):'Sign in with your Firefox account to get started.');
   $('settings-notice').textContent=s.connection==='disconnected'?'Credentials are encrypted on this device.':'Disconnect before saving network preferences.';
-  $('ping-servers').disabled=s.pinging;
+  $('ping-servers').disabled=s.pinging||(s.pingingIds||[]).length>0;
   $('ping-servers').textContent=s.pinging?'Checking latency…':'Ping all locations';
   const measured=Object.keys(s.latencies||{}).length;
   $('ping-status').textContent=s.pinging?`Checking endpoints · ${measured} / ${s.servers.length}`:measured?'TCP latency · current network path · Refresh the check after changing networks.':'TCP latency from your current network path. Run a check to compare locations.';
-  const serverKey=JSON.stringify([s.servers,s.latencies,s.pinging])+s.settings.serverId;if(serverKey!==lastServers){lastServers=serverKey;renderServers();}
+  const serverKey=JSON.stringify([s.servers,s.latencies,s.pinging,s.pingingIds])+s.settings.serverId;if(serverKey!==lastServers){lastServers=serverKey;renderServers();}
   const logKey=JSON.stringify(s.logs);if(logKey!==lastLogs){lastLogs=logKey;renderLogs();}
 }
 function icon(name) {const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#glyph-'+name);svg.append(use);return svg;}
@@ -79,18 +79,28 @@ function flag(code,country) {
 function renderServers() {
   if(!currentState)return;
   const query=$('server-search').value.toLowerCase(),seen=new Set();
-  const servers=currentState.servers.filter(s=>{if(automaticServer(s))return false;const key=s.code+'/'+s.cityCode;if(seen.has(key))return false;seen.add(key);return `${s.country} ${s.city} ${s.code}`.toLowerCase().includes(query);}).sort((a,b)=>a.country.localeCompare(b.country)||a.city.localeCompare(b.city));
+  const servers=currentState.servers.filter(s=>{if(automaticServer(s))return false;const key=s.code+'/'+s.cityCode;if(seen.has(key))return false;seen.add(key);return `${s.country} ${s.city} ${s.code}`.toLowerCase().includes(query);}).sort((a,b)=>{
+    const mode=$('server-sort').value,byName=a.country.localeCompare(b.country)||a.city.localeCompare(b.city);
+    if(mode.startsWith('name'))return mode==='name-desc'?-byName:byName;
+    const left=currentState.latencies?.[a.id]?.ms,right=currentState.latencies?.[b.id]?.ms;
+    const leftKnown=Number.isFinite(left),rightKnown=Number.isFinite(right);
+    if(leftKnown!==rightKnown)return leftKnown?-1:1;
+    return leftKnown&&left!==right?(mode==='ping-desc'?right-left:left-right):byName;
+  });
   $('server-list').replaceChildren();
   for(const server of servers) {
-    const button=document.createElement('button');button.className='server-row'+(currentState.settings.serverId.startsWith(server.code+'/'+server.cityCode+'/')?' selected':'');
+    const row=document.createElement('div');row.className='server-row'+(currentState.settings.serverId.startsWith(server.code+'/'+server.cityCode+'/')?' selected':'');
+    const button=document.createElement('button');button.className='server-choice';button.dataset.serverId=server.id;
     const code=document.createElement('span');code.className='country-code';code.append(flag(server.code,server.country));
     const text=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=server.country;small.textContent=server.city;text.append(strong,small);
     const latency=document.createElement('span');latency.className='latency';
     const result=currentState.latencies?.[server.id];
-    latency.textContent=result?(result.ms===null?'Unreachable':`${result.ms} ms`):currentState.pinging?'Checking…':'— ms';
+    latency.textContent=result?(result.ms===null?'Unreachable':`${result.ms} ms`):(currentState.pinging||(currentState.pingingIds||[]).includes(server.id))?'Checking…':'— ms';
     if(result?.ms!=null)latency.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
     latency.title='TCP connection time, including DNS, through your current network path';
-    button.append(code,text,latency,icon('arrow'));button.addEventListener('click',action(async()=>{await call('select',server.id);navigate('home');toast(`Selected ${server.city}, ${server.country}`);}));$('server-list').append(button);
+    button.append(code,text,latency);button.addEventListener('click',action(async()=>{await call('select',server.id);navigate('home');toast(`Selected ${server.city}, ${server.country}`);}));const ping=document.createElement('button');ping.className='server-ping icon-button';ping.type='button';ping.setAttribute('aria-label',`Ping ${server.city}, ${server.country}`);ping.title=`Ping ${server.country}`;ping.append(icon('ping'));
+    ping.disabled=currentState.pinging||(currentState.pingingIds||[]).includes(server.id);
+    ping.addEventListener('click',action(async()=>{await call('ping',server.id);}));const choose=document.createElement('button');choose.type='button';choose.className='server-select icon-button';choose.setAttribute('aria-label',`Select ${server.city}, ${server.country}`);choose.title=`Select ${server.country}`;choose.append(icon('arrow'));choose.addEventListener('click',()=>button.click());row.append(button,ping,choose);$('server-list').append(row);
   }
   $('server-empty').hidden=servers.length>0;$('server-empty').textContent=query?'No matching locations.':'No locations loaded. Refresh to fetch the live server list.';
 }
@@ -148,6 +158,7 @@ $('source').addEventListener('click',action(()=>call('openLink','source')));
 $('create-account').addEventListener('click',action(()=>call('openLink','account')));
 $('refresh-servers').addEventListener('click',action(async()=>{$('refresh-servers').disabled=true;try{await call('servers');toast('Locations updated.');}finally{$('refresh-servers').disabled=false;}}));
 $('server-search').addEventListener('input',renderServers);
+$('server-sort').addEventListener('change',renderServers);
 $('recommended').addEventListener('click',action(async()=>{await call('select','REC');navigate('home');}));
 $('verify-exit').addEventListener('click',action(async()=>{const result=await call('exit');toast(`Exit verified · ${result.ip} · ${result.country}`);}));
 $('login-form').addEventListener('submit',action(async e=>{e.preventDefault();const email=$('email').value.trim(),password=$('password').value;$('password').value='';const result=await call('login',{email,password});needsCode=result.needsCode;render(await call('state'));if(needsCode){$('code').focus();toast('Enter the verification code sent to your Firefox account email.');}else{toast('Signed in successfully.');navigate('home');}}));

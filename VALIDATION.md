@@ -26,3 +26,9 @@ The installer is unsigned. This release makes no claim of a persistent kill swit
 - Electron renderer smoke checks cover supplied theme logos, sun/moon glyphs, circular globe geometry, all custom select controls, selecting options, duplicate service recommendations, incremental latency badges and a simulated automatic connection with an authoritative Canadian exit. These fixtures do not claim a live VPN connection.
 - Actual main-process sandboxed IPC and DPAPI checks pass.
 - Live public discovery and TCP checks reached all 34 endpoints on this machine; no account credentials were used.
+
+## Current locations and architecture update
+
+- Renderer assertions cover the corrected theme logos, absence of the platform badge, both directions of name/latency sorting, unknown results last, and individual ping without location selection or navigation.
+- PE architecture checks verify that Electron, sing-box and Wintun match each requested target, then verify the packaged app/engine/driver again.
+- CI executes x86 Electron smoke checks on x64 Windows via WOW64 and ARM64 smoke/config checks on a native ARM64 Windows runner. These checks do not represent an authenticated production VPN/TUN session.
