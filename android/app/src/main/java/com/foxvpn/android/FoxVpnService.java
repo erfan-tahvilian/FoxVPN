@@ -103,6 +103,7 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
         routes=options.getInet6RouteRange();while(routes.hasNext()){RoutePrefix p=routes.next();builder.addRoute(p.address(),p.prefix());}
         StringIterator packages=options.getExcludePackage();while(packages.hasNext()){String pkg=packages.next();if(!pkg.equals(getPackageName())){try{builder.addDisallowedApplication(pkg);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}}}
         if(Build.VERSION.SDK_INT>=29)builder.setMetered(false);
+        if(Build.VERSION.SDK_INT>=29){android.net.Network underlying=app().network;if(underlying!=null)builder.setUnderlyingNetworks(new android.net.Network[]{underlying});}
         tun=builder.establish();if(tun==null)throw new Exception("Android could not establish the VPN interface");return tun.getFd();
     }
     @Override public LocalDNSTransport localDNSTransport(){return null;}
