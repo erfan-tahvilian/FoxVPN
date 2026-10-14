@@ -62,6 +62,11 @@ public final class MainActivity extends Activity {
         web.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         web.getSettings().setSupportMultipleWindows(false);
         web.getSettings().setMediaPlaybackRequiresUserGesture(true);
+        web.setVerticalScrollBarEnabled(false);
+        web.setHorizontalScrollBarEnabled(false);
+        // App labels and controls must not open WebView's text/image selection menu.
+        // Keep the native editing menu available inside actual text fields.
+        web.setOnLongClickListener(view -> web.getHitTestResult().getType()!=WebView.HitTestResult.EDIT_TEXT_TYPE);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         container.setOnApplyWindowInsetsListener((view,insets) -> {
             android.widget.FrameLayout.LayoutParams layout=(android.widget.FrameLayout.LayoutParams)web.getLayoutParams();

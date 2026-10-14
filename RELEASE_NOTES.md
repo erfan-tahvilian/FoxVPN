@@ -33,6 +33,6 @@ Sign in with a Firefox account, select a location and connect. Account eligibili
 
 TCP and DNS are supported. General UDP/QUIC and a persistent kill switch are not supported. Desktop apps remain in the tray when their window is closed; Android connections remain active in the background.
 
-Production sign-in and VPN traffic have not been verified with a live user account. See the [verification record](https://github.com/erfan-tahvilian/FoxVPN/blob/main/VALIDATION.md) for test coverage.
+See the [verification record](https://github.com/erfan-tahvilian/FoxVPN/blob/main/VALIDATION.md) for device test coverage and remaining validation limits.
 
 See the [README](https://github.com/erfan-tahvilian/FoxVPN#readme) for setup, features and licenses.

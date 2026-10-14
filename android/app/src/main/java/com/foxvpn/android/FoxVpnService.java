@@ -53,8 +53,9 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
                     if(VpnService.prepare(this)!=null)throw new Exception("VPN permission is required");
                     synchronized(engineLock){
                         if(stopping)return;
-                        engine=Libbox.newService(app().backend.engineConfig(),this);
+                        engine=Libbox.newService(nativeConfig(app().backend.engineConfig()),this);
                         engine.start();
+                        if(BuildConfig.DEBUG)android.util.Log.i("FoxVPNEngine","Native VPN engine started");
                     }
                 }
                 if(stopping){requestStop();return;}app().backend.ready();
@@ -62,6 +63,18 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
             finally{starting=false;if(stopping||"disconnected".equals(app().connection()))requestStop();}
         });
         return START_NOT_STICKY;
+    }
+    static String nativeConfig(String raw)throws org.json.JSONException{
+        JSONObject config=new JSONObject(raw);
+        org.json.JSONArray inbounds=config.getJSONArray("inbounds");
+        for(int i=0;i<inbounds.length();i++){
+            JSONObject inbound=inbounds.getJSONObject(i);
+            // This app is excluded from VPN routing. Kernel TCP replies in the mixed
+            // stack can bypass the TUN on Android; keep TCP entirely in userspace.
+            if("tun".equals(inbound.optString("type")))inbound.put("stack","gvisor");
+        }
+        if(BuildConfig.DEBUG)config.getJSONObject("log").put("level","debug");
+        return config.toString();
     }
     void stateChanged(){
         if(stopping)return;
@@ -109,7 +122,7 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
     @Override public LocalDNSTransport localDNSTransport(){return null;}
     @Override public boolean usePlatformAutoDetectInterfaceControl(){return true;}
     @Override public void autoDetectInterfaceControl(int fd)throws Exception{if(!protect(fd))throw new Exception("Could not protect a VPN socket");}
-    @Override public void writeLog(String message){/* Traffic and upstream credentials are not forwarded to the UI. */}
+    @Override public void writeLog(String message){if(BuildConfig.DEBUG)android.util.Log.i("FoxVPNEngine",message);}
     @Override public boolean useProcFS(){return false;}
     @Override public int findConnectionOwner(int protocol,String source,int sourcePort,String destination,int destinationPort)throws Exception{
         if(Build.VERSION.SDK_INT>=29)return getSystemService(ConnectivityManager.class).getConnectionOwnerUid(protocol,new InetSocketAddress(source,sourcePort),new InetSocketAddress(destination,destinationPort));

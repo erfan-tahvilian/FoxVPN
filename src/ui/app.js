@@ -59,6 +59,7 @@ function render(s) {
   $('session-time').textContent=time(s.startedAt?now-s.startedAt:0);
   $('location-count').textContent=new Set(s.servers.filter(c=>!automaticServer(c)).map(c=>c.code)).size || '—';
   $('account-name').textContent=s.signedIn?s.email.split('@')[0]:'Sign in';
+  document.querySelector('#account-shortcut .avatar').textContent=s.signedIn?(Array.from((s.email||'').trim())[0]?.toUpperCase()||'?'):'F';
   $('signin-panel').hidden=s.signedIn;$('signedin-panel').hidden=!s.signedIn;$('signedin-email').textContent=s.email;
   $('login-form').hidden=needsCode;$('code-form').hidden=!needsCode;
   $('login-button').disabled=s.busy;

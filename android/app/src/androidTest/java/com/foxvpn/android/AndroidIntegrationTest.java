@@ -40,6 +40,11 @@ public class AndroidIntegrationTest {
     }
     @Test public void interfaceAndStateIsolation()throws Exception{
         ready();assertEquals("\"Fox VPN\"",js("document.title"));assertEquals("true",js("document.documentElement.scrollWidth<=window.innerWidth"));
+        assertEquals("\"none\"",js("getComputedStyle(document.querySelector('h1')).userSelect"));
+        assertEquals("\"rgba(0, 0, 0, 0)\"",js("getComputedStyle(document.getElementById('connect')).webkitTapHighlightColor"));
+        assertEquals("\"text\"",js("getComputedStyle(document.querySelector('input[type=email]')).userSelect"));
+        assertEquals("true",js("(()=>{const h=document.querySelector('header').getBoundingClientRect(),t=document.getElementById('theme-toggle').getBoundingClientRect(),a=document.querySelector('.account-chip .avatar').getBoundingClientRect();return Math.abs(t.left+t.width/2-h.left-h.width/2)<1 && Math.abs(t.top+t.height/2-h.top-h.height/2)<1 && Math.abs(a.width-a.height)<1})()"));
+        assertEquals("true",js("(()=>{const before=currentState;render({...before,signedIn:true,email:'nora@example.com'});const correct=document.querySelector('.account-chip .avatar').textContent==='N';render(before);return correct})()"));
         for(String page:new String[]{"home","locations","account","settings","logs"}){
             js("navigate('"+page+"')");assertEquals("true",js("document.querySelector('.page.active').id==='"+page+"'"));
         }
@@ -77,7 +82,12 @@ public class AndroidIntegrationTest {
                 settings.put("customDns",dns.equals("custom")?"1.1.1.1":"");
                 JSONObject response=new JSONObject(app.backend.call("settings","["+settings+"]"));
                 assertTrue("DNS settings rejected: "+dns,response.getBoolean("ok"));
-                Libbox.checkConfig(app.backend.engineConfig());
+                String rawConfig=app.backend.engineConfig();
+                JSONObject actualConfig=new JSONObject(FoxVpnService.nativeConfig(rawConfig));
+                assertEquals("Android TUN must use userspace TCP", "gvisor",actualConfig.getJSONArray("inbounds").getJSONObject(0).getString("stack"));
+                assertEquals("Do not alter proxy destinations",new JSONObject(rawConfig).getJSONArray("outbounds").toString(),actualConfig.getJSONArray("outbounds").toString());
+                assertEquals("Do not alter DNS settings",new JSONObject(rawConfig).getJSONObject("dns").toString(),actualConfig.getJSONObject("dns").toString());
+                Libbox.checkConfig(actualConfig.toString());
             }
         }finally{app.backend.call("settings","["+original+"]");}
         Intent permission=VpnService.prepare(context);

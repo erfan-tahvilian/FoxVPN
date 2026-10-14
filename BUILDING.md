@@ -103,4 +103,6 @@ Android uses a permission-protected `VpnService`, the same HTML interface with a
 
 Split tunneling excludes Android package names through the platform VPN builder. Quick Settings and the foreground notification read the core connection state. VPN consent is required before the first system connection. The debug-only integration service creates a real TUN interface without changing the default route; it is excluded from release APKs.
 
+The Android service selects the gVisor userspace TCP stack before starting libbox. The application's UID is excluded from VPN routing; using kernel TCP in the mixed stack can send its replies outside the TUN on affected Android devices. Debug builds expose native engine diagnostics through the `FoxVPNEngine` logcat tag. Release builds do not emit those traffic logs.
+
 Android application code is licensed under [GPL-3.0-or-later](android/LICENSE). The native library's dependency notices and exact module versions are included in APK assets; Go dependencies are pinned in `android/core/go.mod` and `go.sum`.

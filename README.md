@@ -119,7 +119,7 @@ Fox VPN uses Firefox Accounts and Mozilla's VPN service. Account eligibility, re
 
 TCP and DNS are supported. General UDP traffic, including QUIC, is unsupported. Local network traffic and excluded applications bypass the tunnel. A persistent kill switch is not available.
 
-Production sign-in and VPN traffic have not been verified with a live user account. See the [verification record](VALIDATION.md) for test coverage.
+Device test coverage and remaining validation limits are documented in the [verification record](VALIDATION.md).
 
 ## Development
 

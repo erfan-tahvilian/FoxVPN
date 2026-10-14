@@ -13,3 +13,8 @@ android/app/src/main/assets/
 android/local.properties
 __pycache__/
 *.pyc
+
+# Local Graphify analysis and agent handoff files
+/graphify-out/
+/.graphify*/
+/.graphify*

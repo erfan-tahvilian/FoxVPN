@@ -18,7 +18,7 @@ public final class NativeTestService extends FoxVpnService {
         new Thread(() -> {
             try {
                 String config="{\"log\":{\"level\":\"error\"},\"inbounds\":[{\"type\":\"tun\",\"address\":[\"172.29.0.1/30\",\"fdfe:dcba:9876::1/126\"],\"mtu\":1500,\"auto_route\":false,\"stack\":\"mixed\"}],\"outbounds\":[{\"type\":\"direct\",\"tag\":\"direct\"}],\"route\":{\"auto_detect_interface\":true,\"final\":\"direct\"}}";
-                testEngine=Libbox.newService(config,this);testEngine.start();
+                testEngine=Libbox.newService(nativeConfig(config),this);testEngine.start();
             }catch(Exception e){failure=e;}finally{started.countDown();}
         },"FoxVPN-native-test").start();
         return START_NOT_STICKY;
