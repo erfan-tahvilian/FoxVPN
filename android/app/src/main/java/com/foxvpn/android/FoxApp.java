@@ -100,14 +100,25 @@ public final class FoxApp extends Application implements Host {
         return links.getDnsServers().get(0).getHostAddress();
     }
     @Override public String certificates() { return certificates == null ? "" : certificates; }
-    static String loadCertificates() throws Exception {
-        KeyStore store = KeyStore.getInstance("AndroidCAStore"); store.load(null);
-        StringBuilder pem = new StringBuilder(); Enumeration<String> aliases = store.aliases();
-        while (aliases.hasMoreElements()) {
-            java.security.cert.Certificate cert = store.getCertificate(aliases.nextElement());
-            if (cert != null) pem.append("-----BEGIN CERTIFICATE-----\n")
-                .append(Base64.encodeToString(cert.getEncoded(), Base64.NO_WRAP)).append("\n-----END CERTIFICATE-----\n");
+    String loadCertificates() throws Exception {
+        StringBuilder pem = new StringBuilder();
+        try {
+            KeyStore store = KeyStore.getInstance("AndroidCAStore"); store.load(null);
+            Enumeration<String> aliases = store.aliases();
+            while (aliases.hasMoreElements()) {
+                java.security.cert.Certificate cert = store.getCertificate(aliases.nextElement());
+                if (cert != null) pem.append("-----BEGIN CERTIFICATE-----\n")
+                    .append(Base64.encodeToString(cert.getEncoded(), Base64.NO_WRAP)).append("\n-----END CERTIFICATE-----\n");
+            }
+        } catch (Exception ignored) {
+            // Some devices (e.g. MIUI) restrict or empty the AndroidCAStore; fall back to the bundled Mozilla CA list below.
         }
+        java.io.InputStream bundled = getResources().openRawResource(R.raw.cacert);
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        byte[] buffer = new byte[8192]; int read;
+        while ((read = bundled.read(buffer)) != -1) out.write(buffer, 0, read);
+        bundled.close();
+        pem.append(out.toString("UTF-8"));
         return pem.toString();
     }
     String connection() { return state.optString("connection", "disconnected"); }

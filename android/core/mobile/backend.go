@@ -105,7 +105,9 @@ func NewBackend(host Host, vault string) *Backend {
 	if roots == nil {
 		roots = x509.NewCertPool()
 	}
-	roots.AppendCertsFromPEM([]byte(host.Certificates()))
+	if !roots.AppendCertsFromPEM([]byte(host.Certificates())) {
+		b.logs = append(b.logs, object{"time": time.Now().UTC().Format(time.RFC3339), "level": "error", "message": "No CA certificates could be loaded from the device or bundle"})
+	}
 	b.roots = roots
 	control := func(_, _ string, c syscall.RawConn) error {
 		var failed bool
@@ -460,6 +462,7 @@ func (b *Backend) connect() error {
 		}
 		t := newTunnel(b, s, server, token, ctx)
 		if err = t.start(); err != nil {
+			b.log("error", "Tunnel to "+str(server, "city")+", "+str(server, "country")+" failed: "+err.Error())
 			t.close()
 			continue
 		}
