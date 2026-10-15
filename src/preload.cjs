@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const {contextBridge,ipcRenderer}=require('electron');
 const channels=['state','login','verify','logout','servers','ping','account','activate','settings','theme','locationSort','apps','appIcon','select','connect','cancel','disconnect','exit','clearLogs','exportLogs','openLink'];
 contextBridge.exposeInMainWorld('fox',{

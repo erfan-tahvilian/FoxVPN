@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 """Generate localhost-only TLS fixtures. Keys are test data, never used by the app."""
 from cryptography import x509
 from cryptography.x509.oid import NameOID

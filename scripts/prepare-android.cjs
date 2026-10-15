@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
@@ -5,6 +7,7 @@ const dest=path.join(root,'android/app/src/main/assets');
 fs.mkdirSync(dest,{recursive:true});
 for(const name of ['src/ui','assets','licenses'])fs.cpSync(path.join(root,name),path.join(dest,name),{recursive:true});
 fs.copyFileSync(path.join(root,'android/LICENSE'),path.join(dest,'LICENSE-Android.txt'));
+for(const name of ['LICENSE','COPYRIGHT'])fs.copyFileSync(path.join(root,name),path.join(dest,name));
 let html=fs.readFileSync(path.join(dest,'src/ui/index.html'),'utf8');
 html=html.replace('<script src="desktop.js"></script>','');
 html=html.replace('<link rel="stylesheet" href="styles.css">','<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="mobile.css">');

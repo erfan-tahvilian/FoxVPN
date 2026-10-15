@@ -129,12 +129,11 @@ Device test coverage and remaining validation limits are documented in the [veri
 | [Build guide](BUILDING.md) | Prerequisites and platform-specific build instructions |
 | [Verification record](VALIDATION.md) | Automated checks and remaining manual tests |
 | [Changelog](CHANGELOG.md) | Release history |
-| [Desktop license](LICENSE) | MIT License |
-| [Android license](android/LICENSE) | GPL-3.0-or-later |
+| [Project license](LICENSE) | GPL-3.0-or-later · Windows, macOS and Android |
 
 ## Third-party licenses
 
-The desktop application is distributed under the [MIT License](LICENSE). The Android application is distributed under [GPL-3.0-or-later](android/LICENSE). Bundled dependencies retain their own licenses and notices.
+Fox VPN is distributed under the [GNU General Public License, version 3 or later](LICENSE), on Windows, macOS and Android. See the [copyright notice](COPYRIGHT). Bundled dependencies retain their own licenses and notices.
 
 <details>
 <summary><strong>Dependency notices</strong></summary>

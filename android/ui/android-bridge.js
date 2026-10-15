@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 (() => {
   let sequence=0;const pending=new Map(),listeners=new Set();
   window.fox={

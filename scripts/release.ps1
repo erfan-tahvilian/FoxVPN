@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 param([ValidateSet('Inspect','Publish','Runs','Jobs','Logs')][string]$Mode = 'Inspect')
 $ErrorActionPreference = 'Stop'
 $foxCredentials = "protocol=https`nhost=github.com`n`n" | git credential fill

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const net = require('node:net');
 const tls = require('node:tls');
 const http = require('node:http');

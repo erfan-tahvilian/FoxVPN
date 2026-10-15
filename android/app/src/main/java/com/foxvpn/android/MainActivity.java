@@ -146,7 +146,7 @@ public final class MainActivity extends Activity {
                         case "cancel":case "disconnect":app().stopVpn();respond(id,envelope(true,null));break;
                         case "logout":app().stopVpn();respond(id,app().backend.call(channel,arguments));break;
                         case "openLink":
-                            String target=switch(args.optString(0)){case "source" -> "https://github.com/erfan-tahvilian/FoxVPN";case "account" -> "https://accounts.firefox.com/signup";case "accountSettings" -> "https://accounts.firefox.com/settings";default -> throw new IllegalArgumentException("Unsupported link");};
+                            String target=switch(args.optString(0)){case "source" -> "https://github.com/erfan-tahvilian/FoxVPN";case "license" -> "https://github.com/erfan-tahvilian/FoxVPN/blob/main/LICENSE";case "account" -> "https://accounts.firefox.com/signup";case "accountSettings" -> "https://accounts.firefox.com/settings";default -> throw new IllegalArgumentException("Unsupported link");};
                             app().main.post(() -> startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(target))));respond(id,envelope(true,null));break;
                         case "exportLogs":
                             exportText=app().backend.logExport();

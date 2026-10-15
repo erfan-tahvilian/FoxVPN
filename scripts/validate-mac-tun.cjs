@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
 const {spawn,execFileSync}=require('node:child_process');
 const {MacEngine}=require('../src/lib/mac-engine.cjs');const {DEFAULTS,engineConfig}=require('../src/lib/settings.cjs');const {engineRoot}=require('./mac-target.cjs');

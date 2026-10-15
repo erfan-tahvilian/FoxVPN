@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const fs=require('node:fs'),path=require('node:path');
 const targets={
   x64:{label:'x64',engine:'amd64',wintun:'amd64',electron:'44.7.0',machine:0x8664},

@@ -105,4 +105,4 @@ Split tunneling excludes Android package names through the platform VPN builder.
 
 The Android service selects the gVisor userspace TCP stack before starting libbox. The application's UID is excluded from VPN routing; using kernel TCP in the mixed stack can send its replies outside the TUN on affected Android devices. Debug builds expose native engine diagnostics through the `FoxVPNEngine` logcat tag. Release builds do not emit those traffic logs.
 
-Android application code is licensed under [GPL-3.0-or-later](android/LICENSE). The native library's dependency notices and exact module versions are included in APK assets; Go dependencies are pinned in `android/core/go.mod` and `go.sum`.
+Fox VPN application code on Windows, macOS and Android is licensed under [GPL-3.0-or-later](LICENSE). Independent dependency notices and licenses are preserved. The native library's dependency notices and exact module versions are included in APK assets; Go dependencies are pinned in `android/core/go.mod` and `go.sum`.

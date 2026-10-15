@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 set -euo pipefail
 mkdir -p test-results/android
 collect() {

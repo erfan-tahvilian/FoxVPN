@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const $=id=>document.getElementById(id);
 let currentState=null, page='home', initialized=false, needsCode=false, lastLogs='',lastServers='',lastUp=0,lastDown=0,lastTick=Date.now(),toastTimer;
 const labels={home:'Overview',locations:'Locations',account:'My account',settings:'Settings',logs:'Activity log'};
@@ -158,6 +160,7 @@ $('connect').addEventListener('click',action(async()=>{if(!currentState.signedIn
 $('theme-toggle').addEventListener('click',action(async()=>{const theme=document.body.classList.contains('light')?'dark':'light';await call('theme',theme);$('theme').value=theme;syncSelects();}));
 $('ping-servers').addEventListener('click',action(async()=>{await call('ping');toast('Location latency check complete.');}));
 $('source').addEventListener('click',action(()=>call('openLink','source')));
+$('view-license').addEventListener('click',action(()=>call('openLink','license')));
 $('create-account').addEventListener('click',action(()=>call('openLink','account')));
 $('refresh-servers').addEventListener('click',action(async()=>{$('refresh-servers').disabled=true;try{await call('servers');toast('Locations updated.');}finally{$('refresh-servers').disabled=false;}}));
 $('server-search').addEventListener('input',renderServers);

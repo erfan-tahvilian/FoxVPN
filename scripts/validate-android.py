@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 """Verify release APK architectures, native alignment and package completeness."""
 from pathlib import Path
 import hashlib
@@ -26,6 +28,11 @@ for target in [*abi_info, "universal"]:
             raise RuntimeError(f"{path.name}: incomplete APK")
         if "assets/src/ui/index.html" not in apk.namelist() or "assets/LICENSE-Android.txt" not in apk.namelist():
             raise RuntimeError(f"{path.name}: missing interface or license")
+        for notice in ("LICENSE", "COPYRIGHT", "licenses/GPL-3.0.txt"):
+            if "assets/" + notice not in apk.namelist():
+                raise RuntimeError(f"{path.name}: missing GPL notice: {notice}")
+        if b"GPL-3.0-or-later" not in apk.read("assets/COPYRIGHT"):
+            raise RuntimeError(f"{path.name}: incorrect application license")
         for name in libraries:
             abi = name.split("/")[1]
             data = apk.read(name)

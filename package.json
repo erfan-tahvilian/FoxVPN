@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Independent desktop client for Firefox VPN's HTTP/2 proxy service",
   "author": "Erfan Tahvilian",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "main": "src/main.cjs",
   "scripts": {
     "start": "electron .",
@@ -37,6 +37,7 @@
       "assets/**/*",
       "licenses/**/*",
       "LICENSE",
+      "COPYRIGHT",
       "package.json"
     ],
     "extraResources": [

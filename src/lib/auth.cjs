@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const crypto = require('node:crypto');
 const PREFIX = 'identity.mozilla.com/picl/v1/';
 const CLIENT = '5882386c6d801776';

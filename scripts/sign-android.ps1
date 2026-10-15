@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 param(
     [Parameter(Mandatory=$true)][string]$RunId,
     [ValidateSet('arm64-v8a','armeabi-v7a','x86_64','x86','universal')]

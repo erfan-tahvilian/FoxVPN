@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 name: macOS build
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'assets/**', 'licenses/**', 'package*.json', 'scripts/**', '!scripts/*android*', '.github/workflows/macos.yml']
+    paths: ['src/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'package*.json', 'scripts/**', '!scripts/*android*', '.github/workflows/macos.yml']
   pull_request:
   workflow_dispatch:
 permissions:

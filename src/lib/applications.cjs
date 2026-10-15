@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const fs=require('node:fs').promises;
 const path=require('node:path');
 const os=require('node:os');

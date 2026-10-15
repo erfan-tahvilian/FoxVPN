@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 name: Android build
 on:
   push:
     branches: [main]
-    paths: ['android/**', 'src/ui/**', 'assets/**', 'scripts/*android*', '.github/workflows/android.yml']
+    paths: ['android/**', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*android*', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: read

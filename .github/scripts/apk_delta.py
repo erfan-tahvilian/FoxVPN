@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
 """Reproduce locally signed APKs from verified CI outputs without transferring their payloads."""
 import hashlib
 import json

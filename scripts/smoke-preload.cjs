@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 const {contextBridge}=require('electron');
 const {DEFAULTS}=require('../src/lib/settings.cjs');
 const fs=require('node:fs'),path=require('node:path');

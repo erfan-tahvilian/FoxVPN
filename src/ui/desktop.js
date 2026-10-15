@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Erfan Tahvilian
 (() => {
   const get=id=>document.getElementById(id),form=get('settings-form'),sort=get('server-sort'),field=get('excludedApps');
   for(const mode of ['ping-asc','ping-desc','name-asc','name-desc'])sort.append(sort.querySelector(`option[value="${mode}"]`));
