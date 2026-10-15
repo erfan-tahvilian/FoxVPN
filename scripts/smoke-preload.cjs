@@ -7,6 +7,10 @@ state.servers=fs.existsSync(live)?JSON.parse(fs.readFileSync(live,'utf8')):[{id:
 state.servers.push({id:'XX/auto/fixture:443',code:'XX',country:'Recomended Location',city:'Recomended City',cityCode:'auto',host:'fixture',port:443});
 contextBridge.exposeInMainWorld('fox',{
   call:async(channel,...args)=>{
+    if(channel==='apps')return {ok:true,data:[{id:process.platform==='darwin'?'Google Chrome':'chrome.exe',name:'Google Chrome'},{id:process.platform==='darwin'?'Firefox':'firefox.exe',name:'Firefox'}]};
+    if(channel==='appIcon')return {ok:true,data:require('electron').nativeImage.createFromPath(path.join(__dirname,'../assets/logo-light.png')).resize({width:32}).toDataURL()};
+    if(channel==='locationSort'){state.settings.locationSort=args[0];listener?.(state);}
+    if(channel==='login'){state.signedIn=true;state.email='alice@example.com';listener?.(state);}
     if(channel==='theme'){state.settings.theme=args[0];listener?.(state);}
     if(channel==='settings'){state.settings=args[0];listener?.(state);}
     if(channel==='ping'){if(args[0])state.latencies[args[0]]={ms:7,measuredAt:Date.now()};else state.latencies=Object.fromEntries(state.servers.map((s,i)=>[s.id,{ms:i===0?null:20+i*9,measuredAt:Date.now()}]));listener?.(state);}

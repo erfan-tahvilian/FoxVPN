@@ -1,5 +1,13 @@
 # v1.0.0 verification record
 
+## Cross-platform update — 2026-10-15
+
+- 19 desktop protocol, storage and routing tests pass. Coverage includes include/exclude routing on Windows and macOS, UDP isolation for selected apps, and migration and persistence of location order and routing preferences.
+- Renderer checks cover automatic preference saving, app search and selection, selected apps appearing first when reopened, account initials and circular avatar geometry. Native main-process checks cover preference persistence and restricted application icon access.
+- Windows application discovery was checked against installed shortcuts, registered executables and packaged apps. macOS discovers application bundles and includes their helper executables in routing rules.
+- The Android ARM64 build was tested on a physical Android 12 device. The tester confirmed working application traffic, split tunneling and stable background connectivity after the connection recovery and encrypted DNS changes. Other Android architectures receive build and emulator checks, rather than physical-device coverage.
+- Live desktop VPN routing for the new include mode still requires user testing. Configuration and automated protocol checks do not replace a live application-routing test.
+
 Checked on Windows x64 on 2026-10-11.
 
 ## Passed

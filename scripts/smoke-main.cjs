@@ -14,6 +14,13 @@ async function run(){
     const state=await win.webContents.executeJavaScript(`window.fox.call('state')`);
     assert(state.ok);assert.equal(state.data.connection,'disconnected');assert.equal(state.data.signedIn,false);
     const theme=await win.webContents.executeJavaScript(`window.fox.call('theme','light')`);assert(theme.ok);
+    assert((await win.webContents.executeJavaScript(`window.fox.call('locationSort','ping-desc')`)).ok);
+    await win.webContents.executeJavaScript(`new Promise(r=>{location.reload();setTimeout(r,200)})`).catch(()=>{});
+    if(win.webContents.isLoading())await new Promise(resolve=>win.webContents.once('did-finish-load',resolve));
+    const persisted=await win.webContents.executeJavaScript(`window.fox.call('state')`);assert.equal(persisted.data.settings.locationSort,'ping-desc');
+    const apps=await win.webContents.executeJavaScript(`window.fox.call('apps')`);assert(apps.ok&&Array.isArray(apps.data));
+    if(apps.data.length){const image=await win.webContents.executeJavaScript(`window.fox.call('appIcon',${JSON.stringify(apps.data[0].id)})`);assert(image.ok&&(image.data===null||image.data.startsWith('data:image/')));}
+    const deniedIcon=await win.webContents.executeJavaScript(`window.fox.call('appIcon','../../vault.bin')`);assert(deniedIcon.ok&&deniedIcon.data===null);
     assert(fs.existsSync('test-results/main-profile/vault.bin'));
     const reject=await win.webContents.executeJavaScript(`window.fox.call('settings',{socksPort:0})`);assert.equal(reject.ok,false);
     const noAuth=await win.webContents.executeJavaScript(`window.fox.call('account')`);assert.equal(noAuth.ok,false);

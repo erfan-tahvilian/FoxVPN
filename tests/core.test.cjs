@@ -76,3 +76,24 @@ test('macOS split tunneling uses native process names and automatic utun allocat
   assert(!bypass.includes('sing-box.exe'));
   for(const name of ['/Applications/App.app','bad; command','$(command)'])assert.throws(()=>validate({...DEFAULTS,excludedApps:[name]},'darwin'));
 });
+test('include mode routes only selected apps while keeping other TCP and UDP traffic direct',()=>{
+  for(const [platform,selected,other,own] of [['win32','chrome.exe','other.exe','Fox VPN.exe'],['darwin','Google Chrome','Safari','Fox VPN']]){
+    const config=engineConfig({...DEFAULTS,splitMode:'include',excludedApps:[selected]},'203.0.113.2',null,null,platform);
+    const route=(name,network)=>config.route.rules.find(rule=>rule.process_name?.includes(name)&&(!rule.network||rule.network===network));
+    assert.equal(config.route.final,'direct');assert.equal(route(selected,'tcp').outbound,'fox');assert.equal(route(selected,'udp').action,'reject');assert.equal(route(own,'tcp').outbound,'direct');assert.equal(route(other,'tcp'),undefined);assert.equal(route(other,'udp'),undefined);
+    const empty=engineConfig({...DEFAULTS,splitMode:'include'},'203.0.113.2',null,null,platform);
+    assert(!empty.route.rules.some(rule=>rule.outbound==='fox'));
+  }
+});
+test('location order and split mode migrate safely and survive a vault reload',()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fox-preferences-'));
+  const safe={isEncryptionAvailable:()=>true,encryptString:s=>Buffer.from(s),decryptString:b=>b.toString()};
+  try{
+    const old={...DEFAULTS};delete old.locationSort;delete old.splitMode;
+    fs.writeFileSync(path.join(dir,'vault.bin'),JSON.stringify({auth:null,settings:old}));
+    const store=new Store(dir,safe);assert.equal(store.settings.locationSort,'ping-asc');assert.equal(store.settings.splitMode,'exclude');
+    store.setSettings({...store.settings,locationSort:'name-desc',splitMode:'include',excludedApps:[process.platform==='darwin'?'Safari':'chrome.exe']});
+    const reloaded=new Store(dir,safe);assert.equal(reloaded.settings.locationSort,'name-desc');assert.equal(reloaded.settings.splitMode,'include');assert.equal(reloaded.settings.excludedApps.length,1);
+    assert.throws(()=>validate({...DEFAULTS,locationSort:'invalid'}));assert.throws(()=>validate({...DEFAULTS,splitMode:'invalid'}));
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

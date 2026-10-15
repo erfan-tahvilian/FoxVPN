@@ -17,6 +17,8 @@ app.whenReady().then(async()=>{
     status('Renderer loaded');
     await win.webContents.executeJavaScript(`new Promise(r=>setTimeout(r,250))`);
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('status-label').textContent`),'Disconnected');
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('server-sort').value`),'ping-asc');
+    assert.deepEqual(await win.webContents.executeJavaScript(`[...document.querySelector('#server-sort').options].map(o=>o.value)`),['ping-asc','ping-desc','name-asc','name-desc']);
     assert(await win.webContents.executeJavaScript(`new Set([...document.querySelectorAll('[id]')].map(e=>e.id)).size===document.querySelectorAll('[id]').length`));
     fs.mkdirSync('test-results',{recursive:true});
     assert.equal(await win.webContents.executeJavaScript(`document.querySelector('.engine-badge')`),null);
@@ -50,6 +52,19 @@ app.whenReady().then(async()=>{
         await win.webContents.executeJavaScript(`document.getElementById('server-sort').value='name-asc';document.getElementById('server-sort').dispatchEvent(new Event('change'));new Promise(r=>setTimeout(r,150))`);
       }
       if(page==='settings') {
+        assert.equal(await win.webContents.executeJavaScript(`document.querySelector('#settings-form button[type="submit"]')`),null);
+        await win.webContents.executeJavaScript(`document.getElementById('split-mode').value='include';document.getElementById('split-mode').dispatchEvent(new Event('change',{bubbles:true}));new Promise(r=>setTimeout(r,100))`);
+        assert.equal(await win.webContents.executeJavaScript(`currentState.settings.splitMode`),'include');
+        await win.webContents.executeJavaScript(`document.getElementById('choose-apps').click();new Promise(r=>setTimeout(r,100))`);
+        assert(await win.webContents.executeJavaScript(`document.querySelector('#app-picker').open&&document.querySelectorAll('.app-picker-row').length===2`));
+        await win.webContents.executeJavaScript(`document.querySelector('.app-picker-row:last-child input').click();new Promise(r=>setTimeout(r,100))`);
+        assert.equal(await win.webContents.executeJavaScript(`currentState.settings.excludedApps.length`),1);
+        await win.webContents.executeJavaScript(`document.querySelector('#app-picker .primary').click();document.getElementById('choose-apps').click();new Promise(r=>setTimeout(r,100))`);
+        assert(await win.webContents.executeJavaScript(`document.querySelector('.app-picker-row input').checked`));
+        fs.writeFileSync('test-results/app-picker.png',(await win.webContents.capturePage()).toPNG());
+        await win.webContents.executeJavaScript(`document.querySelector('#app-picker input[type=search]').value='Chrome';document.querySelector('#app-picker input[type=search]').dispatchEvent(new Event('input'))`);
+        assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.app-picker-row').length`),1);
+        await win.webContents.executeJavaScript(`document.querySelector('#app-picker .primary').click()`);
         assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('select')].every(e=>e.hidden)&&document.querySelectorAll('[role=combobox]').length===document.querySelectorAll('select').length`));
         await win.webContents.executeJavaScript(`document.getElementById('theme-trigger').click()`);
         fs.writeFileSync('test-results/settings-dropdown.png',(await win.webContents.capturePage()).toPNG());
@@ -60,6 +75,9 @@ app.whenReady().then(async()=>{
       fs.writeFileSync(`test-results/${page}.png`,(await win.webContents.capturePage()).toPNG());
     }
     await win.webContents.executeJavaScript(`document.querySelector('[data-page="locations"]').click(); document.querySelector('.server-choice').click(); new Promise(r=>setTimeout(r,100))`);
+    await win.webContents.executeJavaScript(`window.fox.call('login',{});new Promise(r=>setTimeout(r,100))`);
+    assert.equal(await win.webContents.executeJavaScript(`document.querySelector('.avatar').textContent`),'A');
+    assert(await win.webContents.executeJavaScript(`(()=>{const r=document.querySelector('.avatar').getBoundingClientRect();return Math.abs(r.width-r.height)<1&&getComputedStyle(document.body).userSelect==='none'})()`));
     assert(await win.webContents.executeJavaScript(`document.querySelector('#selected-symbol .country-flag').naturalWidth>0`));
     fs.writeFileSync('test-results/selected-location.png',(await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`window.fox.call('select','REC').then(()=>window.fox.call('connect'));new Promise(r=>setTimeout(r,100))`);

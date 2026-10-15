@@ -2,6 +2,8 @@
 
 VPN client for Windows, macOS and Android.
 
+Application-based split tunneling supports both selected-app and exclusion modes, with a searchable app list. Private DNS, location latency checks and saved connection preferences are available across all three platforms. Android includes a Quick Settings tile and background connection controls.
+
 ## Downloads
 
 | Platform | Device | Download |

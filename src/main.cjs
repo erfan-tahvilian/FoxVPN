@@ -12,6 +12,8 @@ const {Tunnel}=require('./lib/tunnel.cjs');
 const {measure,measureAll}=require('./lib/latency.cjs');
 const {engineConfig}=require('./lib/settings.cjs');
 const {MacEngine,networkDns:macNetworkDns}=require('./lib/mac-engine.cjs');
+const {ApplicationCatalog}=require('./lib/applications.cjs');
+const applications=new ApplicationCatalog(app);
 const mac=process.platform==='darwin';
 let macEngine;
 let window,tray,store,guardian,tunnel,pendingTunnel,engine,refreshTimer,busy=false,quitting=false,generation=0;
@@ -42,7 +44,7 @@ async function launchEngine(candidate, epoch) {
     networkDns=mac?await macNetworkDns():await new Promise((resolve,reject)=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command',"Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -or $_.IPv6DefaultGateway } | ForEach-Object { $_.DNSServer.ServerAddresses } | Select-Object -First 1"],{windowsHide:true,timeout:10000},(e,out)=>{const ip=out.trim();if(e||!net.isIP(ip))reject(Error('Cannot identify the network DNS resolver. Choose a DoH provider or custom DNS.'));else resolve(ip);}));
   }
   if(epoch!==generation)throw Error('Connection cancelled');
-  const config=engineConfig(store.settings,edgeIP,proxyIP,networkDns);
+  const config=engineConfig({...store.settings,excludedApps:await applications.expand(store.settings.excludedApps)},edgeIP,proxyIP,networkDns);
   if(mac){
     const controller=new MacEngine(app.getPath('userData'),executable,()=>{if(macEngine===controller&&connection==='connected')fail(Error('The macOS tunnel engine stopped unexpectedly.'));});
     macEngine=controller;await controller.start(config);
@@ -99,6 +101,7 @@ async function connect() {
   connection='connecting';lastError=null;exit=null;emit();
   try {
     if(!store.auth)throw Error('Sign in to your Firefox account first.');
+    if(!store.settings.proxyOnly&&store.settings.splitMode==='include'&&!store.settings.excludedApps.length)throw Error('Select at least one app in Split tunneling before connecting.');
     if(!mac&&!store.settings.proxyOnly&&!await admin())throw Error('Run Fox VPN as administrator for system VPN, or enable proxy-only mode in Settings.');
     if(!servers.length)await refreshServers();
     check();
@@ -164,7 +167,10 @@ else {
     });
     handle('account',()=>guardian.account());
     handle('activate',async()=>{const data=await guardian.request('activate','POST');return data.data;});
-    handle('settings',async settings=>{if(connection!=='disconnected')throw Error('Disconnect before changing connection settings.');if(settings.clearUpstreamPassword&&settings.upstream)settings.upstream.password='';else if(settings.upstream?.password==='')settings.upstream.password=store.settings.upstream.password;delete settings.clearUpstreamPassword;store.setSettings(settings);emit();});
+    handle('settings',async settings=>{if(connection!=='disconnected')throw Error('Disconnect before changing connection settings.');if(settings.clearUpstreamPassword&&settings.upstream)settings.upstream.password='';else if(settings.upstream?.password==='')settings.upstream.password=store.settings.upstream.password;delete settings.clearUpstreamPassword;store.setSettings({...settings,locationSort:store.settings.locationSort});emit();});
+    handle('locationSort',locationSort=>{store.setSettings({...store.settings,locationSort});emit();});
+    handle('apps',()=>applications.list());
+    handle('appIcon',id=>applications.icon(id));
     handle('select',id=>{if(connection!=='disconnected')throw Error('Disconnect before choosing another server.');if(id!=='REC'&&!servers.some(s=>s.id===id))throw Error('Unknown server.');store.setSettings({...store.settings,serverId:id});emit();});
     handle('theme',theme=>{store.setSettings({...store.settings,theme});emit();});
     handle('connect',async()=>{if(busy)throw Error('Wait for the current operation.');busy=true;emit();try{await connect();}finally{busy=false;emit();}});

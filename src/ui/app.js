@@ -71,6 +71,7 @@ function render(s) {
   $('ping-status').textContent=s.pinging?`Checking endpoints · ${measured} / ${s.servers.length}`:measured?'TCP latency · current network path · Refresh the check after changing networks.':'TCP latency from your current network path. Run a check to compare locations.';
   const serverKey=JSON.stringify([s.servers,s.latencies,s.pinging,s.pingingIds])+s.settings.serverId;if(serverKey!==lastServers){lastServers=serverKey;renderServers();}
   const logKey=JSON.stringify(s.logs);if(logKey!==lastLogs){lastLogs=logKey;renderLogs();}
+  window.desktopUI?.state(s);
 }
 function icon(name) {const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#glyph-'+name);svg.append(use);return svg;}
 function flag(code,country) {
@@ -181,7 +182,7 @@ function readSettings(){
   settings.clearUpstreamPassword=$('clearUpstreamPassword').checked;
   return settings;
 }
-$('settings-form').addEventListener('submit',action(async e=>{
+if(!window.desktopUI)$('settings-form').addEventListener('submit',action(async e=>{
   e.preventDefault();const settings=readSettings();
   await call('settings',settings);$('upstreamPassword').value='';$('clearUpstreamPassword').checked=false;toast('Preferences saved.');
 }));

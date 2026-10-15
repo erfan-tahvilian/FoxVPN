@@ -33,14 +33,22 @@ New-Item -ItemType Directory -Path $foxBuild,$foxSigningTools,$foxOutput -Force 
 $foxPreviousToken = $env:GH_TOKEN
 $foxDownload = Join-Path $foxRoot ('.tools/android-download-' + $RunId + '-' + [guid]::NewGuid().ToString('N'))
 $foxArtifactName = if ($Architectures.Count -eq 1 -and $Architectures[0] -eq 'arm64-v8a') { 'Android-unsigned-arm64' } else { 'Android-unsigned-build' }
+$foxSignerHash='00ef9948f843fe395d2440ae3ef41405b8040a6d5d46493bd1902ac0ee6deae7'
+$foxCachedSigner=Join-Path $foxSigningTools 'apksigner.jar'
 try {
     $env:GH_TOKEN = $foxCredentialValues['password']
-    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name $foxArtifactName --dir (Join-Path $foxDownload 'build')
-    if ($LASTEXITCODE -ne 0) { throw 'Could not download the verified Android build.' }
-    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-signing-tools --dir (Join-Path $foxDownload 'tools')
-    if ($LASTEXITCODE -ne 0) { throw 'Could not download signing tools.' }
-    Copy-Item -Path (Join-Path $foxDownload 'build/*') -Destination $foxBuild -Recurse -Force
-    Copy-Item -Path (Join-Path $foxDownload 'tools/*') -Destination $foxSigningTools -Recurse -Force
+    $foxMissing=@($Architectures | Where-Object { @(Get-ChildItem -LiteralPath $foxBuild -Recurse -File -Filter ('app-' + $_ + '-release-unsigned.apk')).Count -ne 1 })
+    if($foxMissing.Count -gt 0){
+        & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name $foxArtifactName --dir (Join-Path $foxDownload 'build')
+        if ($LASTEXITCODE -ne 0) { throw 'Could not download the verified Android build.' }
+        Copy-Item -Path (Join-Path $foxDownload 'build/*') -Destination $foxBuild -Recurse -Force
+    }
+    if(!(Test-Path -LiteralPath $foxCachedSigner) -or (Get-FileHash -LiteralPath $foxCachedSigner -Algorithm SHA256).Hash.ToLowerInvariant() -ne $foxSignerHash){
+        & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-signing-tools --dir (Join-Path $foxDownload 'tools')
+        if ($LASTEXITCODE -ne 0) { throw 'Could not download signing tools.' }
+        Copy-Item -Path (Join-Path $foxDownload 'tools/*') -Destination $foxSigningTools -Recurse -Force
+    }
+    if((Get-FileHash -LiteralPath $foxCachedSigner -Algorithm SHA256).Hash.ToLowerInvariant() -ne $foxSignerHash){throw 'Android signing tool checksum mismatch.'}
 } finally { $env:GH_TOKEN = $foxPreviousToken }
 Add-Type -AssemblyName System.Security.Cryptography.ProtectedData
 $foxPassword = [System.Text.Encoding]::UTF8.GetString([System.Security.Cryptography.ProtectedData]::Unprotect([System.IO.File]::ReadAllBytes($foxPasswordFile),$null,[System.Security.Cryptography.DataProtectionScope]::CurrentUser))
