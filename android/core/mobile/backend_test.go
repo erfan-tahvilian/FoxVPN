@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httptrace"
 	"strconv"
 	"strings"
 	"sync"
@@ -258,13 +259,53 @@ func TestHealthReplacesUnresponsiveHTTP2Session(t *testing.T) {
 		return stream.Close()
 	}, func() { tunnel.discardSession(previous) })
 	if err != nil || checks != 2 || tunnel.current == previous { t.Fatalf("Transport recovery failed: %v", err) }
-	if !previous.State().Closed { t.Fatal("Unresponsive session remained open") }
+	deadline := time.Now().Add(time.Second)
+	for !previous.State().Closed && time.Now().Before(deadline) { time.Sleep(time.Millisecond) }
+	if !previous.State().Closed { t.Fatal("Idle retired session remained open") }
 	replacement := tunnel.current
 	tunnel.discardSession(previous)
 	if tunnel.current != replacement { t.Fatal("A stale failure discarded the replacement session") }
 	body, err := tunnel.request(ctx, origin.URL, nil, "")
 	if err != nil || string(body) != "tunneled-response" { t.Fatalf("Recovered transport did not carry HTTPS: %s %v", body, err) }
 }
+func TestEstablishedStreamSurvivesDialCancellationAndSessionRecovery(t *testing.T) {
+	tunnel, origin := protocolTunnel(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	stream, err := tunnel.open(ctx, strings.TrimPrefix(origin.URL, "https://"))
+	if err != nil { t.Fatal(err) }
+	defer stream.Close()
+	previous := tunnel.current
+	cancel()
+	tunnel.discardSession(previous)
+	body, err := tunnel.request(context.Background(), origin.URL, nil, "")
+	if err != nil || string(body) != "tunneled-response" { t.Fatalf("Replacement stream failed: %s %v", body, err) }
+	if previous.State().Closed { t.Fatal("Recovery killed an established stream") }
+	host, _, _ := net.SplitHostPort(strings.TrimPrefix(origin.URL, "https://"))
+	secure := tls.Client(stream, &tls.Config{RootCAs: tunnel.b.roots, ServerName: host, MinVersion: tls.VersionTLS12})
+	handshakeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+	defer stop()
+	if err = secure.HandshakeContext(handshakeCtx); err != nil { t.Fatal(err) }
+	if _, err = io.WriteString(secure, "GET / HTTP/1.1\r\nHost: "+host+"\r\nConnection: close\r\n\r\n"); err != nil { t.Fatal(err) }
+	response, err := http.ReadResponse(bufio.NewReader(secure), nil)
+	if err != nil { t.Fatal(err) }
+	defer response.Body.Close()
+	body, err = io.ReadAll(response.Body)
+	if err != nil || string(body) != "tunneled-response" { t.Fatalf("Original stream was interrupted: %s %v", body, err) }
+}
+
+func TestTunneledRequestsReuseTLSAfterCallerCancellation(t *testing.T) {
+	tunnel, origin := protocolTunnel(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	_, err := tunnel.request(ctx, origin.URL, nil, "")
+	cancel()
+	if err != nil { t.Fatal(err) }
+	reused := false
+	ctx = httptrace.WithClientTrace(context.Background(), &httptrace.ClientTrace{GotConn: func(info httptrace.GotConnInfo) { reused = info.Reused }})
+	body, err := tunnel.request(ctx, origin.URL, nil, "")
+	if err != nil || string(body) != "tunneled-response" || !reused { t.Fatalf("TLS reuse failed: reused=%t body=%s err=%v", reused, body, err) }
+}
+
 func TestStaleTunnelFailureCannotDisconnectNewSession(t *testing.T) {
 	tunnel, _ := protocolTunnel(t)
 	if err := tunnel.start(); err != nil {

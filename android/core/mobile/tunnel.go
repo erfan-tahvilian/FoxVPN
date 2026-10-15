@@ -37,6 +37,8 @@ type proxyTunnel struct {
 	expiry, up, down atomic.Int64
 	listener         net.Listener
 	transport        *http2.Transport
+	requestTransport *http.Transport
+	requestClient    *http.Client
 	sockets          map[io.Closer]struct{}
 	closed           bool
 }
@@ -69,6 +71,16 @@ func newTunnel(b *Backend, settings, server object, token string, ctx context.Co
 		}
 		return tlsConn, nil
 	}}
+	t.requestTransport = &http.Transport{DialTLSContext: func(ctx context.Context, _, address string) (net.Conn, error) {
+		stream, err := t.open(ctx, address)
+		if err != nil { return nil, err }
+		host, _, err := net.SplitHostPort(address)
+		if err != nil { stream.Close(); return nil, err }
+		conn := tls.Client(stream, &tls.Config{RootCAs: b.roots, ServerName: host, MinVersion: tls.VersionTLS12})
+		if err = conn.HandshakeContext(ctx); err != nil { stream.Close(); return nil, err }
+		return conn, nil
+	}, MaxIdleConns: 32, MaxIdleConnsPerHost: 8, MaxConnsPerHost: 8, IdleConnTimeout: time.Minute}
+	t.requestClient = &http.Client{Transport: t.requestTransport, Timeout: 15*time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return t
 }
 func (t *proxyTunnel) setToken(token string) {
@@ -161,8 +173,14 @@ func (t *proxyTunnel) discardSession(expected *http2.ClientConn) {
 	t.current = nil
 	t.currentSocket = nil
 	t.mu.Unlock()
-	expected.Close()
-	if socket != nil { t.untrack(socket) }
+	// Retire the connection for new requests without destroying working
+	// CONNECT streams when an edge delays PING or a health probe.
+	expected.SetDoNotReuse()
+	go func() {
+		expected.Shutdown(t.ctx)
+		expected.Close()
+		if socket != nil { t.untrack(socket) }
+	}()
 }
 // An idle HTTP/2 session can close or fail to acknowledge PING while a fresh
 // authenticated CONNECT still works. Check the data path before declaring loss.
@@ -295,7 +313,11 @@ func (s *streamConn) SetDeadline(time.Time) error      { return nil }
 func (s *streamConn) SetReadDeadline(time.Time) error  { return nil }
 func (s *streamConn) SetWriteDeadline(time.Time) error { return nil }
 func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error) {
-	child, cancel := context.WithCancel(ctx)
+	// A dial context controls connection establishment, not the lifetime of
+	// the returned connection. Keep established streams until Close or VPN stop.
+	child, cancel := context.WithCancel(t.ctx)
+	stopDialCancel := context.AfterFunc(ctx, cancel)
+	defer stopDialCancel()
 	reader, writer := io.Pipe()
 	endpoint := net.JoinHostPort(str(t.server, "host"), strconv.Itoa(int(num(t.server, "port"))))
 	req, err := http.NewRequestWithContext(child, "CONNECT", "https://"+endpoint, reader)
@@ -319,6 +341,13 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 	}
 	timer.Stop()
 	if err != nil {
+		cancel()
+		reader.Close()
+		writer.Close()
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		response.Body.Close()
 		cancel()
 		reader.Close()
 		writer.Close()
@@ -462,25 +491,6 @@ func (t *proxyTunnel) accept(conn net.Conn) error {
 	return nil
 }
 func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, contentType string) ([]byte, error) {
-	transport := &http.Transport{DialTLSContext: func(ctx context.Context, _, addr string) (net.Conn, error) {
-		stream, err := t.open(ctx, addr)
-		if err != nil {
-			return nil, err
-		}
-		host, _, err := net.SplitHostPort(addr)
-		if err != nil {
-			stream.Close()
-			return nil, err
-		}
-		conn := tls.Client(stream, &tls.Config{RootCAs: t.b.roots, ServerName: host, MinVersion: tls.VersionTLS12})
-		if err = conn.HandshakeContext(ctx); err != nil {
-			stream.Close()
-			return nil, err
-		}
-		return conn, nil
-	}}
-	defer transport.CloseIdleConnections()
-	client := &http.Client{Transport: transport, Timeout: 15 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	method := "GET"
 	if body != nil {
 		method = "POST"
@@ -493,7 +503,7 @@ func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, 
 		req.Header.Set("Content-Type", contentType)
 		req.Header.Set("Accept", contentType)
 	}
-	response, err := client.Do(req)
+	response, err := t.requestClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -513,7 +523,7 @@ func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byt
 	if len(targets) > 0 && str(t.settings, "customDns") == "" {
 		// Resolve the provider at the remote proxy, like other tunneled HTTPS
 		// destinations. A blocked anycast IP must not pin DNS to a dead route.
-		return exchangeEncryptedDNS(ctx, targets, 4*time.Second, func(attempt context.Context, provider string) ([]byte, error) {
+		return exchangeEncryptedDNS(ctx, targets, 5*time.Second, func(attempt context.Context, provider string) ([]byte, error) {
 			return t.request(attempt, "https://"+provider+"/dns-query", query, "application/dns-message")
 		})
 	}
@@ -547,17 +557,42 @@ func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byt
 }
 
 func exchangeEncryptedDNS(ctx context.Context, providers []string, timeout time.Duration, exchange func(context.Context, string) ([]byte, error)) ([]byte, error) {
-	for _, provider := range providers {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		// Each provider gets its own budget so a stalled request leaves time
-		// for the next provider within the caller's overall DNS deadline.
-		attempt, cancel := context.WithTimeout(ctx, timeout)
-		result, err := exchange(attempt, provider)
-		cancel()
-		if err == nil && len(result) >= 12 && len(result) <= 4096 {
-			return result, nil
+	if err := ctx.Err(); err != nil { return nil, err }
+	lookup, cancelLookup := context.WithCancel(ctx)
+	defer cancelLookup()
+	type answer struct { data []byte; err error }
+	results := make(chan answer, len(providers))
+	start := func(provider string) {
+		go func() {
+			attempt, cancel := context.WithTimeout(lookup, timeout)
+			defer cancel()
+			data, err := exchange(attempt, provider)
+			results <- answer{data, err}
+		}()
+	}
+	// Give the preferred provider a head start. If it stalls, overlap the
+	// next attempt rather than exhausting Android's entire DNS deadline.
+	next, pending := 0, 0
+	delay := timeout / 4
+	if delay <= 0 { delay = time.Nanosecond }
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	launch := func() {
+		start(providers[next]); next++; pending++
+		timer.Reset(delay)
+	}
+	if len(providers) > 0 { launch() }
+	for pending > 0 {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case result := <-results:
+			pending--
+			if ctx.Err() != nil { return nil, ctx.Err() }
+			if result.err == nil && len(result.data) >= 12 && len(result.data) <= 4096 { return result.data, nil }
+			if next < len(providers) { launch() }
+		case <-timer.C:
+			if next < len(providers) { launch() }
 		}
 	}
 	if err := ctx.Err(); err != nil {
@@ -670,4 +705,5 @@ func (t *proxyTunnel) close() {
 		s.Close()
 	}
 	t.transport.CloseIdleConnections()
+	t.requestTransport.CloseIdleConnections()
 }
