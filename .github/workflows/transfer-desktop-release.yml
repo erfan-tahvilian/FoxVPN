@@ -1,6 +1,7 @@
 name: Transfer existing desktop release
 on:
-  workflow_dispatch:
+  repository_dispatch:
+    types: [transfer-desktop-release]
 permissions:
   contents: write
 jobs:
@@ -12,7 +13,7 @@ jobs:
       - name: Verify and transfer desktop release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TRANSFER: ${{ secrets.FOXVPN_RELEASE_TRANSFER }}
+          RELEASE_TRANSFER: ${{ toJSON(github.event.client_payload.manifest) }}
         shell: python
         run: |
           import hashlib, json, os, pathlib, subprocess, time, urllib.request
