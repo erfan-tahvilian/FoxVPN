@@ -1,0 +1,65 @@
+name: Transfer existing desktop release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and transfer desktop release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TRANSFER: ${{ secrets.FOXVPN_RELEASE_TRANSFER }}
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, subprocess, time, urllib.request
+          manifest = json.loads(os.environ['RELEASE_TRANSFER'])
+          repo = os.environ['GITHUB_REPOSITORY']
+          assert repo.lower() == 'erfan-tahvilian/foxvpn'
+          assert manifest['tag'] == 'v1.0.0'
+          folder = pathlib.Path('release-transfer')
+          folder.mkdir()
+          def gh(*args):
+              return subprocess.run(['gh', *args], check=True, capture_output=True, text=True).stdout
+          files = []
+          expected = {}
+          for asset in manifest['assets']:
+              name, url = asset['name'], asset['url']
+              assert pathlib.Path(name).name == name and 'android' not in name.lower()
+              assert name == 'SHA256SUMS.txt' or name == 'sing-box-1.12.0-source.tar.gz' or name.startswith('FoxVPN-1.0.0-Windows-') or name.startswith('FoxVPN-1.0.0-macOS-')
+              assert url.startswith('https://')
+              print('::add-mask::' + url, flush=True)
+              target = folder / name
+              for attempt in range(3):
+                  try:
+                      offset = target.stat().st_size if target.exists() else 0
+                      request = urllib.request.Request(url, headers={'Range': f'bytes={offset}-'} if offset else {})
+                      with urllib.request.urlopen(request, timeout=90) as response:
+                          mode = 'ab' if offset and response.status == 206 else 'wb'
+                          with target.open(mode) as output:
+                              while chunk := response.read(1024 * 1024):
+                                  output.write(chunk)
+                      digest = hashlib.file_digest(target.open('rb'), 'sha256').hexdigest()
+                      assert target.stat().st_size == asset['size'] and digest == asset['sha256']
+                      break
+                  except Exception:
+                      if attempt == 2:
+                          raise RuntimeError('Could not verify asset ' + name) from None
+                      time.sleep(2)
+              expected[name] = asset['sha256']
+              files.append(str(target))
+              print('Verified ' + name, flush=True)
+          notes = folder / 'release-notes.md'
+          notes.write_text(manifest['body'], encoding='utf-8')
+          release = subprocess.run(['gh', 'release', 'view', manifest['tag'], '--repo', repo], capture_output=True)
+          if release.returncode:
+              gh('release', 'create', manifest['tag'], '--repo', repo, '--verify-tag', '--draft', '--title', manifest['name'], '--notes-file', str(notes))
+          gh('release', 'upload', manifest['tag'], *files, '--repo', repo, '--clobber')
+          transferred = json.loads(gh('api', f'repos/{repo}/releases/tags/' + manifest['tag']))
+          actual = {item['name']: item['digest'].removeprefix('sha256:') for item in transferred['assets']}
+          assert actual == expected, 'Transferred asset digests differ from the original release'
+          gh('release', 'edit', manifest['tag'], '--repo', repo, '--draft=false', '--latest')
+          print('Transferred and verified all desktop release assets.', flush=True)

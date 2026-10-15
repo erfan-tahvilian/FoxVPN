@@ -1,5 +1,7 @@
 # Fox VPN workspace preferences
 
+- The active GitHub repository is `erfan-tahvilian/FoxVPN` (also referred to as FoxVpn). Push all ongoing work there. The renamed private repository `erfan-tahvilian/FoxVPN2` is only the migration source.
+
 - Apply requested changes to all supported platforms. After publishing updates, install the latest Windows x64 release on the user’s Windows 11 x64 computer at `D:\Program Files\FoxVPN` and verify it. Never install macOS packages on this Windows computer.
 - Keep the application UI in English, with orange dark and light themes and country flags beside locations.
 - Write public documentation, release notes and application copy in professional product language. Focus on supported capabilities, installation and information needed by users; omit conversational design history, cosmetic implementation details and internal button/link changes. Keep engineering details in developer documentation.
