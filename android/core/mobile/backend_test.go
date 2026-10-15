@@ -203,6 +203,24 @@ func TestReadyRequiresLiveTunnelAndCancellation(t *testing.T) {
 		t.Fatal("Ready revived a cancelled connection")
 	}
 }
+func TestHealthConfirmsDataPathAfterFailedPing(t *testing.T) {
+	probeCalls := 0
+	probe := func(context.Context) error { probeCalls++; return nil }
+	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return nil }, probe); err != nil || probeCalls != 0 {
+		t.Fatal("Healthy PING must not create unnecessary traffic")
+	}
+	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return io.EOF }, probe); err != nil || probeCalls != 1 {
+		t.Fatal("A working data path must survive an idle-session PING failure")
+	}
+	failure := errors.New("data path unavailable")
+	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return io.EOF }, func(context.Context) error { return failure }); !errors.Is(err, failure) {
+		t.Fatal("A failed data path must still be reported")
+	}
+	ctx, cancel := context.WithCancel(context.Background()); cancel()
+	if err := checkTunnelHealth(ctx, func(context.Context) error { return context.Canceled }, probe); !errors.Is(err, context.Canceled) || probeCalls != 1 {
+		t.Fatal("A cancelled tunnel must not start a fallback probe")
+	}
+}
 func TestConnectionLifecycleWithRealEdge(t *testing.T) {
 	tunnel, _ := protocolTunnel(t)
 	if err := tunnel.start(); err != nil {

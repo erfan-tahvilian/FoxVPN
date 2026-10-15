@@ -130,15 +130,30 @@ func (t *proxyTunnel) session(ctx context.Context) (*http2.ClientConn, error) {
 	return session, nil
 }
 func (t *proxyTunnel) health(ctx context.Context) error {
-	session, err := t.session(ctx)
-	if err != nil {
-		return err
-	}
-	return session.Ping(ctx)
+	return checkTunnelHealth(ctx, func(pingCtx context.Context) error {
+		session, err := t.session(pingCtx)
+		if err != nil { return err }
+		return session.Ping(pingCtx)
+	}, func(probeCtx context.Context) error {
+		stream, err := t.open(probeCtx, "www.cloudflare.com:443")
+		if err != nil { return err }
+		return stream.Close()
+	})
+}
+// An idle HTTP/2 session can close or fail to acknowledge PING while a fresh
+// authenticated CONNECT still works. Check the data path before declaring loss.
+func checkTunnelHealth(ctx context.Context, ping, probe func(context.Context) error) error {
+	pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	err := ping(pingCtx)
+	cancel()
+	if err == nil { return nil }
+	if ctx.Err() != nil { return ctx.Err() }
+	return probe(ctx)
 }
 func (t *proxyTunnel) monitor() {
 	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
+	failures := 0
 	for {
 		select {
 		case <-t.ctx.Done():
@@ -148,6 +163,9 @@ func (t *proxyTunnel) monitor() {
 			err := t.health(ctx)
 			cancel()
 			if err != nil && t.ctx.Err() == nil {
+				failures++
+				t.b.log("warn", fmt.Sprintf("Connection health check failed (%d/3): %v", failures, err))
+				if failures < 3 { continue }
 				t.b.mu.Lock()
 				active := t.b.tunnel == t && t.b.connection == "connected"
 				t.b.mu.Unlock()
@@ -155,6 +173,10 @@ func (t *proxyTunnel) monitor() {
 					t.b.failTunnel(t, "VPN connection interrupted. Reconnect to restore your connection.")
 				}
 				return
+			}
+			if err == nil && failures > 0 {
+				failures = 0
+				t.b.log("info", "Connection health recovered")
 			}
 		}
 	}

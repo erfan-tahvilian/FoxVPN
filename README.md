@@ -105,7 +105,7 @@ Press the connect button again to disconnect. On desktop, closing the window kee
 
 ### Quick Settings on Android
 
-After signing in and approving your first VPN connection, add **Fox VPN** to your Quick Settings panel. Use **Add Quick Settings tile** in the app on supported Android versions, or edit the panel manually. Tap the tile to connect or disconnect; its highlighted state indicates an active connection.
+After signing in and approving your first VPN connection, edit your Quick Settings panel and add **Fox VPN**. Tap the tile to connect or disconnect; its highlighted state indicates an active connection.
 
 <details>
 <summary><strong>Use proxy-only mode</strong></summary>

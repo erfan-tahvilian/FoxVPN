@@ -3,12 +3,9 @@ package com.foxvpn.android;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.StatusBarManager;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.net.VpnService;
 import android.os.Build;
@@ -27,7 +24,7 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final int VPN_PERMISSION = 1, NOTIFICATION_PERMISSION = 2, EXPORT = 3;
     private static final String ORIGIN = "https://appassets.androidplatform.net";
-    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","addTile","locationSort");
+    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","locationSort");
     private static final Set<String> LOCATION_SORTS = Set.of("ping-asc","ping-desc","name-asc","name-desc");
     WebView web;
     private boolean loaded, pendingConnect;
@@ -156,7 +153,6 @@ public final class MainActivity extends Activity {
                             app().main.post(() -> startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,"FoxVPN-diagnostics.txt"),EXPORT));
                             respond(id,envelope(true,null));break;
                         case "chooseApps": app().main.post(MainActivity.this::chooseApps);respond(id,envelope(true,null));break;
-                        case "addTile": app().main.post(MainActivity.this::addTile);respond(id,envelope(true,null));break;
                         default:respond(id,app().backend.call(channel,arguments));break;
                     }
                 }catch(Exception e){respond(id,envelope(false,e.getMessage()==null?"Request failed":e.getMessage()));}
@@ -180,10 +176,6 @@ public final class MainActivity extends Activity {
         super.onActivityResult(request,result,data);
         if(request==VPN_PERMISSION){if(result==RESULT_OK)FoxVpnService.connect(this);else Toast.makeText(this,"VPN permission is required to connect.",Toast.LENGTH_SHORT).show();}
         if(request==EXPORT&&result==RESULT_OK&&data!=null&&data.getData()!=null&&exportText!=null){String text=exportText;exportText=null;app().actions.execute(() -> {try(java.io.OutputStream stream=getContentResolver().openOutputStream(data.getData())){if(stream==null)throw new java.io.IOException();stream.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));}catch(Exception e){app().main.post(() -> Toast.makeText(this,"Could not export diagnostics.",Toast.LENGTH_SHORT).show());}});}
-    }
-    private void addTile(){
-        if(Build.VERSION.SDK_INT>=33)getSystemService(StatusBarManager.class).requestAddTileService(new ComponentName(this,FoxTileService.class),"Fox VPN",Icon.createWithResource(this,R.drawable.ic_fox_tile),getMainExecutor(),result -> {});
-        else Toast.makeText(this,"Edit Quick Settings and add the Fox VPN tile.",Toast.LENGTH_LONG).show();
     }
     private void chooseApps(){
         if(!"disconnected".equals(app().connection()))return;

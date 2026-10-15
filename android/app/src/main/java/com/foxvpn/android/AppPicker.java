@@ -48,7 +48,7 @@ final class AppPicker {
             String name=info.activityInfo.packageName;
             if(!name.equals(ownPackage)&&seen.add(name))apps.add(new App(info.loadLabel(context.getPackageManager()).toString(),name,info));
         }
-        apps.sort(Comparator.comparing(App::name,String.CASE_INSENSITIVE_ORDER));filtered.addAll(apps);
+        apps.sort(Comparator.comparing((App app)->!selected.contains(app.packageName)).thenComparing(App::name,String.CASE_INSENSITIVE_ORDER));filtered.addAll(apps);
     }
     private int dp(int value){return Math.round(value*context.getResources().getDisplayMetrics().density);}
     void show(){

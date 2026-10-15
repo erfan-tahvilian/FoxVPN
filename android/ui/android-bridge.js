@@ -56,8 +56,6 @@
         }catch(error){notice.textContent='Could not save changes.';toast(error.message);}
       });
     });
-    const tile=document.createElement('button');tile.type='button';tile.className='secondary';tile.textContent='Add Quick Settings tile';tile.addEventListener('click',()=>window.fox.call('addTile'));
-    document.querySelector('.settings-card').append(tile);
     const about=document.createElement('div');about.className='settings-card';
     const heading=document.createElement('h3');heading.textContent='About Fox VPN';
     const version=document.createElement('p');version.textContent='Version 1.0.0';

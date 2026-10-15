@@ -51,7 +51,7 @@ public class AndroidIntegrationTest {
         assertEquals("false",js("'access_token' in currentState || 'refresh_token' in currentState"));
         assertEquals("true",js("document.getElementById('excludedApps').closest('label').hidden"));
         assertEquals("true",js("!!document.getElementById('choose-apps') && !document.querySelector('#settings-form button[type=submit]')"));
-        assertEquals("true",js("Array.from(document.querySelectorAll('button')).some(x=>x.textContent==='Add Quick Settings tile')"));
+        assertEquals("false",js("Array.from(document.querySelectorAll('button')).some(x=>x.textContent==='Add Quick Settings tile')"));
         js("window.fox.call('theme','light')");Thread.sleep(500);
         assertEquals("true",js("document.body.classList.contains('light')"));
         js("window.fox.call('theme','dark')");Thread.sleep(500);
