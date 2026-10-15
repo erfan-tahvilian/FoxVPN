@@ -172,13 +172,17 @@ function accountInfo(data) {
   $('account-stats').replaceChildren(...parts.map(text=>{const p=document.createElement('div');p.textContent=text;return p;}));
 }
 $('refresh-account').addEventListener('click',action(async()=>accountInfo(await call('account'))));
-$('settings-form').addEventListener('submit',action(async e=>{
-  e.preventDefault();const settings={...currentState.settings};
+function readSettings(){
+  const settings={...currentState.settings};
   for(const key of ['theme','bind','doh','customDns','edge'])settings[key]=$(key).value.trim();
   settings.socksPort=Number($('socksPort').value);for(const key of ['proxyOnly','exitCheck'])settings[key]=$(key).checked;
   settings.excludedApps=$('excludedApps').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   settings.upstream={enabled:$('upstreamEnabled').checked,type:$('upstreamType').value,host:$('upstreamHost').value.trim(),port:Number($('upstreamPort').value),username:$('upstreamUsername').value,password:$('upstreamPassword').value};
   settings.clearUpstreamPassword=$('clearUpstreamPassword').checked;
+  return settings;
+}
+$('settings-form').addEventListener('submit',action(async e=>{
+  e.preventDefault();const settings=readSettings();
   await call('settings',settings);$('upstreamPassword').value='';$('clearUpstreamPassword').checked=false;toast('Preferences saved.');
 }));
 $('log-filter').addEventListener('change',renderLogs);

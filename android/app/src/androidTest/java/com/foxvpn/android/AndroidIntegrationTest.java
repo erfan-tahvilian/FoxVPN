@@ -49,7 +49,8 @@ public class AndroidIntegrationTest {
             js("navigate('"+page+"')");assertEquals("true",js("document.querySelector('.page.active').id==='"+page+"'"));
         }
         assertEquals("false",js("'access_token' in currentState || 'refresh_token' in currentState"));
-        assertEquals("true",js("document.getElementById('excludedApps').placeholder.includes('com.android.chrome')"));
+        assertEquals("true",js("document.getElementById('excludedApps').closest('label').hidden"));
+        assertEquals("true",js("!!document.getElementById('choose-apps') && !document.querySelector('#settings-form button[type=submit]')"));
         assertEquals("true",js("Array.from(document.querySelectorAll('button')).some(x=>x.textContent==='Add Quick Settings tile')"));
         js("window.fox.call('theme','light')");Thread.sleep(500);
         assertEquals("true",js("document.body.classList.contains('light')"));
@@ -70,6 +71,48 @@ public class AndroidIntegrationTest {
         encrypted[encrypted.length-1]^=1;Files.write(file.toPath(),encrypted);
         boolean rejected=false;try{vault.read();}catch(Exception e){rejected=true;}
         assertTrue("Tampered vault was accepted",rejected);vault.write(original);
+    }
+    @Test public void locationSortingSurvivesRelaunch()throws Exception{
+        Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        android.content.SharedPreferences preferences=context.getSharedPreferences("interface",Context.MODE_PRIVATE);
+        String original=preferences.getString("locationSort",null);
+        try{
+            assertTrue(preferences.edit().remove("locationSort").commit());
+            activity.finishActivity();activity.launchActivity(null);ready();
+            assertEquals("\"ping-asc\"",js("document.getElementById('server-sort').value"));
+            assertEquals("\"ping-asc,ping-desc,name-asc,name-desc\"",js("Array.from(document.getElementById('server-sort').options,x=>x.value).join(',')"));
+            js("document.getElementById('server-sort').value='name-desc';document.getElementById('server-sort').dispatchEvent(new Event('change'))");
+            long deadline=System.currentTimeMillis()+5000;
+            while(!"name-desc".equals(preferences.getString("locationSort",null))&&System.currentTimeMillis()<deadline)Thread.sleep(50);
+            assertEquals("name-desc",preferences.getString("locationSort",null));
+            activity.finishActivity();activity.launchActivity(null);ready();
+            assertEquals("\"name-desc\"",js("document.getElementById('server-sort').value"));
+            assertEquals("true",js("document.getElementById('server-sort-trigger').textContent.includes('Descending')"));
+        }finally{
+            android.content.SharedPreferences.Editor edit=preferences.edit();
+            if(original==null)edit.remove("locationSort");else edit.putString("locationSort",original);
+            assertTrue(edit.commit());
+        }
+    }
+    @Test public void androidPreferencesSaveWithoutSubmit()throws Exception{
+        ready();FoxApp app=(FoxApp)InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
+        boolean before=app.state.getJSONObject("settings").getBoolean("exitCheck");
+        try{
+            js("navigate('settings');document.getElementById('exitCheck').click()");
+            long deadline=System.currentTimeMillis()+5000;
+            while(app.state.getJSONObject("settings").getBoolean("exitCheck")==before&&System.currentTimeMillis()<deadline)Thread.sleep(100);
+            assertEquals(!before,app.state.getJSONObject("settings").getBoolean("exitCheck"));
+            activity.finishActivity();activity.launchActivity(null);ready();
+            assertEquals(String.valueOf(!before),js("document.getElementById('exitCheck').checked"));
+            js("navigate('settings');document.getElementById('choose-apps').click()");
+            UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+            assertNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText").text("Search apps")),5000));
+            UiObject2 search=device.findObject(By.clazz("android.widget.EditText"));search.setText("no-such-foxvpn-app-123");
+            assertNotNull(device.wait(Until.findObject(By.text("No apps found")),5000));
+            device.pressBack();UiObject2 done=device.findObject(By.text("Done"));if(done!=null)done.click();
+        }finally{
+            JSONObject settings=new JSONObject(app.state.getJSONObject("settings").toString());settings.put("exitCheck",before);app.backend.call("settings","["+settings+"]");
+        }
     }
     @Test public void nativeVpnPermissionProtectAndCleanup()throws Exception{
         ready();Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();

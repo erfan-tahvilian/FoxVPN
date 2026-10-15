@@ -7,7 +7,6 @@ import android.app.StatusBarManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
@@ -21,9 +20,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 import androidx.webkit.WebViewAssetLoader;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,7 +27,8 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final int VPN_PERMISSION = 1, NOTIFICATION_PERMISSION = 2, EXPORT = 3;
     private static final String ORIGIN = "https://appassets.androidplatform.net";
-    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","addTile");
+    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","addTile","locationSort");
+    private static final Set<String> LOCATION_SORTS = Set.of("ping-asc","ping-desc","name-asc","name-desc");
     WebView web;
     private boolean loaded, pendingConnect;
     private String exportText;
@@ -129,12 +126,21 @@ public final class MainActivity extends Activity {
     private void respond(String id,String value) { app().main.post(() -> {if(web!=null&&loaded)web.evaluateJavascript("window.fox.resolve("+JSONObject.quote(id)+","+value+")",null);}); }
     private String envelope(boolean ok,String error) {try {JSONObject result=new JSONObject().put("ok",ok).put("data",JSONObject.NULL);if(error!=null)result.put("error",error);return result.toString();}catch(Exception e){return "{\"ok\":false,\"error\":\"Request failed\"}";}}
     final class Bridge {
+        @JavascriptInterface public String getLocationSort() {
+            String saved=getSharedPreferences("interface",MODE_PRIVATE).getString("locationSort","ping-asc");
+            return LOCATION_SORTS.contains(saved)?saved:"ping-asc";
+        }
         @JavascriptInterface public void request(String id,String channel,String arguments) {
             if (id==null||id.length()>64||arguments==null||arguments.length()>131072||!ACTIONS.contains(channel))return;
             app().actions.execute(() -> {
                 try {
                     JSONArray args=new JSONArray(arguments);
                     switch(channel){
+                        case "locationSort":
+                            String sort=args.getString(0);
+                            if(!LOCATION_SORTS.contains(sort))throw new IllegalArgumentException("Invalid location sorting");
+                            if(!getSharedPreferences("interface",MODE_PRIVATE).edit().putString("locationSort",sort).commit())throw new java.io.IOException("Could not save location sorting.");
+                            respond(id,envelope(true,null));break;
                         case "connect": app().main.post(MainActivity.this::beginConnect);respond(id,envelope(true,null));break;
                         case "cancel":case "disconnect":app().stopVpn();respond(id,envelope(true,null));break;
                         case "logout":app().stopVpn();respond(id,app().backend.call(channel,arguments));break;
@@ -176,22 +182,12 @@ public final class MainActivity extends Activity {
         else Toast.makeText(this,"Edit Quick Settings and add the Fox VPN tile.",Toast.LENGTH_LONG).show();
     }
     private void chooseApps(){
-        List<ResolveInfo> installed=getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0);
-        installed.sort(Comparator.comparing(info -> info.loadLabel(getPackageManager()).toString(),String.CASE_INSENSITIVE_ORDER));
-        List<String> labels=new ArrayList<>(),packages=new ArrayList<>();
-        for(ResolveInfo info:installed){String pkg=info.activityInfo.packageName;if(pkg.equals(getPackageName())||packages.contains(pkg))continue;packages.add(pkg);labels.add(info.loadLabel(getPackageManager()).toString());}
-        JSONArray saved=app().state.optJSONObject("settings").optJSONArray("excludedApps");boolean[] checked=new boolean[packages.size()];
-        for(int i=0;i<checked.length;i++)for(int j=0;j<saved.length();j++)if(packages.get(i).equals(saved.optString(j)))checked[i]=true;
+        if(!"disconnected".equals(app().connection()))return;
         String theme=app().state.optJSONObject("settings").optString("theme","system");
         boolean light="light".equals(theme)||"system".equals(theme)&&!app().isDark();
-        android.view.ContextThemeWrapper dialogContext=new android.view.ContextThemeWrapper(this,light?android.R.style.Theme_Material_Light_Dialog_Alert:android.R.style.Theme_Material_Dialog_Alert);
-        new android.app.AlertDialog.Builder(dialogContext).setTitle("Exclude apps")
-            .setMultiChoiceItems(labels.toArray(new String[0]),checked,(dialog,index,value)->checked[index]=value)
-            .setNegativeButton("Cancel",null).setPositiveButton("Apply",(dialog,which)->{
-                List<String> selected=new ArrayList<>();
-                for(int i=0;i<saved.length();i++)if(!packages.contains(saved.optString(i)))selected.add(saved.optString(i));
-                for(int i=0;i<checked.length;i++)if(checked[i])selected.add(packages.get(i));
-                web.evaluateJavascript("document.getElementById('excludedApps').value="+JSONObject.quote(String.join("\n",selected)),null);
-            }).show();
+        android.view.ContextThemeWrapper context=new android.view.ContextThemeWrapper(this,light?android.R.style.Theme_Material_Light_Dialog_Alert:android.R.style.Theme_Material_Dialog_Alert);
+        new AppPicker(context,getPackageName(),app().state.optJSONObject("settings").optJSONArray("excludedApps"),selected -> {
+            web.evaluateJavascript("(()=>{const field=document.getElementById('excludedApps');field.value="+JSONObject.quote(String.join("\n",selected))+";field.dispatchEvent(new Event('change',{bubbles:true}));})()",null);
+        }).show();
     }
 }
