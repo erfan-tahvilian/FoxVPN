@@ -24,7 +24,12 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Could not verify Android build metadata.' }
     $foxRun = $foxRunJson | ConvertFrom-Json
 } finally { $env:GH_TOKEN = $foxPreviousToken }
-if ($foxRun.conclusion -ne 'success' -or $foxRun.head_sha -ne (git rev-parse HEAD).Trim()) { throw 'Android build must pass for the current source commit.' }
+if ($foxRun.conclusion -ne 'success' -or $foxRun.path -ne '.github/workflows/android.yml') { throw 'A successful Android CI build is required.' }
+if($foxRun.head_sha -ne (git rev-parse HEAD).Trim()){
+    # Release tooling may change after a build; every APK input must still match.
+    & git diff --exit-code $foxRun.head_sha HEAD -- android src/ui assets licenses LICENSE COPYRIGHT scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml | Out-Null
+    if($LASTEXITCODE -ne 0){throw 'Android application source differs from the verified CI build.'}
+}
 $foxBuild = Join-Path $foxRoot ('.tools/android-build-' + $RunId)
 $foxSigningTools = Join-Path $foxRoot '.tools/android-signing-tools'
 $foxOutput = Join-Path $foxRoot 'dist/android'

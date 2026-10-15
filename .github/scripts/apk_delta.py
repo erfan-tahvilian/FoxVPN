@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Erfan Tahvilian
-"""Reproduce locally signed APKs from verified CI outputs without transferring their payloads."""
+"""Reproduce exact APK bytes using a verified base; callers verify signing before publication."""
 import hashlib
 import json
 import pathlib
@@ -114,7 +114,7 @@ def apply(unsigned_root, patch_file, output, run_id, commit):
                             remaining -= len(data)
             if written != package['size'] or digest(destination) != package['signed_sha256']:
                 raise ValueError('Signed package hash mismatch')
-            print(f'Verified signed APK: {package["name"]}', flush=True)
+            print(f'Verified APK bytes: {package["name"]}', flush=True)
 
 
 if __name__ == '__main__':
