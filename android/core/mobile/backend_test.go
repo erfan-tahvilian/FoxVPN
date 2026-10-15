@@ -206,18 +206,18 @@ func TestReadyRequiresLiveTunnelAndCancellation(t *testing.T) {
 func TestHealthConfirmsDataPathAfterFailedPing(t *testing.T) {
 	probeCalls := 0
 	probe := func(context.Context) error { probeCalls++; return nil }
-	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return nil }, probe); err != nil || probeCalls != 0 {
+	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return nil }, probe, nil); err != nil || probeCalls != 0 {
 		t.Fatal("Healthy PING must not create unnecessary traffic")
 	}
-	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return io.EOF }, probe); err != nil || probeCalls != 1 {
+	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return io.EOF }, probe, nil); err != nil || probeCalls != 1 {
 		t.Fatal("A working data path must survive an idle-session PING failure")
 	}
 	failure := errors.New("data path unavailable")
-	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return io.EOF }, func(context.Context) error { return failure }); !errors.Is(err, failure) {
+	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return io.EOF }, func(context.Context) error { return failure }, nil); !errors.Is(err, failure) {
 		t.Fatal("A failed data path must still be reported")
 	}
 	ctx, cancel := context.WithCancel(context.Background()); cancel()
-	if err := checkTunnelHealth(ctx, func(context.Context) error { return context.Canceled }, probe); !errors.Is(err, context.Canceled) || probeCalls != 1 {
+	if err := checkTunnelHealth(ctx, func(context.Context) error { return context.Canceled }, probe, nil); !errors.Is(err, context.Canceled) || probeCalls != 1 {
 		t.Fatal("A cancelled tunnel must not start a fallback probe")
 	}
 }
@@ -242,6 +242,28 @@ func TestConnectionLifecycleWithRealEdge(t *testing.T) {
 	if str(state, "connection") != "disconnected" || num(state, "startedAt") != 0 || state["activeServer"] != nil {
 		t.Fatal("Disconnect did not clear connection state")
 	}
+}
+func TestHealthReplacesUnresponsiveHTTP2Session(t *testing.T) {
+	tunnel, origin := protocolTunnel(t)
+	if err := tunnel.start(); err != nil { t.Fatal(err) }
+	previous := tunnel.current
+	checks := 0
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := checkTunnelHealth(ctx, func(context.Context) error { return io.EOF }, func(ctx context.Context) error {
+		checks++
+		if checks == 1 { return context.DeadlineExceeded }
+		stream, err := tunnel.open(ctx, strings.TrimPrefix(origin.URL, "https://"))
+		if err != nil { return err }
+		return stream.Close()
+	}, func() { tunnel.discardSession(previous) })
+	if err != nil || checks != 2 || tunnel.current == previous { t.Fatalf("Transport recovery failed: %v", err) }
+	if !previous.State().Closed { t.Fatal("Unresponsive session remained open") }
+	replacement := tunnel.current
+	tunnel.discardSession(previous)
+	if tunnel.current != replacement { t.Fatal("A stale failure discarded the replacement session") }
+	body, err := tunnel.request(ctx, origin.URL, nil, "")
+	if err != nil || string(body) != "tunneled-response" { t.Fatalf("Recovered transport did not carry HTTPS: %s %v", body, err) }
 }
 func TestStaleTunnelFailureCannotDisconnectNewSession(t *testing.T) {
 	tunnel, _ := protocolTunnel(t)

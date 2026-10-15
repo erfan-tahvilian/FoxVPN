@@ -32,6 +32,7 @@ type proxyTunnel struct {
 	mu               sync.Mutex
 	sessionMu        sync.Mutex
 	current          *http2.ClientConn
+	currentSocket    net.Conn
 	token            string
 	expiry, up, down atomic.Int64
 	listener         net.Listener
@@ -126,28 +127,58 @@ func (t *proxyTunnel) session(ctx context.Context) (*http2.ClientConn, error) {
 		return nil, context.Canceled
 	}
 	t.current = session
+	t.currentSocket = conn
 	t.mu.Unlock()
 	return session, nil
 }
 func (t *proxyTunnel) health(ctx context.Context) error {
+	var checked *http2.ClientConn
+	down := t.down.Load()
 	return checkTunnelHealth(ctx, func(pingCtx context.Context) error {
 		session, err := t.session(pingCtx)
 		if err != nil { return err }
+		checked = session
 		return session.Ping(pingCtx)
 	}, func(probeCtx context.Context) error {
 		stream, err := t.open(probeCtx, "www.cloudflare.com:443")
-		if err != nil { return err }
+		if err != nil {
+			if t.down.Load() > down { return nil }
+			return err
+		}
 		return stream.Close()
-	})
+	}, func() { t.discardSession(checked) })
+}
+func (t *proxyTunnel) discardSession(expected *http2.ClientConn) {
+	if expected == nil { return }
+	t.sessionMu.Lock()
+	defer t.sessionMu.Unlock()
+	t.mu.Lock()
+	if t.current != expected {
+		t.mu.Unlock()
+		return
+	}
+	socket := t.currentSocket
+	t.current = nil
+	t.currentSocket = nil
+	t.mu.Unlock()
+	expected.Close()
+	if socket != nil { t.untrack(socket) }
 }
 // An idle HTTP/2 session can close or fail to acknowledge PING while a fresh
 // authenticated CONNECT still works. Check the data path before declaring loss.
-func checkTunnelHealth(ctx context.Context, ping, probe func(context.Context) error) error {
+func checkTunnelHealth(ctx context.Context, ping, probe func(context.Context) error, reconnect func()) error {
 	pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	err := ping(pingCtx)
 	cancel()
 	if err == nil { return nil }
 	if ctx.Err() != nil { return ctx.Err() }
+	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	err = probe(probeCtx)
+	cancel()
+	if err == nil { return nil }
+	if ctx.Err() != nil { return ctx.Err() }
+	if reconnect == nil { return err }
+	reconnect()
 	return probe(ctx)
 }
 func (t *proxyTunnel) monitor() {
@@ -159,7 +190,7 @@ func (t *proxyTunnel) monitor() {
 		case <-t.ctx.Done():
 			return
 		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(t.ctx, 10*time.Second)
+			ctx, cancel := context.WithTimeout(t.ctx, 15*time.Second)
 			err := t.health(ctx)
 			cancel()
 			if err != nil && t.ctx.Err() == nil {
