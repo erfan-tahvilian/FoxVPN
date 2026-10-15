@@ -96,6 +96,7 @@ public class AndroidIntegrationTest {
     }
     @Test public void androidPreferencesSaveWithoutSubmit()throws Exception{
         ready();FoxApp app=(FoxApp)InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
+        JSONObject original=new JSONObject(app.state.getJSONObject("settings").toString());
         boolean before=app.state.getJSONObject("settings").getBoolean("exitCheck");
         try{
             js("navigate('settings');document.getElementById('exitCheck').click()");
@@ -104,6 +105,12 @@ public class AndroidIntegrationTest {
             assertEquals(!before,app.state.getJSONObject("settings").getBoolean("exitCheck"));
             activity.finishActivity();activity.launchActivity(null);ready();
             assertEquals(String.valueOf(!before),js("document.getElementById('exitCheck').checked"));
+            js("navigate('settings');document.getElementById('split-mode').value='include';document.getElementById('split-mode').dispatchEvent(new Event('change',{bubbles:true}))");
+            deadline=System.currentTimeMillis()+5000;
+            while(!"include".equals(app.state.getJSONObject("settings").optString("splitMode"))&&System.currentTimeMillis()<deadline)Thread.sleep(100);
+            assertEquals("include",app.state.getJSONObject("settings").getString("splitMode"));
+            activity.finishActivity();activity.launchActivity(null);ready();
+            assertEquals("\"include\"",js("document.getElementById('split-mode').value"));
             js("navigate('settings');document.getElementById('choose-apps').click()");
             UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
             assertNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText").text("Search apps")),5000));
@@ -111,7 +118,7 @@ public class AndroidIntegrationTest {
             assertNotNull(device.wait(Until.findObject(By.text("No apps found")),5000));
             device.pressBack();UiObject2 done=device.findObject(By.text("Done"));if(done!=null)done.click();
         }finally{
-            JSONObject settings=new JSONObject(app.state.getJSONObject("settings").toString());settings.put("exitCheck",before);app.backend.call("settings","["+settings+"]");
+            app.backend.call("settings","["+original+"]");
         }
     }
     @Test public void nativeVpnPermissionProtectAndCleanup()throws Exception{
@@ -131,6 +138,13 @@ public class AndroidIntegrationTest {
                 assertEquals("Do not alter proxy destinations",new JSONObject(rawConfig).getJSONArray("outbounds").toString(),actualConfig.getJSONArray("outbounds").toString());
                 assertEquals("Do not alter DNS settings",new JSONObject(rawConfig).getJSONObject("dns").toString(),actualConfig.getJSONObject("dns").toString());
                 Libbox.checkConfig(actualConfig.toString());
+                JSONObject allowlistSource=new JSONObject(rawConfig);
+                allowlistSource.getJSONArray("inbounds").getJSONObject(0).put("exclude_package",new org.json.JSONArray().put("com.android.chrome"));
+                JSONObject allowlist=new JSONObject(FoxVpnService.nativeConfig(allowlistSource.toString(),"include"));
+                JSONObject tun=allowlist.getJSONArray("inbounds").getJSONObject(0);
+                assertFalse("Allow and deny lists must not be combined",tun.has("exclude_package"));
+                assertEquals("com.android.chrome",tun.getJSONArray("include_package").getString(0));
+                Libbox.checkConfig(allowlist.toString());
             }
         }finally{app.backend.call("settings","["+original+"]");}
         Intent permission=VpnService.prepare(context);

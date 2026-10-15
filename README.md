@@ -72,6 +72,7 @@ Verify downloads against [SHA256SUMS.txt](https://github.com/erfan-tahvilian/Fox
 Firefox account sign-in and email verification are supported. Light, dark and system appearance are available.
 
 On Android, connect from Quick Settings and manage an active connection from the persistent notification.
+Android split tunneling supports routing only selected apps through the VPN or excluding selected apps from it.
 
 <details>
 <summary><strong>View more screenshots</strong></summary>

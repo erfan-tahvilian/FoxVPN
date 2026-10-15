@@ -136,6 +136,10 @@ public final class MainActivity extends Activity {
                 try {
                     JSONArray args=new JSONArray(arguments);
                     switch(channel){
+                        case "settings":
+                            String mode=args.getJSONObject(0).optString("splitMode","exclude");
+                            if(!mode.equals("exclude")&&!mode.equals("include"))throw new IllegalArgumentException("Invalid VPN routing mode");
+                            respond(id,app().backend.call(channel,arguments));break;
                         case "locationSort":
                             String sort=args.getString(0);
                             if(!LOCATION_SORTS.contains(sort))throw new IllegalArgumentException("Invalid location sorting");
@@ -186,7 +190,7 @@ public final class MainActivity extends Activity {
         String theme=app().state.optJSONObject("settings").optString("theme","system");
         boolean light="light".equals(theme)||"system".equals(theme)&&!app().isDark();
         android.view.ContextThemeWrapper context=new android.view.ContextThemeWrapper(this,light?android.R.style.Theme_Material_Light_Dialog_Alert:android.R.style.Theme_Material_Dialog_Alert);
-        new AppPicker(context,getPackageName(),app().state.optJSONObject("settings").optJSONArray("excludedApps"),selected -> {
+        new AppPicker(context,getPackageName(),app().state.optJSONObject("settings").optJSONArray("excludedApps"),"include".equals(app().state.optJSONObject("settings").optString("splitMode")),selected -> {
             web.evaluateJavascript("(()=>{const field=document.getElementById('excludedApps');field.value="+JSONObject.quote(String.join("\n",selected))+";field.dispatchEvent(new Event('change',{bubbles:true}));})()",null);
         }).show();
     }

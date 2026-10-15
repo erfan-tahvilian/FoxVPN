@@ -20,6 +20,7 @@ final class AppPicker {
     private final List<App> apps=new ArrayList<>(),filtered=new ArrayList<>();
     private final Set<String> selected=new LinkedHashSet<>();
     private final Consumer<List<String>> changed;
+    private final boolean onlySelected;
     private final BaseAdapter adapter=new BaseAdapter(){
         @Override public int getCount(){return filtered.size();}
         @Override public Object getItem(int index){return filtered.get(index);}
@@ -34,13 +35,13 @@ final class AppPicker {
             TextView packageName=new TextView(context);packageName.setText(app.packageName);packageName.setTextSize(11);packageName.setAlpha(.6f);text.addView(packageName);
             row.addView(text,new LinearLayout.LayoutParams(0,-2,1));
             CheckBox check=new CheckBox(context);check.setChecked(selected.contains(app.packageName));check.setButtonTintList(android.content.res.ColorStateList.valueOf(Color.rgb(255,117,24)));check.setClickable(false);check.setFocusable(false);check.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);row.addView(check);
-            row.setContentDescription(app.name+(check.isChecked()?", excluded":", uses VPN"));
+            row.setContentDescription(app.name+(check.isChecked()==onlySelected?", uses VPN":", uses regular connection"));
             row.setOnClickListener(view->{if(!selected.remove(app.packageName))selected.add(app.packageName);notifyDataSetChanged();changed.accept(new ArrayList<>(selected));});
             return row;
         }
     };
-    AppPicker(Context context,String ownPackage,JSONArray saved,Consumer<List<String>> changed){
-        this.context=context;this.changed=changed;
+    AppPicker(Context context,String ownPackage,JSONArray saved,boolean onlySelected,Consumer<List<String>> changed){
+        this.context=context;this.changed=changed;this.onlySelected=onlySelected;
         if(saved!=null)for(int i=0;i<saved.length();i++)selected.add(saved.optString(i));
         Set<String> seen=new HashSet<>();
         for(ResolveInfo info:context.getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0)){
@@ -60,7 +61,7 @@ final class AppPicker {
             public void onTextChanged(CharSequence s,int start,int before,int count){String query=s.toString().trim().toLowerCase(Locale.ROOT);filtered.clear();for(App app:apps)if(app.name.toLowerCase(Locale.ROOT).contains(query)||app.packageName.toLowerCase(Locale.ROOT).contains(query))filtered.add(app);adapter.notifyDataSetChanged();}
             public void afterTextChanged(android.text.Editable s){}
         });
-        AlertDialog dialog=new AlertDialog.Builder(context).setTitle("Exclude apps").setView(content).setPositiveButton("Done",null).create();
+        AlertDialog dialog=new AlertDialog.Builder(context).setTitle(onlySelected?"Apps using VPN":"Exclude apps").setView(content).setPositiveButton("Done",null).create();
         dialog.setOnShowListener(ignored->{dialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.rgb(255,117,24));});
         dialog.show();
     }

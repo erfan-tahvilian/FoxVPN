@@ -7,5 +7,6 @@
 - Copy the verified, signed Android ARM64 release APK to `E:\Other\FoxVPN` for the user's phone testing. Do not install Android packages on the Windows host.
 - Use Fox VPN branding and project ownership notices. Remove previous project license references according to the owner’s stated agreement; preserve independent dependency licenses.
 - Use the repository owner's configured Git identity. Do not add AI assistant authorship or coauthor trailers to commits.
+- For Android interactions the user can test on their phone, provide concise test steps and wait for their confirmation instead of operating the phone through each check. Continue build, static and automated CI checks.
 
 - Keep the application, installer, source metadata and GitHub release version at `v1.0.0` for all current updates. Do not increment the version unless the user explicitly requests it. Replace the existing v1.0.0 release assets with the latest verified build.

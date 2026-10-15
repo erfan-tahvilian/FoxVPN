@@ -14,12 +14,15 @@ $foxPasswordFile = Join-Path $foxRoot '.tools/android-key-password.dpapi'
 if (!(Test-Path -LiteralPath $foxKeystore) -or !(Test-Path -LiteralPath $foxPasswordFile)) { throw 'Local Android signing identity is unavailable; refusing to create a replacement.' }
 New-Item -ItemType Directory -Path $foxBuild,$foxSigningTools,$foxOutput -Force | Out-Null
 $foxPreviousToken = $env:GH_TOKEN
+$foxDownload = Join-Path $foxRoot ('.tools/android-download-' + $RunId + '-' + [guid]::NewGuid().ToString('N'))
 try {
     $env:GH_TOKEN = $foxCredentialValues['password']
-    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-unsigned-build --dir $foxBuild
+    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-unsigned-build --dir (Join-Path $foxDownload 'build')
     if ($LASTEXITCODE -ne 0) { throw 'Could not download the verified Android build.' }
-    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-signing-tools --dir $foxSigningTools
+    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-signing-tools --dir (Join-Path $foxDownload 'tools')
     if ($LASTEXITCODE -ne 0) { throw 'Could not download signing tools.' }
+    Copy-Item -Path (Join-Path $foxDownload 'build/*') -Destination $foxBuild -Recurse -Force
+    Copy-Item -Path (Join-Path $foxDownload 'tools/*') -Destination $foxSigningTools -Recurse -Force
 } finally { $env:GH_TOKEN = $foxPreviousToken }
 Add-Type -AssemblyName System.Security.Cryptography.ProtectedData
 $foxPassword = [System.Text.Encoding]::UTF8.GetString([System.Security.Cryptography.ProtectedData]::Unprotect([System.IO.File]::ReadAllBytes($foxPasswordFile),$null,[System.Security.Cryptography.DataProtectionScope]::CurrentUser))

@@ -53,7 +53,7 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
                     if(VpnService.prepare(this)!=null)throw new Exception("VPN permission is required");
                     synchronized(engineLock){
                         if(stopping)return;
-                        engine=Libbox.newService(nativeConfig(app().backend.engineConfig()),this);
+                        engine=Libbox.newService(nativeConfig(app().backend.engineConfig(),app().state.optJSONObject("settings").optString("splitMode","exclude")),this);
                         engine.start();
                         if(BuildConfig.DEBUG)android.util.Log.i("FoxVPNEngine","Native VPN engine started");
                     }
@@ -65,13 +65,22 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
         return START_NOT_STICKY;
     }
     static String nativeConfig(String raw)throws org.json.JSONException{
+        return nativeConfig(raw,"exclude");
+    }
+    static String nativeConfig(String raw,String splitMode)throws org.json.JSONException{
         JSONObject config=new JSONObject(raw);
         org.json.JSONArray inbounds=config.getJSONArray("inbounds");
         for(int i=0;i<inbounds.length();i++){
             JSONObject inbound=inbounds.getJSONObject(i);
             // This app is excluded from VPN routing. Kernel TCP replies in the mixed
             // stack can bypass the TUN on Android; keep TCP entirely in userspace.
-            if("tun".equals(inbound.optString("type")))inbound.put("stack","gvisor");
+            if("tun".equals(inbound.optString("type"))){
+                inbound.put("stack","gvisor");
+                if("include".equals(splitMode)){
+                    inbound.put("include_package",inbound.optJSONArray("exclude_package"));
+                    inbound.remove("exclude_package");
+                }
+            }
         }
         if(BuildConfig.DEBUG)config.getJSONObject("log").put("level","debug");
         return config.toString();
@@ -108,13 +117,22 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
     @Override public int openTun(TunOptions options)throws Exception{
         if(VpnService.prepare(this)!=null)throw new Exception("VPN permission was revoked");
         Builder builder=new Builder().setSession("Fox VPN").setMtu(options.getMTU());
-        builder.addDisallowedApplication(getPackageName());
         RoutePrefixIterator addresses=options.getInet4Address();while(addresses.hasNext()){RoutePrefix p=addresses.next();builder.addAddress(p.address(),p.prefix());}
         addresses=options.getInet6Address();while(addresses.hasNext()){RoutePrefix p=addresses.next();builder.addAddress(p.address(),p.prefix());}
         builder.addDnsServer(options.getDNSServerAddress().getValue());
         RoutePrefixIterator routes=options.getInet4RouteRange();while(routes.hasNext()){RoutePrefix p=routes.next();builder.addRoute(p.address(),p.prefix());}
         routes=options.getInet6RouteRange();while(routes.hasNext()){RoutePrefix p=routes.next();builder.addRoute(p.address(),p.prefix());}
-        StringIterator packages=options.getExcludePackage();while(packages.hasNext()){String pkg=packages.next();if(!pkg.equals(getPackageName())){try{builder.addDisallowedApplication(pkg);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}}}
+        StringIterator included=options.getIncludePackage();
+        if("include".equals(app().state.optJSONObject("settings").optString("splitMode"))){
+            int count=0;
+            while(included.hasNext()){String pkg=included.next();if(!pkg.equals(getPackageName())){try{builder.addAllowedApplication(pkg);count++;}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}}}
+            // An empty Android allowlist routes every app through the VPN. Never
+            // fall back to that behavior when only selected apps were requested.
+            if(count==0)throw new Exception("Select at least one installed app to use the VPN.");
+        }else{
+            builder.addDisallowedApplication(getPackageName());
+            StringIterator packages=options.getExcludePackage();while(packages.hasNext()){String pkg=packages.next();if(!pkg.equals(getPackageName())){try{builder.addDisallowedApplication(pkg);}catch(android.content.pm.PackageManager.NameNotFoundException ignored){}}}
+        }
         if(Build.VERSION.SDK_INT>=29)builder.setMetered(false);
         if(Build.VERSION.SDK_INT>=29){android.net.Network underlying=app().network;if(underlying!=null)builder.setUnderlyingNetworks(new android.net.Network[]{underlying});}
         tun=builder.establish();if(tun==null)throw new Exception("Android could not establish the VPN interface");return tun.getFd();
