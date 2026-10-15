@@ -5,11 +5,24 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if ($RunId -notmatch '^\d+$') { throw 'Invalid build run ID.' }
-. "$PSScriptRoot/release.ps1" -Mode Inspect | Out-Null
 $foxRoot = Split-Path -Parent $PSScriptRoot
-$foxRun = Invoke-FoxApi ('/actions/runs/' + $RunId)
-if ($foxRun.conclusion -ne 'success' -or $foxRun.head_sha -ne (git rev-parse HEAD).Trim()) { throw 'Android build must pass for the current source commit.' }
 $foxGh = Join-Path $foxRoot '.tools/gh/bin/gh.exe'
+$foxCredentials = "protocol=https`nhost=github.com`n`n" | git credential fill
+if ($LASTEXITCODE -ne 0) { throw 'GitHub credentials are unavailable.' }
+$foxCredentialValues = @{}
+foreach ($foxLine in $foxCredentials) {
+    $foxPair = $foxLine -split '=', 2
+    if ($foxPair.Length -eq 2) { $foxCredentialValues[$foxPair[0]] = $foxPair[1] }
+}
+if (!$foxCredentialValues['password']) { throw 'GitHub authentication is unavailable.' }
+$foxPreviousToken = $env:GH_TOKEN
+try {
+    $env:GH_TOKEN = $foxCredentialValues['password']
+    $foxRunJson = & $foxGh api ('repos/erfan-tahvilian/FoxVPN/actions/runs/' + $RunId)
+    if ($LASTEXITCODE -ne 0) { throw 'Could not verify Android build metadata.' }
+    $foxRun = $foxRunJson | ConvertFrom-Json
+} finally { $env:GH_TOKEN = $foxPreviousToken }
+if ($foxRun.conclusion -ne 'success' -or $foxRun.head_sha -ne (git rev-parse HEAD).Trim()) { throw 'Android build must pass for the current source commit.' }
 $foxBuild = Join-Path $foxRoot ('.tools/android-build-' + $RunId)
 $foxSigningTools = Join-Path $foxRoot '.tools/android-signing-tools'
 $foxOutput = Join-Path $foxRoot 'dist/android'
