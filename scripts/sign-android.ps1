@@ -1,4 +1,8 @@
-param([Parameter(Mandatory=$true)][string]$RunId)
+param(
+    [Parameter(Mandatory=$true)][string]$RunId,
+    [ValidateSet('arm64-v8a','armeabi-v7a','x86_64','x86','universal')]
+    [string[]]$Architectures=@('arm64-v8a','armeabi-v7a','x86_64','x86','universal')
+)
 $ErrorActionPreference = 'Stop'
 if ($RunId -notmatch '^\d+$') { throw 'Invalid build run ID.' }
 . "$PSScriptRoot/release.ps1" -Mode Inspect | Out-Null
@@ -15,9 +19,10 @@ if (!(Test-Path -LiteralPath $foxKeystore) -or !(Test-Path -LiteralPath $foxPass
 New-Item -ItemType Directory -Path $foxBuild,$foxSigningTools,$foxOutput -Force | Out-Null
 $foxPreviousToken = $env:GH_TOKEN
 $foxDownload = Join-Path $foxRoot ('.tools/android-download-' + $RunId + '-' + [guid]::NewGuid().ToString('N'))
+$foxArtifactName = if ($Architectures.Count -eq 1 -and $Architectures[0] -eq 'arm64-v8a') { 'Android-unsigned-arm64' } else { 'Android-unsigned-build' }
 try {
     $env:GH_TOKEN = $foxCredentialValues['password']
-    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-unsigned-build --dir (Join-Path $foxDownload 'build')
+    & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name $foxArtifactName --dir (Join-Path $foxDownload 'build')
     if ($LASTEXITCODE -ne 0) { throw 'Could not download the verified Android build.' }
     & $foxGh run download $RunId --repo erfan-tahvilian/FoxVPN --name Android-signing-tools --dir (Join-Path $foxDownload 'tools')
     if ($LASTEXITCODE -ne 0) { throw 'Could not download signing tools.' }
@@ -31,7 +36,7 @@ $foxJava = 'D:\Program Files\Java\jdk-22\bin\java.exe'
 $foxSigner = Join-Path $foxSigningTools 'apksigner.jar'
 $foxCertificate = (Get-Content (Join-Path $foxRoot 'android/signing-certificate.sha256') -Raw).Trim()
 try {
-    foreach ($foxAbi in @('arm64-v8a','armeabi-v7a','x86_64','x86','universal')) {
+    foreach ($foxAbi in $Architectures) {
         $foxInputs = @(Get-ChildItem -LiteralPath $foxBuild -Recurse -File -Filter ('app-' + $foxAbi + '-release-unsigned.apk'))
         if ($foxInputs.Count -ne 1) { throw ('Expected one verified Android package for ' + $foxAbi) }
         $foxApk = Join-Path $foxOutput ('FoxVPN-1.0.0-Android-' + $foxAbi + '.apk')
