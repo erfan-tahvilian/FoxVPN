@@ -508,16 +508,14 @@ func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, 
 	return data, err
 }
 func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byte, error) {
-	providers := map[string][]string{"automatic": {"1.1.1.1", "8.8.8.8", "9.9.9.9"}, "cloudflare": {"1.1.1.1"}, "google": {"8.8.8.8"}, "quad9": {"9.9.9.9"}}
+	providers := map[string][]string{"automatic": {"cloudflare-dns.com", "dns.google", "dns.quad9.net"}, "cloudflare": {"cloudflare-dns.com"}, "google": {"dns.google"}, "quad9": {"dns.quad9.net"}}
 	targets := providers[str(t.settings, "doh")]
 	if len(targets) > 0 && str(t.settings, "customDns") == "" {
-		for _, ip := range targets {
-			result, err := t.request(ctx, "https://"+ip+"/dns-query", query, "application/dns-message")
-			if err == nil && len(result) >= 12 && len(result) <= 4096 {
-				return result, nil
-			}
-		}
-		return nil, errors.New("Encrypted DNS providers are unreachable")
+		// Resolve the provider at the remote proxy, like other tunneled HTTPS
+		// destinations. A blocked anycast IP must not pin DNS to a dead route.
+		return exchangeEncryptedDNS(ctx, targets, 4*time.Second, func(attempt context.Context, provider string) ([]byte, error) {
+			return t.request(attempt, "https://"+provider+"/dns-query", query, "application/dns-message")
+		})
 	}
 	if str(t.settings, "customDns") != "" {
 		host = str(t.settings, "customDns")
@@ -547,6 +545,27 @@ func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byt
 	_, err = io.ReadFull(stream, result)
 	return result, err
 }
+
+func exchangeEncryptedDNS(ctx context.Context, providers []string, timeout time.Duration, exchange func(context.Context, string) ([]byte, error)) ([]byte, error) {
+	for _, provider := range providers {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		// Each provider gets its own budget so a stalled request leaves time
+		// for the next provider within the caller's overall DNS deadline.
+		attempt, cancel := context.WithTimeout(ctx, timeout)
+		result, err := exchange(attempt, provider)
+		cancel()
+		if err == nil && len(result) >= 12 && len(result) <= 4096 {
+			return result, nil
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return nil, errors.New("Encrypted DNS providers are unreachable")
+}
+
 func (t *proxyTunnel) udp(conn net.Conn) error {
 	udp, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.ParseIP(str(t.settings, "bind"))})
 	if err != nil {

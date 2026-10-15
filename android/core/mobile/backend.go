@@ -590,7 +590,7 @@ func (b *Backend) EngineConfig() string {
 	b.mu.Lock()
 	s := copyObject(b.settings)
 	b.mu.Unlock()
-	providers := map[string]string{"automatic": "1.1.1.1", "cloudflare": "1.1.1.1", "google": "8.8.8.8", "quad9": "9.9.9.9"}
+	providers := map[string]string{"cloudflare": "cloudflare-dns.com", "google": "dns.google", "quad9": "dns.quad9.net"}
 	dns := object{"tag": "private", "type": "https", "server": providers[str(s, "doh")], "path": "/dns-query", "detour": "fox"}
 	if str(s, "doh") == "automatic" {
 		dns = object{"tag": "private", "type": "udp", "server": "1.1.1.1", "detour": "fox"}
