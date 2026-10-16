@@ -111,6 +111,8 @@ This uses the cached verified APK and existing signing identity. It changes only
 
 These APKs are unpublished diagnostic builds, not replacements for release assets. Confirm installation on the affected device before adopting a packaging change. The manual Android release-install workflow also checks the alternative packaging on an API 36 x86_64 emulator using an ephemeral test certificate; that key and APK are never distributed.
 
+### Android runtime
+
 Android uses a permission-protected `VpnService`, the same HTML interface with a mobile layout, and one native Go library containing the authentication/HTTP2 bridge and sing-box libbox. The WebView loads packaged HTTPS assets only; it cannot browse external pages or read local files. Named actions cross the native bridge. Android Keystore protects local session encryption keys.
 
 Split tunneling excludes Android package names through the platform VPN builder. Quick Settings and the foreground notification read the core connection state. VPN consent is required before the first system connection. The debug-only integration service creates a real TUN interface without changing the default route; it is excluded from release APKs.
