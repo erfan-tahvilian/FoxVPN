@@ -1,3 +1,5 @@
+<p align="center"><strong>English</strong> &nbsp; | &nbsp; <a href="README.fa.md">فارسی</a></p>
+
 <picture>
   <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/readme/hero-dark-mobile.webp">
   <source media="(max-width: 600px)" srcset="docs/readme/hero-light-mobile.webp">
