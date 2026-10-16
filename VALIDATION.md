@@ -70,3 +70,7 @@ Other physical devices/architectures, vendor power-management behavior and real 
 - Electron checks cover Overview latency controls, separate IPv4/IPv6 rows, disabled verification cursors and both themes. The tray popup is exercised with connected/disconnected states and rejects commands from other windows.
 - The owner confirmed that the compressed-native ARM64 installation package installs and opens on Daria Bond II running Android 16. Production Android packaging now uses that extraction mode.
 - Optional address-family discovery runs through the authenticated tunnel and does not determine connection readiness. An unavailable address family is reported without interrupting the VPN.
+
+### Published build verification
+
+The updated application passed [Windows x64, x86 and ARM64 builds](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38893208976), [native Intel and Apple Silicon macOS builds](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38893208818), and the [Android core, package, lint and emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38893208796). The published signed x86_64 and universal APKs also passed [fresh installation and startup on Android 16](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38896444520). Windows x64 was installed at the configured local destination and its packaged source, engine architecture and version were verified. Phone UI verification for this update remains pending.
