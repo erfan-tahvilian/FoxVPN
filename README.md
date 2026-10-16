@@ -34,8 +34,8 @@ Sign in with a Firefox account to get started. Service eligibility, availability
 Choose the package that matches your operating system and processor. Installers and portable archives are available for desktop; Android packages are signed APKs.
 
 <p align="center">
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="240" alt="Download Fox VPN for Windows x64 — EXE installer."></picture></a>
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="240" alt="Download Fox VPN for macOS Apple Silicon — DMG."></picture></a>
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="240" alt="Download Fox VPN for Windows x64 — EXE installer."></picture></a> &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="240" alt="Download Fox VPN for macOS Apple Silicon — DMG."></picture></a> &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-android-dark.svg"><img src="docs/readme/download-android-light.svg" width="240" alt="Download Fox VPN for Android ARM64 — signed APK."></picture></a>
 </p>
 
@@ -138,7 +138,7 @@ Desktop routing follows application process names; macOS includes app helper pro
 
 | Find your connection | Make it your own |
 | :--- | :--- |
-| **🌍 Location choice** — use a recommended endpoint or choose a country manually. | **💾 Saved preferences** — settings and your preferred location order persist between sessions. |
+| **🌍 Location choice** — use a recommended endpoint or choose a country manually. | **💾 Saved preferences** — settings, downloaded locations and your preferred location order persist between sessions. |
 | **⚡ Latency checks** — check all locations or one at a time; sort by latency or name. | **⚙️ Connection options** — use system VPN or a local SOCKS5 proxy, with HTTP / SOCKS5 upstream support. |
 | **📊 At-a-glance activity** — view connection statistics and export diagnostic logs. | **🔐 Local credential protection** — encrypted session storage, configurable DNS and Firefox account email verification. |
 

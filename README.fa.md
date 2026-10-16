@@ -36,8 +36,8 @@
 بستهٔ متناسب با سیستم‌عامل و پردازندهٔ دستگاهتان را انتخاب کنید. نسخه‌های دسکتاپ به‌صورت نصب‌کننده و فایل قابل‌حمل ارائه می‌شوند؛ بسته‌های اندروید، فایل‌های APK امضاشده هستند.
 
 <p align="center">
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="240" alt="دانلود نصب‌کنندهٔ EXE برای ویندوز x64."></picture></a>
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="240" alt="دانلود فایل DMG برای مک با پردازندهٔ اپل سیلیکون."></picture></a>
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="240" alt="دانلود نصب‌کنندهٔ EXE برای ویندوز x64."></picture></a> &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="240" alt="دانلود فایل DMG برای مک با پردازندهٔ اپل سیلیکون."></picture></a> &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-android-dark.svg"><img src="docs/readme/download-android-light.svg" width="240" alt="دانلود APK امضاشده برای اندروید ARM64."></picture></a>
 </p>
 
@@ -140,7 +140,7 @@ macOS 13 Ventura یا جدیدتر · **اپل سیلیکون و اینتل**
 
 | انتخاب و بررسی اتصال | تنظیم متناسب با نیاز شما |
 | ---: | ---: |
-| **🌍 انتخاب لوکیشن** — از لوکیشن پیشنهادی استفاده کنید یا کشور را دستی انتخاب کنید. | **💾 ذخیرهٔ تنظیمات** — تنظیمات و ترتیب دلخواه لوکیشن‌ها پس از بستن برنامه حفظ می‌شوند. |
+| **🌍 انتخاب لوکیشن** — از لوکیشن پیشنهادی استفاده کنید یا کشور را دستی انتخاب کنید. | **💾 ذخیرهٔ تنظیمات** — تنظیمات، فهرست دریافت‌شدهٔ لوکیشن‌ها و ترتیب دلخواه آن‌ها پس از بستن برنامه حفظ می‌شوند. |
 | **⚡ بررسی پینگ** — پینگ همهٔ لوکیشن‌ها یا یک مورد را اندازه بگیرید و فهرست را بر اساس پینگ یا نام مرتب کنید. | **⚙️ گزینه‌های اتصال** — اتصال سراسری دستگاه یا پراکسی محلی SOCKS5، با پشتیبانی از پراکسی بالادستی HTTP و SOCKS5. |
 | **📊 فعالیت در یک نگاه** — آمار اتصال را ببینید و گزارش عیب‌یابی را خروجی بگیرید. | **🔐 حفاظت محلی از اطلاعات ورود** — ذخیرهٔ رمزگذاری‌شدهٔ نشست، DNS قابل‌تنظیم و تأیید ایمیلی حساب فایرفاکس. |
 
@@ -225,10 +225,12 @@ APK را نصب کنید و در صورت درخواست، اجازهٔ نصب �
 <details>
 <summary><strong>نرم‌افزارهای ثالث و سورس متناظر</strong></summary>
 
-- **sing-box** — تحت GPL-3.0-or-later و شرط نام‌گذاری پروژهٔ اصلی. سورس دقیق متناظر در فایل [sing-box-1.12.0-source.tar.gz](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/sing-box-1.12.0-source.tar.gz) ارائه شده است. [اعلان مجوز](licenses/sing-box-NOTICE.txt) و [راهنمای ساخت از سورس](https://sing-box.sagernet.org/installation/build-from-source/) را ببینید.
-- **Wintun** — تحت مجوز همراه بسته‌های ویندوز بازتوزیع می‌شود. [وب‌سایت Wintun](https://www.wintun.net/) را ببینید.
-- **Electron، Chromium، Node.js و وابستگی‌های npm** — اعلان‌ها در بسته‌های دسکتاپ قرار دارند. اعلان وابستگی‌های بومی اندروید در محتوای APK گنجانده شده‌اند.
-- **flag-icons** — تحت مجوز MIT؛ [اعلان مجوز](licenses/flag-icons-MIT.txt) را ببینید.
+<ul dir="rtl">
+<li dir="rtl"><strong>sing-box</strong> — تحت GPL-3.0-or-later و شرط نام‌گذاری پروژهٔ اصلی. سورس دقیق متناظر در فایل <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/sing-box-1.12.0-source.tar.gz">sing-box-1.12.0-source.tar.gz</a> ارائه شده است. <a href="licenses/sing-box-NOTICE.txt">اعلان مجوز</a> و <a href="https://sing-box.sagernet.org/installation/build-from-source/">راهنمای ساخت از سورس</a> را ببینید.</li>
+<li dir="rtl"><strong>Wintun</strong> — تحت مجوز همراه بسته‌های ویندوز بازتوزیع می‌شود. <a href="https://www.wintun.net/">وب‌سایت Wintun</a> را ببینید.</li>
+<li dir="rtl"><strong>Electron، Chromium، Node.js و وابستگی‌های npm</strong> — اعلان‌ها در بسته‌های دسکتاپ قرار دارند. اعلان وابستگی‌های بومی اندروید در محتوای APK گنجانده شده‌اند.</li>
+<li dir="rtl"><strong>flag-icons</strong> — تحت مجوز MIT؛ <a href="licenses/flag-icons-MIT.txt">اعلان مجوز</a> را ببینید.</li>
+</ul>
 
 </details>
 
