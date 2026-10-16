@@ -104,3 +104,14 @@ test('country placeholders are not presented as city names',()=>{
  const list=candidates([{country:{name:'Germany',code:'DE',cities:[{name:' germany ',code:'de',servers:[{hostname:'edge.example',port:443}]}]}}]);
  assert.equal(list[0].city,'');assert.equal(list[0].id,'DE/de/edge.example:443');
 });
+
+test('location cache survives restart, preference changes and rejected refreshes',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fox-locations-'));
+ const safe={isEncryptionAvailable:()=>true,encryptString:s=>Buffer.from(s),decryptString:b=>b.toString()};
+ const server={id:'DE/de/edge.example:443',country:'Germany',code:'DE',city:'',cityCode:'de',host:'edge.example',port:443};
+ try {
+  const store=new Store(dir,safe);assert.deepEqual(store.servers,[]);store.setServers([server]);store.setSettings({...store.settings,theme:'light'});
+  const reloaded=new Store(dir,safe);assert.deepEqual(reloaded.servers,[server]);assert.throws(()=>reloaded.setServers([]));assert.deepEqual(reloaded.servers,[server]);
+  safe.isEncryptionAvailable=()=>false;assert.throws(()=>reloaded.setServers([{...server,id:'new'}]));assert.deepEqual(reloaded.servers,[server]);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

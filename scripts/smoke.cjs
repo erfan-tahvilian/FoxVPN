@@ -93,6 +93,12 @@ app.whenReady().then(async()=>{
     assert.equal(await win.webContents.executeJavaScript(`locationLabel({country:'Germany',city:'Germany'})`),'Germany');
     assert.equal(await win.webContents.executeJavaScript(`locationLabel({country:'Germany',city:'Frankfurt'})`),'Germany, Frankfurt');
     assert.equal(await win.webContents.executeJavaScript(`typeof require`),'undefined');
+    assert(await win.webContents.executeJavaScript(`!!(document.getElementById('exitCheck').compareDocumentPosition(document.getElementById('proxyOnly')) & Node.DOCUMENT_POSITION_FOLLOWING)`));
+    await win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='../../android/ui/mobile.css';link.onload=resolve;link.onerror=reject;document.head.append(link)})`);
+    win.setContentSize(360,800);
+    await win.webContents.executeJavaScript(`document.getElementById('selected-location').textContent='United Kingdom';document.getElementById('selected-latency').textContent='Unreachable';new Promise(r=>setTimeout(r,100))`);
+    assert(await win.webContents.executeJavaScript(`(()=>{const label=document.getElementById('selected-location'),heading=document.querySelector('.server-selector small');return label.scrollWidth<=label.clientWidth && heading.scrollWidth<=heading.clientWidth})()`),'Android location name and heading should fit on one line');
+    fs.writeFileSync('test-results/android-overview-compact.png',(await win.webContents.capturePage()).toPNG());
     assert.deepEqual(errors,[]);
     status('PASS: navigation, themes, renderer isolation and console checks');
     console.log('Renderer smoke checks passed: navigation, theme, account form, isolated renderer, no console errors.');

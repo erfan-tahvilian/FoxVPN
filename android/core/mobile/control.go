@@ -319,9 +319,12 @@ func (b *Backend) refreshServers(ctx context.Context) ([]object, error) {
 			}
 		}
 	}
+	if len(servers)==0 { return nil, errors.New("No usable locations were received") }
 	b.mu.Lock()
+	previous:=b.servers
 	b.servers = servers
 	b.mu.Unlock()
+	if err:=b.save();err!=nil { b.mu.Lock();b.servers=previous;b.mu.Unlock();return nil,err }
 	b.emit()
 	return servers, nil
 }
@@ -447,3 +450,5 @@ func locationLabel(server object) string {
 	}
 	return country + ", " + city
 }
+
+var cachedHost = regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?$`)

@@ -20,3 +20,16 @@ header{position:relative}
 .account-chip{min-width:0;max-width:100%;padding:0;gap:7px}
 .account-chip .avatar{flex:0 0 29px;width:29px;height:29px;min-width:29px;min-height:29px;aspect-ratio:1;border-radius:50%;line-height:1}
 .account-chip #account-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Keep Overview actions compact and let the location retain its own text column. */
+.server-selector{display:grid;grid-template-columns:minmax(0,1fr) 32px 24px;grid-template-rows:auto auto;gap:4px 6px;padding:12px}
+.server-selector .selected-location-choice{grid-column:1;grid-row:1 / 3;gap:9px;min-width:0}
+.server-selector .location-symbol{flex:0 0 32px;width:32px;height:32px}
+.server-selector .selected-location-copy{flex:1;min-width:0}
+.server-selector small{font-size:8px;letter-spacing:.6px;white-space:nowrap}
+.server-selector .selected-location-copy strong{font-size:12px;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+.server-selector em{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.server-selector #selected-latency{grid-column:2 / 4;grid-row:2;justify-self:end;max-width:100%;font-size:9px;padding:3px 4px}
+.server-selector #ping-selected{grid-column:2;grid-row:1;min-width:32px;min-height:32px;width:32px;height:32px;padding:7px}
+.server-selector #ping-selected svg{width:14px;height:14px}
+.server-selector #choose-location-arrow{grid-column:3;grid-row:1;min-width:24px;min-height:32px;width:24px;height:32px;padding:4px}

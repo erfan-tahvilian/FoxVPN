@@ -364,3 +364,16 @@ func TestExitAddressFamiliesAndLocationLabels(t *testing.T) {
  if _,err=tunnel.exit(context.Background(),"US");err==nil { t.Fatal("Country mismatch was accepted") }
  if locationLabel(object{"country":"Germany","city":" germany "})!="Germany" || locationLabel(object{"country":"Germany","city":"Frankfurt"})!="Germany, Frankfurt" { t.Fatal("Invalid country and city formatting") }
 }
+
+func TestLocationCacheSurvivesRestart(t *testing.T) {
+ host:=&testHost{}
+ b:=NewBackend(host,"{}")
+ b.servers=[]object{{"id":"DE/de/edge.example:443","country":"Germany","code":"DE","city":"Germany","host":"edge.example","port":443}}
+ if err:=b.save();err!=nil { t.Fatal(err) }
+ restored:=NewBackend(host,host.saved)
+ if len(restored.servers)!=1 || str(restored.servers[0],"host")!="edge.example" || str(restored.servers[0],"city")!="" { t.Fatal("Saved locations were not restored") }
+ restored.settings["theme"]="light"
+ if err:=restored.save();err!=nil { t.Fatal(err) }
+ if len(NewBackend(host,host.saved).servers)!=1 { t.Fatal("Preference save lost locations") }
+ if len(cachedServers([]any{object{"host":"bad/host","port":443}}))!=0 { t.Fatal("Invalid cached endpoint accepted") }
+}

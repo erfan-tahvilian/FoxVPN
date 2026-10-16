@@ -15,7 +15,7 @@ class TrayPopup {
   async show() {
     const request=this.epoch=(this.epoch||0)+1;
     if(!this.window||this.window.isDestroyed()){
-      this.window=new BrowserWindow({width:306,height:272,show:false,frame:false,transparent:true,resizable:false,movable:false,alwaysOnTop:true,skipTaskbar:true,hasShadow:true,roundedCorners:true,webPreferences:{preload:path.join(__dirname,'tray-preload.cjs'),sandbox:true,nodeIntegration:false,contextIsolation:true}});
+      this.window=new BrowserWindow({width:306,height:244,show:false,frame:false,transparent:true,resizable:false,movable:false,alwaysOnTop:true,skipTaskbar:true,hasShadow:true,roundedCorners:true,webPreferences:{preload:path.join(__dirname,'tray-preload.cjs'),sandbox:true,nodeIntegration:false,contextIsolation:true}});
       this.window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
       this.window.webContents.on('will-navigate',event=>event.preventDefault());
       this.window.on('blur',()=>this.hide());
@@ -23,11 +23,14 @@ class TrayPopup {
     }
     await this.ready;
     if(request!==this.epoch||this.window.isDestroyed())return;
+    const height=await this.window.webContents.executeJavaScript("Math.ceil(document.querySelector('main').getBoundingClientRect().bottom+5)");
+    if(request!==this.epoch||this.window.isDestroyed())return;
+    this.window.setResizable(true);this.window.setSize(306,height);this.window.setResizable(false);
     const anchor=this.bounds(),point={x:Math.round(anchor.x+anchor.width/2),y:Math.round(anchor.y+anchor.height/2)};
     const work=screen.getDisplayNearestPoint(point).workArea;
     const x=Math.max(work.x,Math.min(work.x+work.width-306,point.x-153));
-    const proposed=point.y>work.y+work.height/2?anchor.y-280:anchor.y+anchor.height+8;
-    const y=Math.max(work.y,Math.min(work.y+work.height-272,proposed));
+    const proposed=point.y>work.y+work.height/2?anchor.y-height-4:anchor.y+anchor.height+4;
+    const y=Math.max(work.y,Math.min(work.y+work.height-height,proposed));
     this.window.setPosition(Math.round(x),Math.round(y));this.update();this.window.show();this.window.focus();
   }
   update(){if(this.window&&!this.window.isDestroyed())this.window.webContents.send('fox:tray-state',this.state());}

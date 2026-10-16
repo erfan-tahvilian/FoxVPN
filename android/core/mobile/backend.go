@@ -96,6 +96,7 @@ func NewBackend(host Host, vault string) *Backend {
 		if s := obj(saved, "settings"); len(s) > 0 && validate(s) == nil {
 			b.settings = s
 		}
+		b.servers = cachedServers(list(saved, "servers"))
 		b.auth = obj(saved, "auth")
 		if len(b.auth) == 0 {
 			b.auth = nil
@@ -175,7 +176,7 @@ func (b *Backend) log(level, message string) {
 }
 func (b *Backend) save() error {
 	b.mu.Lock()
-	v, _ := json.Marshal(object{"settings": b.settings, "auth": b.auth})
+	v, _ := json.Marshal(object{"settings": b.settings, "auth": b.auth, "servers": b.servers})
 	b.mu.Unlock()
 	return b.host.Save(string(v))
 }
@@ -707,4 +708,18 @@ func (b *Backend) refreshAddresses(t *proxyTunnel) {
 	}
 	b.mu.Unlock()
 	b.emit()
+}
+
+// Cached locations contain public endpoint metadata only; credentials remain separate.
+func cachedServers(values []any) []object {
+ result := []object{}
+ if len(values)>2000 { return result }
+ for _,value:=range values {
+  server,ok:=value.(map[string]any)
+  if !ok { continue }
+  host:=str(server,"host");port:=num(server,"port")
+  if str(server,"id")=="" || len(str(server,"id"))>512 || str(server,"country")=="" || len(str(server,"code"))<2 || len(str(server,"code"))>3 || len(host)>253 || (net.ParseIP(host)==nil && !cachedHost.MatchString(host)) || port<1 || port>65535 || port!=float64(int(port)) { continue }
+  result=append(result,object{"id":str(server,"id"),"country":str(server,"country"),"code":str(server,"code"),"city":displayCity(str(server,"country"),str(server,"city")),"cityCode":str(server,"cityCode"),"host":host,"port":port})
+ }
+ return result
 }

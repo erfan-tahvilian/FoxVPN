@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Erfan Tahvilian
-const {app,BrowserWindow}=require('electron');
+const {app,BrowserWindow,screen}=require('electron');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {TrayPopup}=require('../src/tray.cjs');
 app.disableHardwareAcceleration();app.setPath('userData',path.resolve('test-results/tray-profile'));
 app.whenReady().then(async()=>{
   let state={version:'1.0.0',connection:'disconnected',light:false,signedIn:true,busy:false,location:''};
   const commands=[];
-  const popup=new TrayPopup({state:()=>state,command:async action=>commands.push(action),bounds:()=>({x:100,y:100,width:20,height:20})});
+  const work=screen.getPrimaryDisplay().workArea;let anchor={x:work.x+100,y:work.y+work.height-20,width:20,height:20};
+  const popup=new TrayPopup({state:()=>state,command:async action=>commands.push(action),bounds:()=>anchor});
   try{
     await popup.show();
+    await new Promise(r=>setTimeout(r,100));const rect=popup.window.getBounds();const visibleBottom=popup.window.getContentBounds().y+await popup.window.webContents.executeJavaScript("document.querySelector('main').getBoundingClientRect().bottom");assert(Math.abs(anchor.y-visibleBottom-9)<=3,'Visible tray menu must sit within a small gap of its anchor');
+    assert(rect.height<272,'Tray should fit its visible menu without an empty lower area');
     const js=code=>popup.window.webContents.executeJavaScript(code);
     assert.equal(await js(`document.getElementById('toggle-label').textContent`),'Connect');
     assert.equal(await js(`typeof require`),'undefined');

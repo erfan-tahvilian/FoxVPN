@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Erfan Tahvilian
-const {app,BrowserWindow,ipcMain,safeStorage,nativeTheme,dialog,Tray,Menu,shell}=require('electron');
+const {app,BrowserWindow,ipcMain,safeStorage,nativeTheme,dialog,Tray,Menu,shell,screen}=require('electron');
 const {nativeImage}=require('electron');
 const fs=require('node:fs');
 const path=require('node:path');
@@ -49,7 +49,7 @@ function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'eng
 async function admin() {
   return new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command','([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)'],{windowsHide:true},(e,out)=>resolve(!e&&out.trim()==='True')));
 }
-async function refreshServers() {servers=await guardian.servers();log('info',`Updated server list · ${servers.length} available endpoints`);return servers;}
+async function refreshServers() {const next=await guardian.servers();store.setServers(next);servers=store.servers;log('info',`Updated server list · ${servers.length} available endpoints`);return servers;}
 async function launchEngine(candidate, epoch) {
   const executable=path.join(engineDir(),mac?'sing-box':'sing-box.exe');
   if(!fs.existsSync(executable)||(!mac&&!fs.existsSync(path.join(engineDir(),'wintun.dll'))))throw Error('The tunnel engine is missing. Reinstall Fox VPN.');
@@ -169,10 +169,10 @@ else {
   app.on('second-instance',()=>{window?.show();window?.focus();});
   app.whenReady().then(()=>{
     if(mac)Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Fox VPN',submenu:[{role:'about'},{type:'separator'},{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'},{role:'quit'}]},{role:'editMenu'},{role:'windowMenu'}]));
-    store=new Store(app.getPath('userData'),safeStorage);
+    store=new Store(app.getPath('userData'),safeStorage);servers=store.servers;
     const control=new Control();guardian=new Guardian(control,new Auth(control,store));
     createWindow();tray=new Tray(mac?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');
-    trayPopup=new TrayPopup({state:trayState,command:trayCommand,bounds:()=>tray.getBounds()});
+    trayPopup=new TrayPopup({state:trayState,command:trayCommand,bounds:()=>{const bounds=tray.getBounds();if(mac)return bounds;const point=screen.getCursorScreenPoint();return point.x>=bounds.x-8&&point.x<=bounds.x+bounds.width+8&&point.y>=bounds.y-8&&point.y<=bounds.y+bounds.height+8?bounds:{...point,width:0,height:0};}});
     const showTray=()=>trayPopup.show().catch(error=>log('warn',error.message));
     tray.on('right-click',showTray);tray.on('click',showTray);tray.on('double-click',()=>{trayPopup.hide();window.show();window.focus();});emit();
     handle('state',()=>state());
@@ -210,7 +210,7 @@ else {
     handle('openLink',id=>{const urls={source:'https://github.com/erfan-tahvilian/FoxVPN',license:'https://github.com/erfan-tahvilian/FoxVPN/blob/main/LICENSE',account:'https://accounts.firefox.com/',accountSettings:'https://accounts.firefox.com/settings'};if(!urls[id])throw Error('Unknown link');return shell.openExternal(urls[id]);});
     nativeTheme.on('updated',emit);setInterval(emit,1000).unref();
     if(store.loadError)log('warn',store.loadError);
-    refreshServers().catch(()=>log('warn','Server list is currently unreachable. Use Refresh in Locations to try again.'));
+    refreshServers().catch(()=>log('warn','Locations could not be refreshed. Saved locations remain available; try Refresh again later.'));
   });
   app.on('before-quit',event=>{if(quitting)return;event.preventDefault();quitting=true;disconnect().finally(()=>{trayPopup?.destroy();tray?.destroy();app.quit();});});
   app.on('activate',()=>{window?.show();window?.focus();});

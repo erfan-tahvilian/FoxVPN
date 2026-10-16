@@ -4,7 +4,7 @@ VPN client for Windows, macOS and Android.
 
 Licensed under the GNU General Public License, version 3 or later. Independent dependencies retain their original licenses and notices.
 
-Application-based split tunneling supports both selected-app and exclusion modes, with a searchable app list. Private DNS, location latency checks and saved connection preferences are available across all three platforms. Android includes a Quick Settings tile and background connection controls.
+Application-based split tunneling supports both selected-app and exclusion modes, with a searchable app list. Private DNS, location latency checks and saved connection preferences are available across all three platforms. Downloaded locations remain available between sessions. Android includes a Quick Settings tile and background connection controls.
 
 Connection details include separate IPv4 and IPv6 addresses when available, with latency checks directly from Overview. Desktop tray controls reflect the current connection state. Android improves installation compatibility and provides direct access to the app by holding its Quick Settings tile.
 
