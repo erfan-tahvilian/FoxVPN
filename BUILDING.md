@@ -99,6 +99,18 @@ The build produces unsigned release APKs for arm64-v8a, armeabi-v7a, x86_64, x86
 
 The project release workflow builds and tests APKs in CI, then signs them locally on the maintainer's Windows computer using `scripts/sign-android.ps1 -RunId <successful-run-id>`. The private key and its DPAPI-protected password remain in the ignored local tools directory. The public certificate SHA-256 fingerprint is recorded in `android/signing-certificate.sha256`.
 
+### Installation compatibility experiments
+
+For an installation failure limited to a device's firmware, prepare a controlled ARM64 test from a successful build without changing the production packaging default:
+
+```powershell
+scripts/sign-android.ps1 -RunId <successful-run-id> -Architectures arm64-v8a -InstallCompatibility
+```
+
+This uses the cached verified APK and existing signing identity. It changes only the manifest's `extractNativeLibs` boolean and ZIP compression of native libraries, preserving all other uncompressed payload bytes, including the native engine and DEX files. A local Windows Android SDK `zipalign` is required. Output goes to `dist/android-install-compat/`; production APKs in `dist/android/` remain unchanged. The helper's payload comparison report is kept in the ignored local tools directory.
+
+These APKs are unpublished diagnostic builds, not replacements for release assets. Confirm installation on the affected device before adopting a packaging change. The manual Android release-install workflow also checks the alternative packaging on an API 36 x86_64 emulator using an ephemeral test certificate; that key and APK are never distributed.
+
 Android uses a permission-protected `VpnService`, the same HTML interface with a mobile layout, and one native Go library containing the authentication/HTTP2 bridge and sing-box libbox. The WebView loads packaged HTTPS assets only; it cannot browse external pages or read local files. Named actions cross the native bridge. Android Keystore protects local session encryption keys.
 
 Split tunneling excludes Android package names through the platform VPN builder. Quick Settings and the foreground notification read the core connection state. VPN consent is required before the first system connection. The debug-only integration service creates a real TUN interface without changing the default route; it is excluded from release APKs.
