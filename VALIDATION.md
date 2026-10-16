@@ -1,5 +1,11 @@
 # v1.0.0 verification record
 
+## Published Android APK installation — 2026-10-16
+
+- The signed v1.0.0 x86_64 and universal APKs were downloaded directly from the release, checked against GitHub asset SHA-256 digests and the project's pinned signing certificate, then installed and launched on an Android 16 / API 36 x86_64 emulator. The test covers a fresh x86_64 installation and an update to the universal APK; the application remained running without a Java or native startup crash. See the [installation check](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38839111418).
+- Local checks of the published ARM64 APK passed Android API 36 signature verification, ZIP integrity and duplicate-entry checks, 16 KB ZIP alignment, and ELF load-segment alignment and offset congruence. The local phone-test copy has the same SHA-256 digest as the release asset.
+- These results do not reproduce or resolve the reported Daria Bond II installation failure. Its on-device package-manager error and the identity of the APK used there are still needed. Emulator installation does not establish compatibility with that device's ARM64 firmware or installation policy.
+
 ## Cross-platform update — 2026-10-15
 
 - 19 desktop protocol, storage and routing tests pass. Coverage includes include/exclude routing on Windows and macOS, UDP isolation for selected apps, and migration and persistence of location order and routing preferences.
