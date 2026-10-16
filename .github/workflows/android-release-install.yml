@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Erfan Tahvilian
+name: Verify published Android installation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android16:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve and authenticate published APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release-apks test-results/android-install
+          tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$tools/apksigner"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" > /tmp/release.json
+          for arch in x86_64 universal; do
+            name="FoxVPN-1.0.0-Android-$arch.apk"
+            digest="$(jq -r --arg name "$name" '.assets[] | select(.name == $name) | .digest' /tmp/release.json)"
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+            gh release download v1.0.0 --pattern "$name" --dir release-apks
+            echo "${digest#sha256:}  release-apks/$name" | sha256sum --check
+            "$tools/apksigner" verify --min-sdk-version 36 --max-sdk-version 36 --print-certs "release-apks/$name" > /tmp/certificate.txt
+            grep -F "Signer #1 certificate SHA-256 digest: $(tr -d '\r\n' < android/signing-certificate.sha256)" /tmp/certificate.txt
+            "$tools/zipalign" -c -P 16 4 "release-apks/$name"
+          done
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and launch signed release APKs on Android 16
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          profile: pixel_7
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: bash .github/scripts/check_android_release.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-16-release-install-results
+          path: test-results/android-install/
