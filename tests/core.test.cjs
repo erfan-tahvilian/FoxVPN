@@ -99,3 +99,8 @@ test('location order and split mode migrate safely and survive a vault reload',(
     assert.throws(()=>validate({...DEFAULTS,locationSort:'invalid'}));assert.throws(()=>validate({...DEFAULTS,splitMode:'invalid'}));
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('country placeholders are not presented as city names',()=>{
+ const list=candidates([{country:{name:'Germany',code:'DE',cities:[{name:' germany ',code:'de',servers:[{hostname:'edge.example',port:443}]}]}}]);
+ assert.equal(list[0].city,'');assert.equal(list[0].id,'DE/de/edge.example:443');
+});

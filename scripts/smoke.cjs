@@ -19,6 +19,7 @@ app.whenReady().then(async()=>{
     status('Renderer loaded');
     await win.webContents.executeJavaScript(`new Promise(r=>setTimeout(r,250))`);
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('status-label').textContent`),'Disconnected');
+    assert.equal(await win.webContents.executeJavaScript(`getComputedStyle(document.getElementById('verify-exit')).cursor`),'default');
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('server-sort').value`),'ping-asc');
     assert.deepEqual(await win.webContents.executeJavaScript(`[...document.querySelector('#server-sort').options].map(o=>o.value)`),['ping-asc','ping-desc','name-asc','name-desc']);
     assert(await win.webContents.executeJavaScript(`new Set([...document.querySelectorAll('[id]')].map(e=>e.id)).size===document.querySelectorAll('[id]').length`));
@@ -47,7 +48,7 @@ app.whenReady().then(async()=>{
         }
         assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.server-row')].every(row=>row.children[1].classList.contains('server-ping')&&row.children[2].classList.contains('server-select'))`));
         const beforeSelection=await win.webContents.executeJavaScript(`currentState.settings.serverId`);
-        await win.webContents.executeJavaScript(`document.querySelector('.server-ping').click();new Promise(r=>setTimeout(r,100))`);
+        await win.webContents.executeJavaScript(`document.querySelector('.server-row .server-ping').click();new Promise(r=>setTimeout(r,100))`);
         assert.equal(await win.webContents.executeJavaScript(`page`),'locations');
         assert.equal(await win.webContents.executeJavaScript(`currentState.settings.serverId`),beforeSelection);
         assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.latency')].some(e=>e.textContent==='7 ms')`));
@@ -85,6 +86,12 @@ app.whenReady().then(async()=>{
     await win.webContents.executeJavaScript(`window.fox.call('select','REC').then(()=>window.fox.call('connect'));new Promise(r=>setTimeout(r,100))`);
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('selected-location').textContent`),'Canada');
     assert(await win.webContents.executeJavaScript(`document.getElementById('selected-detail').textContent.startsWith('Recommended · Connected to ')`));
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('exit-ipv4').textContent`),'203.0.113.1');
+    assert.equal(await win.webContents.executeJavaScript(`getComputedStyle(document.getElementById('verify-exit')).cursor`),'pointer');
+    await win.webContents.executeJavaScript(`document.getElementById('ping-selected').click();new Promise(r=>setTimeout(r,100))`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('selected-latency').textContent`),'7 ms');
+    assert.equal(await win.webContents.executeJavaScript(`locationLabel({country:'Germany',city:'Germany'})`),'Germany');
+    assert.equal(await win.webContents.executeJavaScript(`locationLabel({country:'Germany',city:'Frankfurt'})`),'Germany, Frankfurt');
     assert.equal(await win.webContents.executeJavaScript(`typeof require`),'undefined');
     assert.deepEqual(errors,[]);
     status('PASS: navigation, themes, renderer isolation and console checks');

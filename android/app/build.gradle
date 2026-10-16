@@ -39,7 +39,7 @@ android {
             universalApk true
         }
     }
-    packaging { jniLibs { useLegacyPackaging false } }
+    packaging { jniLibs { useLegacyPackaging true } }
     compileOptions {
         coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17

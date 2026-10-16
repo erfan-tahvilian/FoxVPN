@@ -348,3 +348,19 @@ func TestUnreachableLatencyAndValidation(t *testing.T) {
 		t.Fatal("Accepted invalid Android package")
 	}
 }
+
+type exitRoundTripper func(*http.Request) (*http.Response,error)
+func (f exitRoundTripper) RoundTrip(r *http.Request) (*http.Response,error) { return f(r) }
+func TestExitAddressFamiliesAndLocationLabels(t *testing.T) {
+ tunnel:=&proxyTunnel{requestClient:&http.Client{Transport:exitRoundTripper(func(r *http.Request)(*http.Response,error){
+  body:="ip=2001:db8::1\nloc=DE\n"
+  if r.URL.Hostname()=="1.1.1.1" { body="ip=203.0.113.3\nloc=DE\n" }
+  return &http.Response{StatusCode:200,Body:io.NopCloser(strings.NewReader(body)),Header:make(http.Header)},nil
+ })}}
+ base,err:=tunnel.exit(context.Background(),"DE")
+ if err!=nil || str(base,"ipv6")!="2001:db8::1" || str(base,"ipv4")!="" { t.Fatalf("Unexpected primary identity: %v %v",base,err) }
+ combined:=tunnel.addresses(context.Background(),base)
+ if str(combined,"ipv4")!="203.0.113.3" || str(base,"ipv4")!="" { t.Fatal("Address discovery failed or mutated the published state") }
+ if _,err=tunnel.exit(context.Background(),"US");err==nil { t.Fatal("Country mismatch was accepted") }
+ if locationLabel(object{"country":"Germany","city":" germany "})!="Germany" || locationLabel(object{"country":"Germany","city":"Frankfurt"})!="Germany, Frankfurt" { t.Fatal("Invalid country and city formatting") }
+}

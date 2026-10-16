@@ -25,6 +25,15 @@ function applyTheme(s) {
   document.querySelectorAll('[data-theme-logo]').forEach(img=>{const src=`../../assets/${light?'logo':'logo-light'}.png`;if(img.getAttribute('src')!==src)img.src=src;});
 }
 function countryName(code) {try{return new Intl.DisplayNames(['en'],{type:'region'}).of(code);}catch{return code;}}
+function locationCity(server) {const city=(server?.city||'').trim();return city&&city.toLowerCase()!==(server?.country||'').trim().toLowerCase()?city:'';}
+function locationLabel(server) {return [server?.country,locationCity(server)].filter(Boolean).join(', ');}
+function renderLatency(element,server,s) {
+  const result=server?s.latencies?.[server.id]:null;
+  const pending=server&&(s.pinging||(s.pingingIds||[]).includes(server.id));
+  element.className='latency';element.textContent=pending?'Checking…':result?(result.ms==null?'Unreachable':`${result.ms} ms`):'— ms';
+  if(!pending&&result?.ms!=null)element.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
+  element.title='TCP connection time to the VPN endpoint through your current network path';
+}
 function automaticServer(server) {return /recom+end|anycast/i.test(server.country+' '+server.city)||server.code==='REC';}
 function fillSettings(s) {
   for(const key of ['theme','bind','socksPort','doh','customDns','edge'])$(key).value=s[key];
@@ -50,9 +59,15 @@ function render(s) {
   const selected=s.activeServer||s.servers.find(server=>server.id===s.settings.serverId);
   const exitCountry=connected&&s.exit?.country?countryName(s.exit.country):null;
   $('selected-symbol').replaceChildren(exitCountry?flag(s.exit.country,exitCountry):selected?flag(selected.code,selected.country):icon('globe'));
-  $('selected-location').textContent=exitCountry?(selected?.code===s.exit.country&&selected.city!==selected.country?`${selected.city}, ${exitCountry}`:exitCountry):selected?`${selected.city}, ${selected.country}`:'Recommended location';
-  $('selected-detail').textContent=connected&&selected?`${s.settings.serverId==='REC'?'Recommended · ':''}Connected to ${selected.city}, ${selected.country}`:selected?`${selected.code} · HTTP/2 endpoint`:'Automatically choose an available server';
-  $('exit-ip').textContent=s.exit?.ip||(connected?'Not verified':'Not connected');
+  const shown=exitCountry&&selected?.code!==s.exit.country?{country:exitCountry,city:''}:selected;
+  $('selected-location').textContent=shown?locationLabel(shown):'Recommended location';
+  $('selected-detail').textContent=connected&&selected?`${s.settings.serverId==='REC'?'Recommended · ':''}Connected to ${locationLabel(shown)}`:selected?'HTTP/2 endpoint':'Automatically choose an available server';
+  renderLatency($('selected-latency'),selected,s);
+  $('ping-selected').disabled=!selected||s.pinging||(s.pingingIds||[]).includes(selected.id);
+  $('ping-selected').title=selected?`Ping ${locationLabel(selected)}`:'Connect to identify the recommended endpoint, or choose a location';
+  const legacy=s.exit?.ip||'';
+  $('exit-ipv4').textContent=s.exit?.ipv4||(!legacy.includes(':')&&legacy)|| (connected?(s.exit?.pending?'Checking…':'Not available'):'Not connected');
+  $('exit-ipv6').textContent=s.exit?.ipv6||(legacy.includes(':')&&legacy)|| (connected?(s.exit?.pending?'Checking…':'Not available'):'Not connected');
   $('exit-country').textContent=exitCountry||s.exit?.country||'—';
   $('verify-exit').disabled=!connected;
   $('downloaded').textContent=bytes(s.down);$('uploaded').textContent=bytes(s.up);
@@ -97,15 +112,12 @@ function renderServers() {
     const row=document.createElement('div');row.className='server-row'+(currentState.settings.serverId.startsWith(server.code+'/'+server.cityCode+'/')?' selected':'');
     const button=document.createElement('button');button.className='server-choice';button.dataset.serverId=server.id;
     const code=document.createElement('span');code.className='country-code';code.append(flag(server.code,server.country));
-    const text=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=server.country;small.textContent=server.city;text.append(strong,small);
+    const text=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=server.country;small.textContent=locationCity(server);small.hidden=!small.textContent;text.append(strong,small);
     const latency=document.createElement('span');latency.className='latency';
-    const result=currentState.latencies?.[server.id];
-    latency.textContent=result?(result.ms===null?'Unreachable':`${result.ms} ms`):(currentState.pinging||(currentState.pingingIds||[]).includes(server.id))?'Checking…':'— ms';
-    if(result?.ms!=null)latency.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
-    latency.title='TCP connection time, including DNS, through your current network path';
-    button.append(code,text,latency);button.addEventListener('click',action(async()=>{await call('select',server.id);navigate('home');toast(`Selected ${server.city}, ${server.country}`);}));const ping=document.createElement('button');ping.className='server-ping icon-button';ping.type='button';ping.setAttribute('aria-label',`Ping ${server.city}, ${server.country}`);ping.title=`Ping ${server.country}`;ping.append(icon('ping'));
+    renderLatency(latency,server,currentState);
+    button.append(code,text,latency);button.addEventListener('click',action(async()=>{await call('select',server.id);navigate('home');toast(`Selected ${locationLabel(server)}`);}));const ping=document.createElement('button');ping.className='server-ping icon-button';ping.type='button';ping.setAttribute('aria-label',`Ping ${locationLabel(server)}`);ping.title=`Ping ${server.country}`;ping.append(icon('ping'));
     ping.disabled=currentState.pinging||(currentState.pingingIds||[]).includes(server.id);
-    ping.addEventListener('click',action(async()=>{await call('ping',server.id);}));const choose=document.createElement('button');choose.type='button';choose.className='server-select icon-button';choose.setAttribute('aria-label',`Select ${server.city}, ${server.country}`);choose.title=`Select ${server.country}`;choose.append(icon('arrow'));choose.addEventListener('click',()=>button.click());row.append(button,ping,choose);$('server-list').append(row);
+    ping.addEventListener('click',action(async()=>{await call('ping',server.id);}));const choose=document.createElement('button');choose.type='button';choose.className='server-select icon-button';choose.setAttribute('aria-label',`Select ${locationLabel(server)}`);choose.title=`Select ${server.country}`;choose.append(icon('arrow'));choose.addEventListener('click',()=>button.click());row.append(button,ping,choose);$('server-list').append(row);
   }
   $('server-empty').hidden=servers.length>0;$('server-empty').textContent=query?'No matching locations.':'No locations loaded. Refresh to fetch the live server list.';
 }
@@ -155,7 +167,8 @@ function setupSelects() {
 setupSelects();
 document.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.page)));
 for(const id of ['account-shortcut','home-account'])$(id).addEventListener('click',()=>navigate('account'));
-$('choose-location').addEventListener('click',()=>navigate('locations'));
+for(const id of ['choose-location','choose-location-arrow'])$(id).addEventListener('click',()=>navigate('locations'));
+$('ping-selected').addEventListener('click',action(async()=>{const selected=currentState.activeServer||currentState.servers.find(s=>s.id===currentState.settings.serverId);if(selected)await call('ping',selected.id);}));
 $('connect').addEventListener('click',action(async()=>{if(!currentState.signedIn){navigate('account');return;}await call(currentState.connection==='connected'?'disconnect':currentState.connection==='connecting'?'cancel':'connect');}));
 $('theme-toggle').addEventListener('click',action(async()=>{const theme=document.body.classList.contains('light')?'dark':'light';await call('theme',theme);$('theme').value=theme;syncSelects();}));
 $('ping-servers').addEventListener('click',action(async()=>{await call('ping');toast('Location latency check complete.');}));

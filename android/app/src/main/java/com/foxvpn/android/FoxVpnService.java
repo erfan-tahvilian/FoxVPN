@@ -91,11 +91,15 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
         if("disconnected".equals(connection)){if(!starting)requestStop();return;}
         getSystemService(NotificationManager.class).notify(NOTIFICATION,notification("connected".equals(connection)?"Connected":"Connecting…"));
     }
+    private static String locationLabel(JSONObject server){
+        String country=server.optString("country").trim(),city=server.optString("city").trim();
+        return city.isEmpty()||city.equalsIgnoreCase(country)?country:country.isEmpty()?city:country+", "+city;
+    }
     private Notification notification(String status){
         PendingIntent open=PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,FoxVpnService.class).setAction("disconnect"),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         JSONObject server=app().state.optJSONObject("activeServer");
-        String text=status;if(server!=null&&"connected".equals(app().connection()))text+=" · "+server.optString("city")+", "+server.optString("country");
+        String text=status;if(server!=null&&"connected".equals(app().connection()))text+=" · "+locationLabel(server);
         JSONObject exit=app().state.optJSONObject("exit");
         if(exit!=null&&server!=null&&"connected".equals(app().connection())&&!exit.optString("country").equals(server.optString("code")))
             text=status+" · "+new java.util.Locale("",exit.optString("country")).getDisplayCountry(java.util.Locale.ENGLISH);

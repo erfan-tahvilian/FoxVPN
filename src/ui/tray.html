@@ -1,0 +1,6 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Erfan Tahvilian -->
+<html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fox VPN</title><link rel="stylesheet" href="tray.css"></head><body>
+<main aria-label="Fox VPN tray menu"><header><img id="logo" src="../../assets/logo-light.png" alt=""><div><strong>Fox VPN</strong><p><span id="status-dot"></span><span id="status">Disconnected</span></p></div><span id="version">v1.0.0</span></header><p id="location">Your connection. Your control.</p>
+<div role="menu" aria-label="Connection controls"><button id="toggle" class="primary" role="menuitem"><svg viewBox="0 0 24 24"><path d="M12 3v9M6 6a9 9 0 1 0 12 0"/></svg><span id="toggle-label">Connect</span></button><button id="open" role="menuitem"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/></svg>Open Fox VPN</button><button id="quit" role="menuitem"><svg viewBox="0 0 24 24"><path d="M10 4H5v16h5M12 12h9m-4-4 4 4-4 4"/></svg>Quit Fox VPN</button></div><p id="error" role="status" hidden></p></main><script src="tray.js"></script></body></html>

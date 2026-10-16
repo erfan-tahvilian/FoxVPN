@@ -57,7 +57,7 @@ class Tunnel {
       this.accept(socket).catch(()=>{if(!socket.destroyed)socket.end(Buffer.from([5,1,0,1,0,0,0,0,0,0]));});
     });
     await new Promise((resolve,reject)=>{this.server.once('error',reject);this.server.listen(this.settings.socksPort,this.settings.bind,resolve);});
-    this.log('info',`HTTP/2 tunnel ready · ${candidate.city}, ${candidate.country}`);
+    this.log('info',`HTTP/2 tunnel ready · ${[candidate.country,candidate.city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')}`);
     this.keepalive=setInterval(()=>{for(const s of this.sessions)if(!s.closed&&!s.destroyed)s.ping((e)=>{if(e)s.destroy();});},20000);
   }
   async session() {
@@ -120,10 +120,10 @@ class Tunnel {
     socket.pipe(stream);stream.pipe(socket);socket.resume();
   }
   async request(url, body, contentType) {
-    const u=new URL(url), stream=await this.open(u.hostname,Number(u.port)||443);
+    const u=new URL(url), host=u.hostname.replace(/^\[|\]$/g,''), stream=await this.open(host,Number(u.port)||443);
     const agent=new https.Agent({keepAlive:false});
     agent.createConnection=(_options,callback)=>{
-      const socket=tls.connect({socket:stream,servername:net.isIP(u.hostname)?undefined:u.hostname,rejectUnauthorized:true,checkServerIdentity:(_host,cert)=>tls.checkServerIdentity(u.hostname,cert)});
+      const socket=tls.connect({socket:stream,servername:net.isIP(host)?undefined:host,rejectUnauthorized:true,checkServerIdentity:(_host,cert)=>tls.checkServerIdentity(host,cert)});
       socket.once('secureConnect',()=>callback(null,socket));socket.once('error',callback);
     };
     try {
@@ -172,9 +172,19 @@ class Tunnel {
   async exit(expected) {
     const text=(await this.request('https://www.cloudflare.com/cdn-cgi/trace')).toString();
     const fields=Object.fromEntries(text.trim().split('\n').map(l=>l.split('=')));
-    if(!fields.ip || !fields.loc)throw Error('Exit verification returned no IP or country.');
+    if(!net.isIP(fields.ip||'') || !/^[a-z]{2}$/i.test(fields.loc||''))throw Error('Exit verification returned no IP or country.');
     if(expected && expected!=='REC' && expected.toUpperCase()!==fields.loc.toUpperCase())throw Error(`Exit mismatch: expected ${expected}, received ${fields.loc}.`);
-    return {ip:fields.ip,country:fields.loc};
+    return {ip:fields.ip,country:fields.loc,ipv4:net.isIP(fields.ip)===4?fields.ip:'',ipv6:net.isIP(fields.ip)===6?fields.ip:'',pending:true};
+  }
+  async addresses(base) {
+    const result={...base};
+    const family=result.ipv4?6:4;
+    try {
+      const address=family===4?'1.1.1.1':'[2606:4700:4700::1111]';
+      const fields=Object.fromEntries((await this.request(`https://${address}/cdn-cgi/trace`)).toString().trim().split('\n').map(line=>line.split('=')));
+      if(net.isIP(fields.ip||'')===family&&fields.loc?.toUpperCase()===base.country.toUpperCase())result[family===4?'ipv4':'ipv6']=fields.ip;
+    } catch {/* A missing address family does not interrupt an established connection. */}
+    return result;
   }
   stop() {
     this.active=false;clearInterval(this.keepalive);

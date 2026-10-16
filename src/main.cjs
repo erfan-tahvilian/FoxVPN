@@ -15,10 +15,11 @@ const {measure,measureAll}=require('./lib/latency.cjs');
 const {engineConfig}=require('./lib/settings.cjs');
 const {MacEngine,networkDns:macNetworkDns}=require('./lib/mac-engine.cjs');
 const {ApplicationCatalog}=require('./lib/applications.cjs');
+const {TrayPopup}=require('./tray.cjs');
 const applications=new ApplicationCatalog(app);
 const mac=process.platform==='darwin';
 let macEngine;
-let window,tray,store,guardian,tunnel,pendingTunnel,engine,refreshTimer,busy=false,quitting=false,generation=0;
+let window,tray,trayPopup,store,guardian,tunnel,pendingTunnel,engine,refreshTimer,busy=false,quitting=false,generation=0;
 let latencies={},pinging=false;const pingingIds=new Set();
 let servers=[],logs=[],connection='disconnected',startedAt=null,exit=null,quota=null,lastError=null;
 const icon=path.join(__dirname,mac?'../assets/logo-light.png':'../assets/icon.ico');
@@ -28,7 +29,22 @@ function log(level,message) {
   logs.push(entry);if(logs.length>1000)logs.shift();emit();
 }
 function state() {return {version:app.getVersion(),platform:process.platform,settings:store.publicSettings(),signedIn:!!store.auth,email:store.auth?.email || '',servers,latencies,pinging,pingingIds:[...pingingIds],activeServer:connection==='connected'?tunnel?.candidate:null,logs,connection,startedAt,exit,quota,lastError,up:tunnel?.up || 0,down:tunnel?.down || 0,systemDark:nativeTheme.shouldUseDarkColors,busy};}
-function emit() {if(window&&!window.isDestroyed())window.webContents.send('fox:state',state());}
+function emit() {if(store&&nativeTheme.themeSource!==store.settings.theme)nativeTheme.themeSource=store.settings.theme;if(window&&!window.isDestroyed())window.webContents.send('fox:state',state());trayPopup?.update();}
+function trayState(){
+  const server=tunnel?.candidate;
+  const country=exit?.country?new Intl.DisplayNames(['en'],{type:'region'}).of(exit.country):server?.country;
+  const city=server&&(!exit?.country||exit.country===server.code)?server.city:'';
+  return {version:app.getVersion(),connection,signedIn:!!store.auth,busy,light:!nativeTheme.shouldUseDarkColors,location:[country,city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')};
+}
+async function trayCommand(action){
+  if(action==='open'){window.show();window.focus();return;}
+  if(action==='quit'){app.quit();return;}
+  if(connection==='connecting'){await disconnect();return;}
+  if(busy||connection==='disconnecting')return;
+  if(connection==='connected'){await disconnect();return;}
+  busy=true;emit();try{await connect();}finally{busy=false;emit();}
+}
+
 function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'engine'):path.join(__dirname,mac?'../engine/darwin':'../engine',process.arch);}
 async function admin() {
   return new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command','([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)'],{windowsHide:true},(e,out)=>resolve(!e&&out.trim()==='True')));
@@ -119,14 +135,21 @@ async function connect() {
       const attempt=new Tunnel(structuredClone(store.settings),log,fail);
       pendingTunnel=attempt;
       try{await attempt.start(candidate,pass);check();if(store.settings.exitCheck||id==='REC')exit=await attempt.exit(id==='REC'?null:candidate.code);check();tunnel=attempt;pendingTunnel=null;selected=candidate;break;}
-      catch(e){attempt.stop();pendingTunnel=null;check();lastError=e.message;log('warn',`Could not connect to ${candidate.city}, ${candidate.country}. Trying another endpoint.`);}
+      catch(e){attempt.stop();pendingTunnel=null;check();lastError=e.message;log('warn',`Could not connect to ${[candidate.country,candidate.city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')}. Trying another endpoint.`);}
     }
     if(!selected)throw Error(lastError || 'No server could be reached.');
     if(!store.settings.proxyOnly)await launchEngine(selected,epoch);
     check();
-    connection='connected';startedAt=Date.now();lastError=null;renew(pass);
+    connection='connected';startedAt=Date.now();lastError=null;renew(pass);void refreshAddresses(tunnel,epoch);
     log('info',store.settings.proxyOnly?'Proxy-only mode active · configure your application to use the local SOCKS5 proxy':`Connected · ${mac?'macOS':'Windows'} system VPN active`);
   }catch(e){if(epoch===generation){lastError=e.message;log('error',e.message);await disconnect();}}
+}
+async function refreshAddresses(active,epoch) {
+  if(tunnel!==active||connection!=='connected')return;
+  const base=exit?.ip?{...exit}:null;exit={...exit,pending:true};emit();
+  let result=base;
+  try{result=await active.addresses(base||await active.exit(null));}catch{/* No optional probe can invalidate an established tunnel. */}
+  if(tunnel===active&&generation===epoch&&connection==='connected'){exit={...result,pending:false};emit();}
 }
 function handle(channel, fn) {
   ipcMain.handle('fox:'+channel,async(event,...args)=>{
@@ -148,7 +171,10 @@ else {
     if(mac)Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Fox VPN',submenu:[{role:'about'},{type:'separator'},{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'},{role:'quit'}]},{role:'editMenu'},{role:'windowMenu'}]));
     store=new Store(app.getPath('userData'),safeStorage);
     const control=new Control();guardian=new Guardian(control,new Auth(control,store));
-    createWindow();tray=new Tray(mac?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');tray.setContextMenu(Menu.buildFromTemplate([{label:'Open Fox VPN',click:()=>window.show()},{label:'Disconnect',click:()=>disconnect()},{type:'separator'},{label:'Quit Fox VPN',click:()=>app.quit()}]));tray.on('double-click',()=>window.show());
+    createWindow();tray=new Tray(mac?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');
+    trayPopup=new TrayPopup({state:trayState,command:trayCommand,bounds:()=>tray.getBounds()});
+    const showTray=()=>trayPopup.show().catch(error=>log('warn',error.message));
+    tray.on('right-click',showTray);tray.on('click',showTray);tray.on('double-click',()=>{trayPopup.hide();window.show();window.focus();});emit();
     handle('state',()=>state());
     handle('login',async({email,password})=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{return await guardian.auth.login(email,password);}finally{busy=false;emit();}});
     handle('verify',async code=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{return await guardian.auth.verify(code);}finally{busy=false;emit();}});
@@ -178,7 +204,7 @@ else {
     handle('connect',async()=>{if(busy)throw Error('Wait for the current operation.');busy=true;emit();try{await connect();}finally{busy=false;emit();}});
     handle('disconnect',async()=>{if(busy)throw Error('Wait for the current operation.');await disconnect();});
     handle('cancel',async()=>{if(connection==='connecting')await disconnect();});
-    handle('exit',async()=>{if(connection!=='connected')throw Error('Connect before verifying your exit.');exit=await tunnel.exit(store.settings.serverId==='REC'?null:tunnel.candidate.code);emit();return exit;});
+    handle('exit',async()=>{if(connection!=='connected')throw Error('Connect before verifying your connection.');const active=tunnel,epoch=generation;const result=await active.exit(store.settings.serverId==='REC'?null:active.candidate.code);if(tunnel!==active||epoch!==generation)throw Error('Connection changed while checking.');exit=result;emit();void refreshAddresses(active,epoch);return result;});
     handle('clearLogs',()=>{logs=[];emit();});
     handle('exportLogs',async()=>{const result=await dialog.showSaveDialog(window,{defaultPath:'FoxVPN-diagnostics.txt',filters:[{name:'Text files',extensions:['txt']}]});if(!result.canceled)fs.writeFileSync(result.filePath,logs.map(l=>`${l.time} [${l.level}] ${l.message}`).join('\n'));});
     handle('openLink',id=>{const urls={source:'https://github.com/erfan-tahvilian/FoxVPN',license:'https://github.com/erfan-tahvilian/FoxVPN/blob/main/LICENSE',account:'https://accounts.firefox.com/',accountSettings:'https://accounts.firefox.com/settings'};if(!urls[id])throw Error('Unknown link');return shell.openExternal(urls[id]);});
@@ -186,7 +212,7 @@ else {
     if(store.loadError)log('warn',store.loadError);
     refreshServers().catch(()=>log('warn','Server list is currently unreachable. Use Refresh in Locations to try again.'));
   });
-  app.on('before-quit',event=>{if(quitting)return;event.preventDefault();quitting=true;disconnect().finally(()=>{tray?.destroy();app.quit();});});
+  app.on('before-quit',event=>{if(quitting)return;event.preventDefault();quitting=true;disconnect().finally(()=>{trayPopup?.destroy();tray?.destroy();app.quit();});});
   app.on('activate',()=>{window?.show();window?.focus();});
   app.on('window-all-closed',()=>{});
 }

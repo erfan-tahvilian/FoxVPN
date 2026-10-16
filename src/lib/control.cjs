@@ -74,7 +74,7 @@ function candidates(records) {
       const connect = (server.protocols || []).find(p=>p.name==='connect');
       if(server.protocols?.length && !connect) continue;
       const host=connect?.host || server.hostname, port=connect?.port || server.port || 443;
-      if(host) output.push({id:`${country.code}/${city.code}/${host}:${port}`, country:country.name, code:country.code, city:city.name, cityCode:city.code,host,port});
+      if(host) output.push({id:`${country.code}/${city.code}/${host}:${port}`, country:country.name, code:country.code, city:String(city.name||'').trim().toLowerCase()===String(country.name||'').trim().toLowerCase()?'':String(city.name||'').trim(), cityCode:city.code,host,port});
     }
   }
   return output;

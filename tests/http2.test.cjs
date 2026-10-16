@@ -36,5 +36,14 @@ test('real TLS + HTTP/2 CONNECT carries authenticated streams and nested HTTPS w
 test('exit verification refuses a mismatching selected country',async()=>{
   const tunnel=new Tunnel(DEFAULTS,()=>{},()=>{});tunnel.request=async()=>Buffer.from('ip=203.0.113.2\nloc=DE\n');
   await assert.rejects(tunnel.exit('US'),/Exit mismatch/);
-  assert.deepEqual(await tunnel.exit(null),{ip:'203.0.113.2',country:'DE'});
+  assert.deepEqual(await tunnel.exit(null),{ip:'203.0.113.2',country:'DE',ipv4:'203.0.113.2',ipv6:'',pending:true});
+});
+
+test('address discovery preserves verified country and tolerates missing IP families',async()=>{
+  const tunnel=new Tunnel(DEFAULTS,()=>{},()=>{});
+  const base={ip:'2001:db8::1',country:'DE',ipv4:'',ipv6:'2001:db8::1'};
+  tunnel.request=async url=>{assert.equal(url,'https://1.1.1.1/cdn-cgi/trace');return Buffer.from('ip=203.0.113.4\nloc=DE\n');};
+  assert.equal((await tunnel.addresses(base)).ipv4,'203.0.113.4');assert.equal(base.ipv4,'');
+  tunnel.request=async()=>Buffer.from('ip=203.0.113.4\nloc=US\n');assert.equal((await tunnel.addresses(base)).ipv4,'');
+  tunnel.request=async()=>{throw Error('No IPv4 route')};assert.deepEqual(await tunnel.addresses(base),base);
 });

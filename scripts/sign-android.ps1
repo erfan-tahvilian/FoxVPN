@@ -3,12 +3,10 @@
 param(
     [Parameter(Mandatory=$true)][string]$RunId,
     [ValidateSet('arm64-v8a','armeabi-v7a','x86_64','x86','universal')]
-    [string[]]$Architectures=@('arm64-v8a','armeabi-v7a','x86_64','x86','universal'),
-    [switch]$InstallCompatibility
+    [string[]]$Architectures=@('arm64-v8a','armeabi-v7a','x86_64','x86','universal')
 )
 $ErrorActionPreference = 'Stop'
 if ($RunId -notmatch '^\d+$') { throw 'Invalid build run ID.' }
-if ($InstallCompatibility -and ($Architectures.Count -ne 1 -or $Architectures[0] -ne 'arm64-v8a')) { throw 'Installation experiments are ARM64-only; specify -Architectures arm64-v8a.' }
 $foxRoot = Split-Path -Parent $PSScriptRoot
 $foxGh = Join-Path $foxRoot '.tools/gh/bin/gh.exe'
 $foxCredentials = "protocol=https`nhost=github.com`n`n" | git credential fill
@@ -34,7 +32,7 @@ if($foxRun.head_sha -ne (git rev-parse HEAD).Trim()){
 }
 $foxBuild = Join-Path $foxRoot ('.tools/android-build-' + $RunId)
 $foxSigningTools = Join-Path $foxRoot '.tools/android-signing-tools'
-$foxOutput = Join-Path $foxRoot $(if($InstallCompatibility){'dist/android-install-compat'}else{'dist/android'})
+$foxOutput = Join-Path $foxRoot 'dist/android'
 $foxKeystore = Join-Path $foxRoot '.tools/android-release.jks'
 $foxPasswordFile = Join-Path $foxRoot '.tools/android-key-password.dpapi'
 if (!(Test-Path -LiteralPath $foxKeystore) -or !(Test-Path -LiteralPath $foxPasswordFile)) { throw 'Local Android signing identity is unavailable; refusing to create a replacement.' }
@@ -69,24 +67,8 @@ try {
     foreach ($foxAbi in $Architectures) {
         $foxInputs = @(Get-ChildItem -LiteralPath $foxBuild -Recurse -File -Filter ('app-' + $foxAbi + '-release-unsigned.apk'))
         if ($foxInputs.Count -ne 1) { throw ('Expected one verified Android package for ' + $foxAbi) }
-        $foxInput = $foxInputs[0].FullName
-        $foxSuffix = ''
-        if($InstallCompatibility){
-            $foxExperiment=Join-Path $foxRoot ('.tools/android-install-compat-'+$RunId)
-            New-Item -ItemType Directory -Path $foxExperiment -Force | Out-Null
-            $foxRaw=Join-Path $foxExperiment 'repacked-unsigned.apk'
-            & python (Join-Path $foxRoot '.github/scripts/make_install_compat.py') $foxInput $foxRaw | Set-Content (Join-Path $foxExperiment 'payload-report.json') -Encoding utf8
-            if($LASTEXITCODE -ne 0){throw 'Installation experiment payload verification failed.'}
-            $foxSdk=if($env:ANDROID_HOME){$env:ANDROID_HOME}else{Join-Path $foxRoot '.tools/phone-sdk'}
-            $foxAligners=@(Get-ChildItem -LiteralPath (Join-Path $foxSdk 'build-tools') -Directory | Sort-Object Name -Descending | ForEach-Object {Join-Path $_.FullName 'zipalign.exe'} | Where-Object {Test-Path -LiteralPath $_})
-            if(!$foxAligners.Count){throw 'A local Windows Android SDK zipalign tool is required; no extra tool download is performed.'}
-            $foxInput=Join-Path $foxExperiment 'aligned-unsigned.apk'
-            & $foxAligners[0] -P 16 -f 4 $foxRaw $foxInput
-            if($LASTEXITCODE -ne 0){throw 'Installation experiment alignment failed.'}
-            $foxSuffix='-install-compat'
-        }
-        $foxApk = Join-Path $foxOutput ('FoxVPN-1.0.0-Android-' + $foxAbi + $foxSuffix + '.apk')
-        & $foxJava -jar $foxSigner sign --ks $foxKeystore --ks-key-alias foxvpn --ks-pass env:FOX_ANDROID_SIGNING_PASS --key-pass env:FOX_ANDROID_SIGNING_PASS --min-sdk-version 26 --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out $foxApk $foxInput
+        $foxApk = Join-Path $foxOutput ('FoxVPN-1.0.0-Android-' + $foxAbi + '.apk')
+        & $foxJava -jar $foxSigner sign --ks $foxKeystore --ks-key-alias foxvpn --ks-pass env:FOX_ANDROID_SIGNING_PASS --key-pass env:FOX_ANDROID_SIGNING_PASS --min-sdk-version 26 --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out $foxApk $foxInputs[0].FullName
         if ($LASTEXITCODE -ne 0) { throw ('Signing failed for ' + $foxAbi) }
         $foxVerification = & $foxJava -jar $foxSigner verify --verbose --print-certs $foxApk
         if ($LASTEXITCODE -ne 0 -or ($foxVerification -join "\n") -notmatch [regex]::Escape($foxCertificate)) { throw ('Signature or signing identity mismatch for ' + $foxAbi) }

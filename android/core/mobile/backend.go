@@ -383,8 +383,11 @@ func (b *Backend) Call(channel, argsJSON string) string {
 			result, err = t.exit(ctx, expected)
 			if err == nil {
 				b.mu.Lock()
-				b.exit = result.(object)
+				if b.tunnel == t {
+					b.exit = result.(object)
+				}
 				b.mu.Unlock()
+				go b.refreshAddresses(t)
 			}
 		}
 	case "clearLogs":
@@ -462,7 +465,7 @@ func (b *Backend) connect() error {
 		}
 		t := newTunnel(b, s, server, token, ctx)
 		if err = t.start(); err != nil {
-			b.log("error", "Tunnel to "+str(server, "city")+", "+str(server, "country")+" failed: "+err.Error())
+			b.log("error", "Tunnel to "+locationLabel(server)+" failed: "+err.Error())
 			t.close()
 			continue
 		}
@@ -488,7 +491,7 @@ func (b *Backend) connect() error {
 		b.exit = exit
 		b.mu.Unlock()
 		complete = true
-		b.log("info", "HTTP/2 tunnel ready · "+str(server, "city")+", "+str(server, "country"))
+		b.log("info", "HTTP/2 tunnel ready · "+locationLabel(server))
 		if yes(s, "proxyOnly") {
 			b.Ready()
 		}
@@ -514,6 +517,7 @@ func (b *Backend) Ready() {
 	b.log("info", "Connected · Fox VPN is active")
 	go b.renew(t)
 	go t.monitor()
+	go b.refreshAddresses(t)
 }
 func (b *Backend) renew(t *proxyTunnel) {
 	ticker := time.NewTicker(time.Minute)
@@ -667,4 +671,40 @@ func (b *Backend) LogExport() string {
 		fmt.Fprintf(&out, "%s [%s] %s\n", str(l, "time"), str(l, "level"), str(l, "message"))
 	}
 	return out.String()
+}
+
+// Address-family discovery is optional and never gates or tears down a VPN.
+func (b *Backend) refreshAddresses(t *proxyTunnel) {
+	b.mu.Lock()
+	if b.tunnel != t || b.connection != "connected" {
+		b.mu.Unlock()
+		return
+	}
+	base := copyObject(b.exit)
+	if base == nil {
+		base = object{}
+	}
+	pending := copyObject(base)
+	pending["pending"] = true
+	b.exit = pending
+	b.mu.Unlock()
+	b.emit()
+	ctx, cancel := context.WithTimeout(t.ctx, 8*time.Second)
+	defer cancel()
+	if str(base, "ip") == "" {
+		value, err := t.exit(ctx, "")
+		if err == nil {
+			base = value
+		}
+	}
+	if str(base, "ip") != "" {
+		base = t.addresses(ctx, base)
+	}
+	base["pending"] = false
+	b.mu.Lock()
+	if b.tunnel == t && b.connection == "connected" {
+		b.exit = base
+	}
+	b.mu.Unlock()
+	b.emit()
 }

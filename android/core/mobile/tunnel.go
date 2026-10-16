@@ -681,7 +681,13 @@ func (t *proxyTunnel) exit(ctx context.Context, expected string) (object, error)
 	if expected != "" && expected != "REC" && !strings.EqualFold(expected, country) {
 		return nil, fmt.Errorf("Exit mismatch: expected %s, received %s", expected, country)
 	}
-	return object{"ip": ip, "country": country}, nil
+	result := object{"ip": ip, "country": country, "ipv4": "", "ipv6": "", "pending": true}
+	if net.ParseIP(ip).To4() != nil {
+		result["ipv4"] = ip
+	} else {
+		result["ipv6"] = ip
+	}
+	return result, nil
 }
 func (t *proxyTunnel) close() {
 	t.cancel()
@@ -706,4 +712,28 @@ func (t *proxyTunnel) close() {
 	}
 	t.transport.CloseIdleConnections()
 	t.requestTransport.CloseIdleConnections()
+}
+
+func (t *proxyTunnel) addresses(ctx context.Context, base object) object {
+	result := copyObject(base)
+	address, key := "https://1.1.1.1/cdn-cgi/trace", "ipv4"
+	if str(base, "ipv4") != "" {
+		address, key = "https://[2606:4700:4700::1111]/cdn-cgi/trace", "ipv6"
+	}
+	data, err := t.request(ctx, address, nil, "")
+	if err != nil {
+		return result
+	}
+	fields := object{}
+	for _, line := range strings.Split(string(data), "\n") {
+		k, v, ok := strings.Cut(strings.TrimSpace(line), "=")
+		if ok {
+			fields[k] = v
+		}
+	}
+	ip := net.ParseIP(str(fields, "ip"))
+	if ip != nil && strings.EqualFold(str(fields, "loc"), str(base, "country")) && (key == "ipv4" && ip.To4() != nil || key == "ipv6" && ip.To4() == nil) {
+		result[key] = ip.String()
+	}
+	return result
 }

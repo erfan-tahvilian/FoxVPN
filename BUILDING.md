@@ -99,17 +99,9 @@ The build produces unsigned release APKs for arm64-v8a, armeabi-v7a, x86_64, x86
 
 The project release workflow builds and tests APKs in CI, then signs them locally on the maintainer's Windows computer using `scripts/sign-android.ps1 -RunId <successful-run-id>`. The private key and its DPAPI-protected password remain in the ignored local tools directory. The public certificate SHA-256 fingerprint is recorded in `android/signing-certificate.sha256`.
 
-### Installation compatibility experiments
+### Android packaging
 
-For an installation failure limited to a device's firmware, prepare a controlled ARM64 test from a successful build without changing the production packaging default:
-
-```powershell
-scripts/sign-android.ps1 -RunId <successful-run-id> -Architectures arm64-v8a -InstallCompatibility
-```
-
-This uses the cached verified APK and existing signing identity. It changes only the manifest's `extractNativeLibs` boolean and ZIP compression of native libraries, preserving all other uncompressed payload bytes, including the native engine and DEX files. A local Windows Android SDK `zipalign` is required. Output goes to `dist/android-install-compat/`; production APKs in `dist/android/` remain unchanged. The helper's payload comparison report is kept in the ignored local tools directory.
-
-These APKs are unpublished diagnostic builds, not replacements for release assets. Confirm installation on the affected device before adopting a packaging change. The manual Android release-install workflow also checks the alternative packaging on an API 36 x86_64 emulator using an ephemeral test certificate; that key and APK are never distributed.
+Release APKs compress native libraries and extract them at installation time (`useLegacyPackaging true`). This packaging was confirmed on a Daria Bond II after its installer rejected the previous direct-mapped APKs. Native 64-bit libraries retain 16 KB ELF load-segment alignment. CI validates all ABIs; published signed packages are also checked by the manual API 36 installation workflow.
 
 ### Android runtime
 

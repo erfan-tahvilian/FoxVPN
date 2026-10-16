@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/hkdf"
@@ -314,7 +315,7 @@ func (b *Backend) refreshServers(ctx context.Context) ([]object, error) {
 				if host == "" {
 					continue
 				}
-				servers = append(servers, object{"id": fmt.Sprintf("%s/%s/%s:%d", str(country, "code"), str(city, "code"), host, int(port)), "country": str(country, "name"), "code": str(country, "code"), "city": str(city, "name"), "cityCode": str(city, "code"), "host": host, "port": port})
+				servers = append(servers, object{"id": fmt.Sprintf("%s/%s/%s:%d", str(country, "code"), str(city, "code"), host, int(port)), "country": str(country, "name"), "code": str(country, "code"), "city": displayCity(str(country, "name"), str(city, "name")), "cityCode": str(city, "code"), "host": host, "port": port})
 			}
 		}
 	}
@@ -426,4 +427,23 @@ func (b *Backend) challenge(ctx context.Context) error {
 		}
 	}
 	return errors.New("Could not complete service verification. Try again later")
+}
+
+func displayCity(country, city string) string {
+	city = strings.TrimSpace(city)
+	if strings.EqualFold(city, strings.TrimSpace(country)) {
+		return ""
+	}
+	return city
+}
+func locationLabel(server object) string {
+	country := strings.TrimSpace(str(server, "country"))
+	city := displayCity(country, str(server, "city"))
+	if city == "" {
+		return country
+	}
+	if country == "" {
+		return city
+	}
+	return country + ", " + city
 }

@@ -19,7 +19,7 @@ for target in [*abi_info, "universal"]:
         raise RuntimeError(f"Expected one APK for {target}: {files}")
     path = files[0]
     expected = set(abi_info) if target == "universal" else {target}
-    with zipfile.ZipFile(path) as apk, path.open("rb") as raw:
+    with zipfile.ZipFile(path) as apk:
         libraries = [n for n in apk.namelist() if n.startswith("lib/") and n.endswith(".so")]
         actual = {n.split("/")[1] for n in libraries}
         if actual != expected:
@@ -40,12 +40,8 @@ for target in [*abi_info, "universal"]:
             if data[:4] != b"\x7fELF" or data[4] != kind or data[5] != 1 or struct.unpack_from("<H", data, 18)[0] != machine:
                 raise RuntimeError(f"{path.name}: wrong ELF architecture: {name}")
             info = apk.getinfo(name)
-            raw.seek(info.header_offset)
-            local = raw.read(30)
-            filename_length, extra_length = struct.unpack_from("<HH", local, 26)
-            offset = info.header_offset + 30 + filename_length + extra_length
-            if info.compress_type != zipfile.ZIP_STORED or offset % 16384:
-                raise RuntimeError(f"{path.name}: native library is not aligned for 16 KB pages")
+            if info.compress_type != zipfile.ZIP_DEFLATED:
+                raise RuntimeError(f"{path.name}: native library must use installation-time extraction")
             if kind == 2:
                 phoff = struct.unpack_from("<Q", data, 32)[0]
                 phsize, count = struct.unpack_from("<HH", data, 54)
