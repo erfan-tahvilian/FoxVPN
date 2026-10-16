@@ -1,162 +1,249 @@
-<div align="center">
-
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-light.png">
-  <img src="assets/logo.png" width="180" alt="Fox VPN">
+  <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/readme/hero-dark-mobile.webp">
+  <source media="(max-width: 600px)" srcset="docs/readme/hero-light-mobile.webp">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.webp">
+  <img src="docs/readme/hero-light.webp" width="1440" alt="Fox VPN. Your connection. Your control. A VPN client for Windows, macOS and Android.">
 </picture>
 
-# Fox VPN
+<p align="center">
+  <a href="#download"><strong>Download v1.0.0</strong></a> &nbsp; / &nbsp;
+  <a href="#the-workspace">Explore the app</a> &nbsp; / &nbsp;
+  <a href="#get-connected">Get connected</a> &nbsp; / &nbsp;
+  <a href="#support-the-project">Support the project</a>
+</p>
 
-**Your connection. Your control.**
+**A familiar workspace for a more private connection.** Fox VPN brings system VPN, app-based routing and connection controls to your desktop and phone, with an English interface and light, dark and system appearance.
 
-A VPN client for Windows, macOS and Android.
-
-![Version](https://img.shields.io/badge/version-1.0.0-ff741f?style=flat-square)
-![Windows](https://img.shields.io/badge/Windows-x64%20%7C%20x86%20%7C%20ARM64-20232a?style=flat-square)
-![macOS](https://img.shields.io/badge/macOS-Intel%20%7C%20Apple%20Silicon-20232a?style=flat-square)
-![Android](https://img.shields.io/badge/Android-ARM%20%7C%20x86-20232a?style=flat-square)
-
-[Download](#download) · [Features](#features) · [Get started](#getting-started) · [Support development](#donate)
-
-</div>
-
----
-
-![Fox VPN overview](docs/screenshots/overview-dark.png)
+Sign in with a Firefox account to get started. Service eligibility, availability and data allowances apply. Fox VPN is an independent client and is not affiliated with Mozilla.
 
 ## Download
 
-**Current release: v1.0.0** · [All release assets](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.0)
+**v1.0.0** · [Release notes & all files ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.0) · [SHA-256 checksums](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt)
+
+Choose the package that matches your operating system and processor. Installers and portable archives are available for desktop; Android packages are signed APKs.
+
+<p align="center">
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="240" alt="Download Fox VPN for Windows x64 — EXE installer."></picture></a>
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="240" alt="Download Fox VPN for macOS Apple Silicon — DMG."></picture></a>
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-android-dark.svg"><img src="docs/readme/download-android-light.svg" width="240" alt="Download Fox VPN for Android ARM64 — signed APK."></picture></a>
+</p>
+
+Quick downloads for common devices. **Every supported architecture is listed below.**
 
 ### Windows
 
-| Device | Installer | Portable |
-| :--- | :---: | :---: |
-| **Intel / AMD 64-bit** · x64 | [Download EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.zip) |
-| **Intel / AMD 32-bit** · x86 | [Download EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.zip) |
-| **Windows on ARM** · ARM64 | [Download EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.zip) |
+Windows 10 or later for **x64 / x86** · Windows 11 for **ARM64**
 
-Requires **Windows 10 or later** for x64/x86, or **Windows 11** for ARM64.
+| Your device | Installer | Portable archive |
+| :--- | :--- | :--- |
+| **Intel / AMD 64-bit** · x64 | [Download EXE ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.zip) |
+| **Intel / AMD 32-bit** · x86 | [Download EXE ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.zip) |
+| **Windows on ARM** · ARM64 | [Download EXE ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.zip) |
 
 ### macOS
 
-| Device | Disk image | Archive |
-| :--- | :---: | :---: |
-| **Apple Silicon** · ARM64 | [Download DMG](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.zip) |
-| **Intel Mac** · x64 | [Download DMG](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.zip) |
+macOS 13 Ventura or later · **Apple Silicon / Intel**
 
-Requires **macOS 13 Ventura or later**.
+| Your Mac | Disk image | App archive |
+| :--- | :--- | :--- |
+| **Apple Silicon** · ARM64 | [Download DMG ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.zip) |
+| **Intel** · x64 | [Download DMG ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.zip) |
 
 ### Android
 
-| Device | Package |
-| :--- | :---: |
-| **Most current phones and tablets** · ARM64 | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk) |
-| **Older ARM devices** · ARM 32-bit | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-armeabi-v7a.apk) |
-| **Intel 64-bit devices and emulators** · x86_64 | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86_64.apk) |
-| **Intel 32-bit devices and emulators** · x86 | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86.apk) |
-| **All supported architectures** · Universal | [Download APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-universal.apk) |
+Android 8.0 or later · Up-to-date **Android System WebView**
 
-Requires **Android 8.0 or later** and an up-to-date Android System WebView. Choose **Universal** if you are unsure which architecture your device uses.
+| Your device | Signed package |
+| :--- | :--- |
+| **Most current phones & tablets** · ARM64 | [Download ARM64 APK ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk) |
+| **Older ARM devices** · ARM 32-bit | [Download ARM APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-armeabi-v7a.apk) |
+| **Intel 64-bit devices & emulators** · x86_64 | [Download x86_64 APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86_64.apk) |
+| **Intel 32-bit devices & emulators** · x86 | [Download x86 APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86.apk) |
+| **All four supported architectures** | [Download Universal APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-universal.apk) |
 
-Verify downloads against [SHA256SUMS.txt](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt).
-
-## Features
-
-| Connection | Privacy | Control |
-| :--- | :--- | :--- |
-| System VPN | Encrypted session storage | Automatic or manual location selection |
-| Local SOCKS5 proxy mode | Split tunneling | Connection statistics |
-| HTTP / SOCKS5 upstream support | Configurable DNS | Diagnostic log export |
-
-Firefox account sign-in and email verification are supported. Light, dark and system appearance are available.
-
-On Android, connect from Quick Settings and manage an active connection from the persistent notification.
-Split tunneling supports routing only selected apps through the VPN or excluding selected apps from it. Choose installed apps from a searchable list with application icons. On desktop, routing follows application process names; macOS app helpers are included with their parent application.
+The architecture-specific APK is the smaller download. Choose **Universal** if you are unsure which architecture your device uses.
 
 <details>
-<summary><strong>View more screenshots</strong></summary>
+<summary><strong>Before you install: package trust & verification</strong></summary>
 
-![Fox VPN light appearance](docs/screenshots/overview-light.png)
+Compare your download's SHA-256 hash with [SHA256SUMS.txt](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt).
 
-![Fox VPN locations](docs/screenshots/locations.png)
-
-Screenshots are interface test previews. Latency values in the location preview are illustrative.
+- **Windows:** Packages are currently unsigned. System VPN requires administrator access.
+- **macOS:** Packages are ad-hoc signed and are not notarized. Verify your download before approving first launch in **System Settings → Privacy & Security → Open Anyway**.
+- **Android:** APK updates use the project's persistent signing identity. See the [public signing certificate fingerprint](android/signing-certificate.sha256).
 
 </details>
 
-## Getting started
+## The workspace
 
-### Install
+A focused overview of your connection, chosen location and session activity.
 
-**Windows:** Run the installer, or extract the complete portable ZIP and launch **Fox VPN.exe**. System VPN requires administrator access. Windows packages are currently unsigned.
+<a href="docs/screenshots/overview-dark.png">
+  <picture>
+    <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/readme/workspace-dark-mobile.webp">
+    <source media="(max-width: 600px)" srcset="docs/readme/workspace-light-mobile.webp">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/workspace-dark.webp">
+    <img src="docs/readme/workspace-light.webp" width="1440" loading="lazy" alt="Fox VPN overview showing the connection button, selected location, connection details and session statistics. On narrow screens, a crop highlights the connection panel.">
+  </picture>
+</a>
 
-**macOS:** Open the DMG and drag **Fox VPN** into **Applications**, or extract the complete app bundle from the ZIP. Packages are ad-hoc signed and are not notarized. If Gatekeeper blocks first launch, verify the download and approve it in **System Settings → Privacy & Security → Open Anyway**. System VPN requests administrator authorization when connecting.
+<details>
+<summary><strong>Explore the full interface · dark, light & locations</strong></summary>
 
-**Android:** Download an APK and allow installation from your browser or file manager when prompted. Open Fox VPN and approve the system VPN request on your first connection. Allow notifications to keep connection controls visible.
+**Dark appearance**
 
-### Connect
+![Fox VPN overview in dark appearance, with the sidebar, connection panel and session statistics.](docs/screenshots/overview-dark.png)
 
-1. Launch Fox VPN and sign in from **My account**.
+**Light appearance**
+
+![The same Fox VPN overview in light appearance.](docs/screenshots/overview-light.png)
+
+**Locations**
+
+![Fox VPN location browser with country flags, search, latency readings and sorting controls.](docs/screenshots/locations.png)
+
+</details>
+
+<sub>Images show desktop interface test previews. Latency readings in the location preview are illustrative. The compact workspace image is a crop of the desktop preview.</sub>
+
+## Traffic on your terms
+
+Decide which applications use the VPN. Split tunneling offers two routing modes, with a searchable app picker and application icons.
+
+<picture>
+  <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/readme/routing-dark-mobile.svg">
+  <source media="(max-width: 600px)" srcset="docs/readme/routing-light-mobile.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/routing-dark.svg">
+  <img src="docs/readme/routing-light.svg" width="1440" loading="lazy" alt="Only selected: selected apps use the VPN and other apps connect directly. Exclude selected: selected apps connect directly and other apps use the VPN.">
+</picture>
+
+Desktop routing follows application process names; macOS includes app helper processes. Android routing follows application packages. Local network traffic bypasses the tunnel. See [network support](#network-support) for protocol coverage.
+
+### More ways to stay in control
+
+| Find your connection | Make it your own |
+| :--- | :--- |
+| **Location choice** — use a recommended endpoint or choose a country manually. | **Saved preferences** — settings and your preferred location order persist between sessions. |
+| **Latency checks** — check all locations or one at a time; sort by latency or name. | **Connection options** — use system VPN or a local SOCKS5 proxy, with HTTP / SOCKS5 upstream support. |
+| **At-a-glance activity** — view connection statistics and export diagnostic logs. | **Local credential protection** — encrypted session storage, configurable DNS and Firefox account email verification. |
+
+**Android:** Connect or disconnect from Quick Settings, with an active-state tile and persistent notification controls. **Desktop:** Keep Fox VPN available in the system tray when its window is closed.
+
+## Get connected
+
+### 01 / Install for your device
+
+<details open>
+<summary><strong>Windows</strong></summary>
+
+Run the installer, or extract the **complete** portable ZIP and launch **Fox VPN.exe**. Approve the administrator request for system VPN.
+
+</details>
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+Open the DMG and drag **Fox VPN** into **Applications**, or extract the complete app bundle from the ZIP. If Gatekeeper blocks first launch, verify the download and approve it in **System Settings → Privacy & Security → Open Anyway**. System VPN requests administrator authorization when connecting.
+
+</details>
+
+<details>
+<summary><strong>Android</strong></summary>
+
+Install the APK and allow installation from your browser or file manager when prompted. Approve the system VPN request on your first connection. Allow notifications to keep connection controls visible.
+
+After signing in and approving the first VPN connection, edit your Quick Settings panel and add **Fox VPN**. Tap the tile to connect or disconnect; its highlighted state indicates an active connection.
+
+</details>
+
+### 02 / Sign in. Choose a location. Connect.
+
+1. Open **My account** and sign in with your Firefox account.
 2. Complete email verification if requested.
 3. Choose a location and press the connect button.
 
-Press the connect button again to disconnect. On desktop, closing the window keeps Fox VPN running in the system tray; use **Quit** to exit. On Android, the connection remains active when the app is in the background.
-
-### Quick Settings on Android
-
-After signing in and approving your first VPN connection, edit your Quick Settings panel and add **Fox VPN**. Tap the tile to connect or disconnect; its highlighted state indicates an active connection.
+Press the connect button again to disconnect. On desktop, use **Quit** from the tray to exit the app completely. On Android, the connection stays active in the background.
 
 <details>
-<summary><strong>Use proxy-only mode</strong></summary>
+<summary><strong>Connect an application through the local proxy</strong></summary>
 
-Enable proxy-only mode in **Settings** and configure your application to use `socks5h://127.0.0.1:1080`, or your configured port. Only applications configured to use the proxy are covered.
+Enable **Proxy-only mode** in Settings. Configure your application to use `socks5h://127.0.0.1:1080`, or your chosen port. Only applications configured to use this proxy are covered; system routes stay unchanged.
+
+Keep the default loopback binding unless you intend to share the proxy on a trusted network. Binding to all interfaces exposes an unauthenticated proxy to that network.
 
 </details>
 
 ## Network support
 
-Fox VPN uses Firefox Accounts and Mozilla's VPN service. Account eligibility, regional availability and data allowances are determined by the service. Fox VPN is not affiliated with Mozilla.
+Fox VPN uses Firefox Accounts and Mozilla's VPN service. Account eligibility, regional availability and data allowances are determined by the service.
 
-TCP and DNS are supported. General UDP traffic, including QUIC, is unsupported. Local network traffic and excluded applications bypass the tunnel. A persistent kill switch is not available.
-
-Device test coverage and remaining validation limits are documented in the [verification record](VALIDATION.md).
-
-## Development
-
-| Resource | Description |
+| Supported | Boundaries to know |
 | :--- | :--- |
-| [Build guide](BUILDING.md) | Prerequisites and platform-specific build instructions |
-| [Verification record](VALIDATION.md) | Automated checks and remaining manual tests |
-| [Changelog](CHANGELOG.md) | Release history |
-| [Project license](LICENSE) | GPL-3.0-or-later · Windows, macOS and Android |
+| TCP traffic and DNS through the tunnel | General UDP traffic, including QUIC, is unsupported. |
+| Configurable tunneled DNS and upstream proxies | Local network traffic and apps routed directly bypass the tunnel. |
+| App-based routing and proxy-only connections | A persistent kill switch is not available. |
 
-## Third-party licenses
+For device coverage, automated checks and remaining manual tests, read the [verification record](VALIDATION.md).
 
-Fox VPN is distributed under the [GNU General Public License, version 3 or later](LICENSE), on Windows, macOS and Android. See the [copyright notice](COPYRIGHT). Bundled dependencies retain their own licenses and notices.
+## Built in the open
+
+Fox VPN is licensed under the **[GNU General Public License, version 3 or later](LICENSE)** across Windows, macOS and Android. See the [copyright notice](COPYRIGHT). Independent dependencies retain their original licenses and notices.
+
+| For developers | For contributors |
+| :--- | :--- |
+| [Build from source](BUILDING.md) — platform prerequisites and build instructions. | [Report a problem](https://github.com/erfan-tahvilian/FoxVPN/issues) — include your OS, architecture and steps to reproduce. |
+| [Verification record](VALIDATION.md) — test coverage and current validation limits. | [Explore the source](https://github.com/erfan-tahvilian/FoxVPN) — review the implementation and contribute improvements. |
+| [Changelog](CHANGELOG.md) — release history. | [Release notes](RELEASE_NOTES.md) — installation and release information. |
+
+Remove account details, tokens, IP addresses and other sensitive information before sharing diagnostic logs.
 
 <details>
-<summary><strong>Dependency notices</strong></summary>
+<summary><strong>Third-party software & corresponding source</strong></summary>
 
-- **sing-box** — GPL-3.0-or-later with upstream's additional naming condition. The exact corresponding source is included with release downloads. See [source build instructions](https://sing-box.sagernet.org/installation/build-from-source/).
-- **Wintun** — redistributed under its included license. See [Wintun](https://www.wintun.net/).
-- **Electron, Chromium, Node.js and npm dependencies** — notices are included in the distribution.
-- **flag-icons** — MIT; see [license notice](licenses/flag-icons-MIT.txt).
+- **sing-box** — GPL-3.0-or-later with its upstream naming condition. The exact corresponding source is included as [sing-box-1.12.0-source.tar.gz](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/sing-box-1.12.0-source.tar.gz). See the [notice](licenses/sing-box-NOTICE.txt) and [source build instructions](https://sing-box.sagernet.org/installation/build-from-source/).
+- **Wintun** — redistributed under the license included with Windows packages. See [Wintun](https://www.wintun.net/).
+- **Electron, Chromium, Node.js and npm dependencies** — notices are included in desktop distributions. Native Android dependency notices are included in APK assets.
+- **flag-icons** — MIT; see the [license notice](licenses/flag-icons-MIT.txt).
 
 </details>
 
----
+## Support the project
 
-## Donate
+Help sustain Fox VPN's development and maintenance.
 
-Support the continued development of Fox VPN.
+<a href="https://buymeacoffee.com/ErfanTahvilian">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/support-dark.svg">
+    <img src="docs/readme/support-light.svg" width="288" alt="Support Fox VPN on Buy Me a Coffee.">
+  </picture>
+</a>
 
-**[Support on Buy Me a Coffee ↗](https://buymeacoffee.com/ErfanTahvilian)**
+<details>
+<summary><strong>Support with cryptocurrency</strong></summary>
 
-### Cryptocurrency
+**Tron · TRX**
 
-| Network | Donation address |
-| :--- | :--- |
-| **Tron (TRX)** | `TL8WyZLLGu8UraHAT8dCoeMsnzGpX2oAYn` |
-| **Binance Coin (BNB · BEP20)** | `0xeC4F61F21238685cC842bC236D86684e5fc2Bc57` |
-| **Bitcoin (BTC)** | `bc1q2y9m8y02fqgsr4c6533duwmqtmrhadc8k8mkt4` |
+```text
+TL8WyZLLGu8UraHAT8dCoeMsnzGpX2oAYn
+```
+
+**Binance Coin · BNB / BEP20**
+
+```text
+0xeC4F61F21238685cC842bC236D86684e5fc2Bc57
+```
+
+**Bitcoin · BTC**
+
+```text
+bc1q2y9m8y02fqgsr4c6533duwmqtmrhadc8k8mkt4
+```
+
+</details>
+
+<picture>
+  <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/readme/signature-dark-mobile.svg">
+  <source media="(max-width: 600px)" srcset="docs/readme/signature-light-mobile.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/signature-dark.svg">
+  <img src="docs/readme/signature-light.svg" width="1440" alt="Fox VPN. Made for your freedom.">
+</picture>
