@@ -6,6 +6,7 @@ The README uses a connection-path motif drawn from Fox VPN's orange fox-and-shie
 
 | Asset | Purpose |
 | --- | --- |
+| `badge-{version,windows,macos,android}.svg` | Local version and platform badges, without third-party image requests. |
 | `hero-{dark,light}.webp` | Wide brand introduction with the original transparent logo. |
 | `hero-{dark,light}-mobile.webp` | Narrow-screen composition with larger relative type. |
 | `download-{windows,macos,android}-{dark,light}.svg` | Direct downloads for Windows x64, macOS Apple Silicon and Android ARM64. |

@@ -6,9 +6,16 @@
 </picture>
 
 <p align="center">
-  <a href="#download"><strong>Download v1.0.0</strong></a> &nbsp; / &nbsp;
-  <a href="#the-workspace">Explore the app</a> &nbsp; / &nbsp;
-  <a href="#get-connected">Get connected</a> &nbsp; / &nbsp;
+  <img src="docs/readme/badge-version.svg" alt="Version 1.0.0" height="22">
+  <img src="docs/readme/badge-windows.svg" alt="Windows: x64, x86 and ARM64" height="22">
+  <img src="docs/readme/badge-macos.svg" alt="macOS: Intel and Apple Silicon" height="22">
+  <img src="docs/readme/badge-android.svg" alt="Android: ARM and x86" height="22">
+</p>
+
+<p align="center">
+  <a href="#download"><strong>Download v1.0.0</strong></a> &nbsp; · &nbsp;
+  <a href="#the-workspace">Explore the app</a> &nbsp; · &nbsp;
+  <a href="#get-connected">Get connected</a> &nbsp; · &nbsp;
   <a href="#support-the-project">Support the project</a>
 </p>
 
@@ -16,9 +23,11 @@
 
 Sign in with a Firefox account to get started. Service eligibility, availability and data allowances apply. Fox VPN is an independent client and is not affiliated with Mozilla.
 
-## Download
+<a name="download"></a>
 
-**v1.0.0** · [Release notes & all files ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.0) · [SHA-256 checksums](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt)
+## 📥 Download
+
+**v1.0.0** · [Release notes & all files](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.0) · [SHA-256 checksums](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt)
 
 Choose the package that matches your operating system and processor. Installers and portable archives are available for desktop; Android packages are signed APKs.
 
@@ -30,32 +39,32 @@ Choose the package that matches your operating system and processor. Installers 
 
 Quick downloads for common devices. **Every supported architecture is listed below.**
 
-### Windows
+### 🪟 Windows
 
-Windows 10 or later for **x64 / x86** · Windows 11 for **ARM64**
+Windows 10 or later for **x64 and x86** · Windows 11 for **ARM64**
 
 | Your device | Installer | Portable archive |
 | :--- | :--- | :--- |
-| **Intel / AMD 64-bit** · x64 | [Download EXE ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.zip) |
-| **Intel / AMD 32-bit** · x86 | [Download EXE ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.zip) |
-| **Windows on ARM** · ARM64 | [Download EXE ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.zip) |
+| **Intel & AMD 64-bit** · x64 | [Download EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.zip) |
+| **Intel & AMD 32-bit** · x86 | [Download EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.zip) |
+| **Windows on ARM** · ARM64 | [Download EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.exe) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.zip) |
 
-### macOS
+### 🍎 macOS
 
-macOS 13 Ventura or later · **Apple Silicon / Intel**
+macOS 13 Ventura or later · **Apple Silicon and Intel**
 
 | Your Mac | Disk image | App archive |
 | :--- | :--- | :--- |
-| **Apple Silicon** · ARM64 | [Download DMG ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.zip) |
-| **Intel** · x64 | [Download DMG ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.zip) |
+| **Apple Silicon** · ARM64 | [Download DMG](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.zip) |
+| **Intel** · x64 | [Download DMG](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.dmg) | [Download ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.zip) |
 
-### Android
+### 🤖 Android
 
 Android 8.0 or later · Up-to-date **Android System WebView**
 
 | Your device | Signed package |
 | :--- | :--- |
-| **Most current phones & tablets** · ARM64 | [Download ARM64 APK ↗](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk) |
+| **Most current phones & tablets** · ARM64 | [Download ARM64 APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk) |
 | **Older ARM devices** · ARM 32-bit | [Download ARM APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-armeabi-v7a.apk) |
 | **Intel 64-bit devices & emulators** · x86_64 | [Download x86_64 APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86_64.apk) |
 | **Intel 32-bit devices & emulators** · x86 | [Download x86 APK](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86.apk) |
@@ -74,7 +83,9 @@ Compare your download's SHA-256 hash with [SHA256SUMS.txt](https://github.com/er
 
 </details>
 
-## The workspace
+<a name="the-workspace"></a>
+
+## 🖥️ The workspace
 
 A focused overview of your connection, chosen location and session activity.
 
@@ -106,7 +117,9 @@ A focused overview of your connection, chosen location and session activity.
 
 <sub>Images show desktop interface test previews. Latency readings in the location preview are illustrative. The compact workspace image is a crop of the desktop preview.</sub>
 
-## Traffic on your terms
+<a name="traffic-on-your-terms"></a>
+
+## 🔀 Traffic on your terms
 
 Decide which applications use the VPN. Split tunneling offers two routing modes, with a searchable app picker and application icons.
 
@@ -123,15 +136,17 @@ Desktop routing follows application process names; macOS includes app helper pro
 
 | Find your connection | Make it your own |
 | :--- | :--- |
-| **Location choice** — use a recommended endpoint or choose a country manually. | **Saved preferences** — settings and your preferred location order persist between sessions. |
-| **Latency checks** — check all locations or one at a time; sort by latency or name. | **Connection options** — use system VPN or a local SOCKS5 proxy, with HTTP / SOCKS5 upstream support. |
-| **At-a-glance activity** — view connection statistics and export diagnostic logs. | **Local credential protection** — encrypted session storage, configurable DNS and Firefox account email verification. |
+| **🌍 Location choice** — use a recommended endpoint or choose a country manually. | **💾 Saved preferences** — settings and your preferred location order persist between sessions. |
+| **⚡ Latency checks** — check all locations or one at a time; sort by latency or name. | **⚙️ Connection options** — use system VPN or a local SOCKS5 proxy, with HTTP / SOCKS5 upstream support. |
+| **📊 At-a-glance activity** — view connection statistics and export diagnostic logs. | **🔐 Local credential protection** — encrypted session storage, configurable DNS and Firefox account email verification. |
 
 **Android:** Connect or disconnect from Quick Settings, with an active-state tile and persistent notification controls. **Desktop:** Keep Fox VPN available in the system tray when its window is closed.
 
-## Get connected
+<a name="get-connected"></a>
 
-### 01 / Install for your device
+## 🚀 Get connected
+
+### 1. Install for your device
 
 <details open>
 <summary><strong>Windows</strong></summary>
@@ -156,7 +171,9 @@ After signing in and approving the first VPN connection, edit your Quick Setting
 
 </details>
 
-### 02 / Sign in. Choose a location. Connect.
+### 2. Sign in, choose a location and connect
+
+If you do not have a Firefox account, [create one](https://accounts.firefox.com/signup) before continuing.
 
 1. Open **My account** and sign in with your Firefox account.
 2. Complete email verification if requested.
@@ -173,7 +190,9 @@ Keep the default loopback binding unless you intend to share the proxy on a trus
 
 </details>
 
-## Network support
+<a name="network-support"></a>
+
+## 🌐 Network support
 
 Fox VPN uses Firefox Accounts and Mozilla's VPN service. Account eligibility, regional availability and data allowances are determined by the service.
 
@@ -185,7 +204,9 @@ Fox VPN uses Firefox Accounts and Mozilla's VPN service. Account eligibility, re
 
 For device coverage, automated checks and remaining manual tests, read the [verification record](VALIDATION.md).
 
-## Built in the open
+<a name="built-in-the-open"></a>
+
+## 🛠️ Built in the open
 
 Fox VPN is licensed under the **[GNU General Public License, version 3 or later](LICENSE)** across Windows, macOS and Android. See the [copyright notice](COPYRIGHT). Independent dependencies retain their original licenses and notices.
 
@@ -207,7 +228,9 @@ Remove account details, tokens, IP addresses and other sensitive information bef
 
 </details>
 
-## Support the project
+<a name="support-the-project"></a>
+
+## 🧡 Support the project
 
 Help sustain Fox VPN's development and maintenance.
 
@@ -227,7 +250,7 @@ Help sustain Fox VPN's development and maintenance.
 TL8WyZLLGu8UraHAT8dCoeMsnzGpX2oAYn
 ```
 
-**Binance Coin · BNB / BEP20**
+**Binance Coin · BNB · BEP20**
 
 ```text
 0xeC4F61F21238685cC842bC236D86684e5fc2Bc57
