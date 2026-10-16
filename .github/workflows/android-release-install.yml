@@ -26,7 +26,8 @@ jobs:
             gh release download v1.0.0 --pattern "$name" --dir release-apks
             echo "${digest#sha256:}  release-apks/$name" | sha256sum --check
             "$tools/apksigner" verify --min-sdk-version 36 --max-sdk-version 36 --print-certs "release-apks/$name" > /tmp/certificate.txt
-            grep -F "Signer #1 certificate SHA-256 digest: $(tr -d '\r\n' < android/signing-certificate.sha256)" /tmp/certificate.txt
+            # New SDK tools label v3-only checks "V3.0 Signer" instead of "Signer #1".
+            grep -F "certificate SHA-256 digest: $(tr -d '\r\n' < android/signing-certificate.sha256)" /tmp/certificate.txt
             "$tools/zipalign" -c -P 16 4 "release-apks/$name"
           done
       - name: Enable emulator acceleration
