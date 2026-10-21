@@ -5,6 +5,7 @@ package apple
 import (
     "encoding/json"
     "errors"
+    "runtime/debug"
     "os"
     "net"
     "strings"
@@ -34,6 +35,8 @@ type Client struct {
 }
 type pathState struct { Name string `json:"name"`; Index int32 `json:"index"`; Expensive bool `json:"expensive"`; Constrained bool `json:"constrained"` }
 func NewClient(host Host,vault,workDir string)*Client {
+    // Keep Go-managed memory below the packet-tunnel extension budget.
+    debug.SetMemoryLimit(32 << 20)
     c:=&Client{host:host}
     c.setupError=os.MkdirAll(workDir,0700)
     if c.setupError==nil {c.setupError=libbox.Setup(&libbox.SetupOptions{BasePath:workDir,WorkingPath:workDir,TempPath:filepath.Join(workDir,"tmp")})}

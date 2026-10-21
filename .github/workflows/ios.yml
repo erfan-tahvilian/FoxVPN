@@ -32,7 +32,7 @@ jobs:
           go test -race -timeout 120s ./mobile
           go test -tags with_gvisor,with_clash_api,with_conntrack ./apple
           go vet ./mobile ./apple
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         with:
           path: ios/Frameworks/FoxCore.xcframework
           key: ios-native-go1.26.9-${{ hashFiles('android/core/**/*.go', 'android/core/go.mod', 'android/core/go.sum', 'scripts/build-ios-core.sh') }}
@@ -40,6 +40,11 @@ jobs:
       - name: Build native iOS and simulator framework
         if: steps.native.outputs.cache-hit != 'true'
         run: bash scripts/build-ios-core.sh
+      - uses: actions/cache/save@v4
+        if: steps.native.outputs.cache-hit != 'true'
+        with:
+          path: ios/Frameworks/FoxCore.xcframework
+          key: ${{ steps.native.outputs.cache-primary-key }}
       - name: Build and inspect unsigned iPhone and iPad archive
         run: bash scripts/build-ios.sh
       - name: Test simulator interface and native core

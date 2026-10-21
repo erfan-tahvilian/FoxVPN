@@ -3,7 +3,7 @@ import SwiftUI
 import WebKit
 import NetworkExtension
 import ActivityKit
-import FoxCore
+@preconcurrency import FoxCore
 import WidgetKit
 
 @MainActor final class AppService: ObservableObject {
@@ -28,7 +28,7 @@ import WidgetKit
         let work = try SharedStore.directory().appendingPathComponent("engine-app").path
         client = AppleNewClient(host, try SharedStore.readVault(), work)
         guard let client else { throw VPNError.configuration("The native core could not initialize.") }
-        receiveLocal(client.snapshot() ?? "{}")
+        receiveLocal(client.snapshot())
     }
     func activate() {
         active = true
@@ -71,10 +71,10 @@ import WidgetKit
         guard let client else { throw VPNError.configuration("Secure session storage could not initialize. Check the app's signing capabilities.") }
         let data = try JSONSerialization.data(withJSONObject: args)
         let raw: String = await withCheckedContinuation { continuation in
-            localActions.async { continuation.resume(returning: client.call(action, args: String(decoding: data, as: UTF8.self)) ?? "{}") }
+            localActions.async { continuation.resume(returning: client.call(action, args: String(decoding: data, as: UTF8.self))) }
         }
         let response = try JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any] ?? [:]
-        if let text = client.snapshot() { receiveLocal(text) }; return response
+        receiveLocal(client.snapshot()); return response
     }
     func poll() async {
         guard !polling else { return }; polling = true; defer { polling = false }
