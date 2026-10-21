@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0 — 2026-10-11
+## v1.0.0 - 2026-10-11
 
 Initial release for Windows, macOS and Android.
 

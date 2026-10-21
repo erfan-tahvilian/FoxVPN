@@ -81,4 +81,4 @@ jobs:
           jq -e '[.assets[] | select(.name != "SHA256SUMS.txt") | .digest | test("^sha256:[a-f0-9]{64}$")] | all' /tmp/fox-release.json
           jq -r '.assets[] | select(.name != "SHA256SUMS.txt") | "\(.digest | sub("^sha256:";""))  \(.name)"' /tmp/fox-release.json | sort -k2 > SHA256SUMS.txt
           gh release upload v1.0.0 SHA256SUMS.txt --clobber
-          gh release edit v1.0.0 --draft=false --title 'Fox VPN v1.0.0 — Windows, macOS & Android' --notes-file RELEASE_NOTES.md
+          gh release edit v1.0.0 --draft=false --title 'Fox VPN v1.0.0 - Windows, macOS & Android' --notes-file RELEASE_NOTES.md

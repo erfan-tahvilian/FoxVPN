@@ -30,7 +30,7 @@ function locationLabel(server) {return [server?.country,locationCity(server)].fi
 function renderLatency(element,server,s) {
   const result=server?s.latencies?.[server.id]:null;
   const pending=server&&(s.pinging||(s.pingingIds||[]).includes(server.id));
-  element.className='latency';element.textContent=pending?'Checking…':result?(result.ms==null?'Unreachable':`${result.ms} ms`):'— ms';
+  element.className='latency';element.textContent=pending?'Checking…':result?(result.ms==null?'Unreachable':`${result.ms} ms`):'- ms';
   if(!pending&&result?.ms!=null)element.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
   element.title='TCP connection time to the VPN endpoint through your current network path';
 }
@@ -68,13 +68,13 @@ function render(s) {
   const legacy=s.exit?.ip||'';
   $('exit-ipv4').textContent=s.exit?.ipv4||(!legacy.includes(':')&&legacy)|| (connected?(s.exit?.pending?'Checking…':'Not available'):'Not connected');
   $('exit-ipv6').textContent=s.exit?.ipv6||(legacy.includes(':')&&legacy)|| (connected?(s.exit?.pending?'Checking…':'Not available'):'Not connected');
-  $('exit-country').textContent=exitCountry||s.exit?.country||'—';
+  $('exit-country').textContent=exitCountry||s.exit?.country||'-';
   $('verify-exit').disabled=!connected;
   $('downloaded').textContent=bytes(s.down);$('uploaded').textContent=bytes(s.up);
   const now=Date.now(), elapsed=(now-lastTick)/1000;
   if(elapsed>.5){$('download-speed').textContent=bytes(Math.max(0,s.down-lastDown)/elapsed)+'/s';$('upload-speed').textContent=bytes(Math.max(0,s.up-lastUp)/elapsed)+'/s';lastUp=s.up;lastDown=s.down;lastTick=now;}
   $('session-time').textContent=time(s.startedAt?now-s.startedAt:0);
-  $('location-count').textContent=new Set(s.servers.filter(c=>!automaticServer(c)).map(c=>c.code)).size || '—';
+  $('location-count').textContent=new Set(s.servers.filter(c=>!automaticServer(c)).map(c=>c.code)).size || '-';
   $('account-name').textContent=s.signedIn?s.email.split('@')[0]:'Sign in';
   document.querySelector('#account-shortcut .avatar').textContent=s.signedIn?(Array.from((s.email||'').trim())[0]?.toUpperCase()||'?'):'F';
   $('signin-panel').hidden=s.signedIn;$('signedin-panel').hidden=!s.signedIn;$('signedin-email').textContent=s.email;

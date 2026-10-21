@@ -1,30 +1,30 @@
 # v1.0.0 verification record
 
-## Published iOS signing distribution — 2026-10-21
+## Published iOS signing distribution - 2026-10-21
 
 The [device build, simulator checks and automated publisher](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39623334814) passed for source `825d108bdb79b5041ab292f9b9345b9b20eb3071`. Eleven distribution-policy tests include explicit rejection of ARM64 simulator executables and profiles missing Packet Tunnel/shared-storage permissions. Package inspection checks iPhoneOS Mach-O platform identifiers, all three targets, required resources and non-system library references.
 
 The [v1.0.0 release](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.0) now contains the unsigned device IPA, bilingual installation guide, requested entitlements, matching source, signing tools, build report and checksums. The publisher checked every uploaded iOS asset against GitHub SHA-256 metadata and refreshed the global checksum file. No Apple signing credentials were available, so the real credential-import/export branch, physical installation, live VPN routing, background behavior and system controls remain unverified. Free Personal Team sideloading is not presented as a working Packet Tunnel installation method.
 
-## Android notification refinement — 2026-10-21
+## Android notification refinement - 2026-10-21
 
 The owner confirmed that downloaded/uploaded totals and the session timer in the preceding Android update worked on the physical phone. The notification refinement retains the system header status, location and chronometer, removes repeated status/time from the content, and schedules traffic refreshes every second. The [Android core, lint, package and emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39617398728) passed. The owner subsequently confirmed the refined expanded/collapsed notification and one-second traffic refresh on the physical phone.
 
-## iOS client and Android session notifications — 2026-10-21
+## iOS client and Android session notifications - 2026-10-21
 
 - The [iOS build and simulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39611973436) passed. The native framework contains an ARM64 device slice and ARM64/Intel simulator slices. The device archive includes the main app, packet-tunnel extension and Control Center/Live Activity extension; validation checks their ARM64 executable headers, compiled icons, packaged interface, CA certificates and license resources.
 - Simulator unit checks exercise the real native backend, saved location sorting, session formatting and country-name normalization. The interface test launches the packaged WKWebView and navigates to Locations. These checks do not establish authenticated VPN routing or background operation on physical Apple hardware.
 - The iOS IPA is an unsigned signing input. Apple certificates, provisioning profiles, installed entitlements, live device routing, handovers, Control Center actions and Live Activity updates still require verification using an appropriately signed build. No Apple signing identity was invented or uploaded.
 - The [Android core, package, lint and emulator integration checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39608423574) passed. Notification formatting covers byte totals and elapsed time. Only the ARM64 artifact was downloaded locally; its GitHub artifact SHA-256 was verified before signing with the existing project certificate. The updated APK is available for the owner's notification check; no physical notification result is claimed here.
 
-## Published Android APK installation — 2026-10-16
+## Published Android APK installation - 2026-10-16
 
 - The signed v1.0.0 x86_64 and universal APKs were downloaded directly from the release, checked against GitHub asset SHA-256 digests and the project's pinned signing certificate, then installed and launched on an Android 16 / API 36 x86_64 emulator. The test covers a fresh x86_64 installation and an update to the universal APK; the application remained running without a Java or native startup crash. See the [installation check](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38839111418).
 - Local checks of the published ARM64 APK passed Android API 36 signature verification, ZIP integrity and duplicate-entry checks, 16 KB ZIP alignment, and ELF load-segment alignment and offset congruence. The local phone-test copy has the same SHA-256 digest as the release asset.
 - An isolated installation experiment changes only `extractNativeLibs` and native-library ZIP compression. All other uncompressed APK payloads, including DEX and native engine bytes, are preserved. The ARM64 device-test APK passes API 36 signature verification with the existing project certificate and ZIP alignment checks. The same packaging experiment passed fresh installation and startup on an API 36 x86_64 emulator with an ephemeral CI-only certificate. See the [extended installation check](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38848258668). The usual Android core, package, lint and device checks also [passed](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38848258523).
 - The Daria Bond II report concerns a first installation from Releases, with both ARM64 and universal APKs rejected. The device is unavailable for direct diagnostics. Emulator checks did not reproduce the vendor installer failure. The owner subsequently confirmed that the experimental ARM64 APK installed, opened and worked on the Daria Bond II. Installation-time native extraction is now adopted for production Android builds; new UI and networking changes still require the usual release checks.
 
-## Cross-platform update — 2026-10-15
+## Cross-platform update - 2026-10-15
 
 - 19 desktop protocol, storage and routing tests pass. Coverage includes include/exclude routing on Windows and macOS, UDP isolation for selected apps, and migration and persistence of location order and routing preferences.
 - Renderer checks cover automatic preference saving, app search and selection, selected apps appearing first when reopened, account initials and circular avatar geometry. Native main-process checks cover preference persistence and restricted application icon access.

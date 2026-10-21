@@ -28,7 +28,7 @@ section=f"""<!-- foxvpn-ios:start -->
 
 **iOS/iPadOS 18+ · iPhone and iPad · ARM64 · experimental, physical VPN testing pending**
 
-[Download IPA for signing]({base}/FoxVPN-{version}-iOS-arm64-unsigned.ipa) · [Installation guide — English / فارسی]({guide}) · [Signing tools]({base}/FoxVPN-{version}-iOS-signing-tools.zip)
+[Download IPA for signing]({base}/FoxVPN-{version}-iOS-arm64-unsigned.ipa) · [Installation guide - English / فارسی]({guide}) · [Signing tools]({base}/FoxVPN-{version}-iOS-signing-tools.zip)
 
 The unsigned IPA contains the device app, Packet Tunnel VPN extension and Control Center/Live Activity extension. **It is not directly installable.** Ordinary free Apple Account signing with AltStore, SideStore or Sideloadly does not authorize this VPN's required Network Extension permissions. The guide explains conditional installation with an authorized signer, including users who only have an iPhone.
 
