@@ -3,10 +3,31 @@ name: iOS build
 on:
   push:
     branches: [main]
-    paths: ['ios/**', 'android/core/**', 'android/ui/mobile.css', 'android/app/src/main/res/raw/cacert.pem', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*ios*', '.github/workflows/ios.yml']
+    tags: ['v*']
+    paths: ['ios/**', 'android/core/**', 'android/ui/mobile.css', 'android/app/src/main/res/raw/cacert.pem', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*ios*', 'IOS_INSTALL.md', '.github/workflows/ios.yml']
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish iOS assets to GitHub Releases
+        type: boolean
+        default: true
+      release_tag:
+        description: Existing release tag matching the app version
+        type: string
+        default: v1.0.0
+      sign:
+        description: Require signed output (fail if credentials are missing)
+        type: boolean
+        default: false
+      export_method:
+        description: Device provisioning method
+        type: choice
+        options: [release-testing, debugging]
+        default: release-testing
 permissions:
   contents: read
+env:
+  IOS_RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.release_tag || 'v1.0.0' }}
 jobs:
   ios:
     runs-on: macos-15
@@ -21,6 +42,10 @@ jobs:
           go-version: '1.26.9'
           cache: true
           cache-dependency-path: android/core/go.sum
+      - name: Check distribution configuration and preflight tests
+        run: |
+          python3 -c 'import json,os; assert os.environ["IOS_RELEASE_TAG"] == "v"+json.load(open("package.json"))["version"], "Release tag must match the app version"'
+          python3 scripts/test-ios-distribution.py
       - name: Inspect Apple toolchain
         run: |
           xcodebuild -version
@@ -59,9 +84,67 @@ jobs:
             ios/Frameworks/FoxCore.xcframework/**/Headers/*
             dist/ios/*.log
             test-results/ios.xcresult/
+      - name: Decide whether device signing is available
+        id: signing
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+        env:
+          IOS_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          IOS_PROFILE_APP_BASE64: ${{ secrets.IOS_PROFILE_APP_BASE64 }}
+          IOS_PROFILE_TUNNEL_BASE64: ${{ secrets.IOS_PROFILE_TUNNEL_BASE64 }}
+          IOS_PROFILE_WIDGETS_BASE64: ${{ secrets.IOS_PROFILE_WIDGETS_BASE64 }}
+          REQUIRE_SIGNING: ${{ inputs.sign }}
+        run: |
+          python3 - <<'PY'
+          import os
+          names=['IOS_CERTIFICATE_P12_BASE64','IOS_PROFILE_APP_BASE64','IOS_PROFILE_TUNNEL_BASE64','IOS_PROFILE_WIDGETS_BASE64']
+          present=[bool(os.environ.get(name)) for name in names]
+          if any(present) and not all(present):raise SystemExit('Signing secrets are incomplete; supply all four certificate/profile values.')
+          if os.environ.get('REQUIRE_SIGNING')=='true' and not all(present):raise SystemExit('Signed output was required but signing credentials are unavailable.')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('enabled='+str(all(present)).lower()+'\n')
+          PY
+      - name: Sign and verify registered-device IPA when credentials are provided
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          IOS_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROFILE_APP_BASE64: ${{ secrets.IOS_PROFILE_APP_BASE64 }}
+          IOS_PROFILE_TUNNEL_BASE64: ${{ secrets.IOS_PROFILE_TUNNEL_BASE64 }}
+          IOS_PROFILE_WIDGETS_BASE64: ${{ secrets.IOS_PROFILE_WIDGETS_BASE64 }}
+          FOX_APP_GROUP: ${{ vars.IOS_APP_GROUP }}
+          FOX_SHARED_KEYCHAIN: ${{ vars.IOS_SHARED_KEYCHAIN }}
+          FOX_IOS_EXPORT_METHOD: ${{ inputs.export_method || 'release-testing' }}
+        run: bash scripts/ci-sign-ios.sh
+      - name: Prepare and audit release assets
+        env:
+          IOS_SIMULATOR_VERIFIED: 'true'
+        run: |
+          python3 scripts/inspect-ios-ipa.py dist/ios/FoxVPN-1.0.0-iOS-arm64-unsigned.ipa
+          python3 scripts/ios-distribution.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iOS-release-assets
+          path: dist/ios/release/
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: iOS-unsigned-signing-input
-          path: |
-            dist/ios/*unsigned.ipa
-            dist/ios/FoxVPN.xcarchive/
+          path: dist/ios/FoxVPN.xcarchive/
+  publish:
+    needs: ios
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: foxvpn-ios-release-${{ inputs.release_tag || github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: iOS-release-assets
+          path: dist/ios/release/
+      - name: Publish and verify iOS release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish-ios.py
