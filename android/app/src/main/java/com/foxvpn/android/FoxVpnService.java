@@ -39,7 +39,7 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
             if(app().backend!=null&&"connected".equals(app().connection())){
                 try{app().state=new JSONObject(app().backend.snapshot());stateChanged();}catch(Exception ignored){}
             }
-            app().main.postDelayed(this,5000);
+            app().main.postDelayed(this,1000);
         }
     };
     private FoxApp app(){return (FoxApp)getApplication();}
@@ -114,10 +114,10 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
             text=status+" · "+new java.util.Locale("",exit.optString("country")).getDisplayCountry(java.util.Locale.ENGLISH);
         boolean connected="connected".equals(app().connection());
         long started=app().state.optLong("startedAt",0);
-        String stats=ConnectionStats.summary(app().state.optLong("down"),app().state.optLong("up"),started,System.currentTimeMillis());
+        String stats=ConnectionStats.summary(app().state.optLong("down"),app().state.optLong("up"));
         return new Notification.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_fox_tile).setContentTitle("Fox VPN")
             .setContentText(connected?stats:text).setSubText(connected?text:null)
-            .setStyle(new Notification.BigTextStyle().bigText(connected?text+"\n"+ConnectionStats.details(app().state.optLong("down"),app().state.optLong("up"),started,System.currentTimeMillis()):text))
+            .setStyle(new Notification.BigTextStyle().bigText(connected?ConnectionStats.details(app().state.optLong("down"),app().state.optLong("up")):text))
             .setWhen(connected?started:0).setShowWhen(connected&&started>0).setUsesChronometer(connected&&started>0)
             .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).setCategory(Notification.CATEGORY_SERVICE)
             .addAction(new Notification.Action.Builder(null,"Disconnect",stop).build()).build();
