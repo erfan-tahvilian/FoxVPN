@@ -54,7 +54,7 @@ The app retains account sign-in and email verification, recommended/manual locat
 
 Control Center reads the system VPN status, with a short-lived provider snapshot as a fallback. A disconnected or expired snapshot is never treated as indefinitely connected. Users must first configure VPN access in the app.
 
-Live Activities show downloaded/uploaded totals and a system-rendered session timer. They may be dismissed and have an OS-defined lifetime. Updates are best-effort under ActivityKit rules; stale usage is explicitly marked with an instruction to open the app. The packet-tunnel extension publishes telemetry while running; the UI also updates the activity while active. No push service or artificial background keepalive is used. Starting a Live Activity is requested from the foreground app only.
+Live Activities show downloaded/uploaded totals and a system-rendered session timer. They may be dismissed and have an OS-defined lifetime. Updates are best-effort under ActivityKit rules; stale usage is explicitly marked with an instruction to open the app. The packet-tunnel extension publishes telemetry while running; the UI also updates the activity while active. No push service or artificial background keepalive is used. A Live Activity can start from the foreground app or the connection control’s Live Activity intent.
 
 iOS does not expose Android's installed-app selection APIs to consumer VPN apps. Per-app split tunneling requires device management and is not offered in this build. Proxy-only background operation is also not offered. Unsupported controls are removed from the iOS interface and rejected by the native adapter; no setting silently claims to apply.
 

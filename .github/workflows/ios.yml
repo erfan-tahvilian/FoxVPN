@@ -50,7 +50,7 @@ jobs:
       - name: Test simulator interface and native core
         run: |
           device="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if v["name"].startswith("iPhone")))')"
-          xcodebuild -project ios/FoxVPN.xcodeproj -scheme FoxVPN -configuration Debug -destination "platform=iOS Simulator,id=$device" -resultBundlePath test-results/ios.xcresult test CODE_SIGNING_ALLOWED=NO > dist/ios/simulator.log 2>&1 || { tail -n 100 dist/ios/simulator.log; exit 1; }
+          xcodebuild -project ios/FoxVPN.xcodeproj -scheme FoxVPN -configuration Debug -destination "platform=iOS Simulator,id=$device" -parallel-testing-enabled NO -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 -resultBundlePath test-results/ios.xcresult test CODE_SIGNING_ALLOWED=NO > dist/ios/simulator.log 2>&1 || { tail -n 100 dist/ios/simulator.log; exit 1; }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

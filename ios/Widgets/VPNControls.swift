@@ -3,18 +3,6 @@ import SwiftUI
 import WidgetKit
 import AppIntents
 import ActivityKit
-struct SetVPNConnection: SetValueIntent, LiveActivityIntent {
-    static var title: LocalizedStringResource = "Set Fox VPN connection"
-    static var description = IntentDescription("Connect or disconnect Fox VPN using your saved location.")
-    @Parameter(title: "Connected") var value: Bool
-    init() {}
-    init(value: Bool) { self.value = value }
-    @MainActor func perform() async throws -> some IntentResult {
-        try await VPNProfile.setConnected(value)
-        ControlCenter.shared.reloadControls(ofKind: SharedStore.controlKind)
-        return .result()
-    }
-}
 struct VPNConnectionValue: ControlValueProvider {
     var previewValue: Bool { false }
     @MainActor func currentValue() async throws -> Bool {

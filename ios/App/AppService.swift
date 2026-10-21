@@ -50,13 +50,8 @@ import WidgetKit
         guard let data = try? JSONSerialization.data(withJSONObject: state), let text = String(data: data, encoding: .utf8) else { return }
         web?.evaluateJavaScript("if(window.fox)window.fox.receive(\(text))", completionHandler: nil)
         let snapshot = SessionSnapshot.from(state)
-        if active && snapshot.connected { startLiveActivity(snapshot) }
+        if active && snapshot.connected { LiveStatus.start(snapshot) }
         Task { await LiveStatus.update(snapshot) }
-    }
-    private func startLiveActivity(_ session: SessionSnapshot) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled, Activity<VPNActivity>.activities.isEmpty else { return }
-        let value = VPNActivity.ContentState(location: session.location, downloaded: session.downloaded, uploaded: session.uploaded, startedAt: session.startedAt, updatedAt: session.updatedAt)
-        _ = try? Activity.request(attributes: VPNActivity(), content: ActivityContent(state: value, staleDate: Date().addingTimeInterval(30)), pushType: nil)
     }
     private func providerCall(_ action: String, _ args: [Any]) async throws -> [String: Any] {
         guard let session = manager?.connection as? NETunnelProviderSession else { throw VPNError.configuration("The VPN session is unavailable.") }

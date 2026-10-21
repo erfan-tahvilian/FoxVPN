@@ -50,7 +50,8 @@ targets:
     platform: iOS
     sources:
       - Tunnel
-      - Shared
+      - path: Shared
+        excludes: [ConnectionIntent.swift]
       - path: Generated/cacert.pem
         buildPhase: resources
     settings:
@@ -73,6 +74,7 @@ targets:
       - path: Shared/SharedStore.swift
       - path: Shared/SessionSnapshot.swift
       - path: Shared/VPNActivity.swift
+      - path: Shared/ConnectionIntent.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.foxvpn.ios.widgets
