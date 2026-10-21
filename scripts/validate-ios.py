@@ -4,6 +4,7 @@ from pathlib import Path
 import plistlib,sys,struct,os
 app=Path(sys.argv[1]);info=plistlib.loads((app/'Info.plist').read_bytes())
 bundle=os.environ.get('FOX_CONTAINER_BUNDLE','com.foxvpn.ios')
+assert info.get('DTPlatformName')=='iphoneos'
 assert info['CFBundleIdentifier']==bundle
 assert info['FoxContainerBundleID']==bundle
 assert info['CFBundleShortVersionString']=='1.0.0'
@@ -16,6 +17,7 @@ device_executable(app,info)
 assert (app/'Assets.car').is_file()
 for extension,suffix,kind in [('FoxVPNTunnel','.tunnel','com.apple.networkextension.packet-tunnel'),('FoxVPNWidgets','.widgets','com.apple.widgetkit-extension')]:
  folder=app/'PlugIns'/(extension+'.appex');entry=plistlib.loads((folder/'Info.plist').read_bytes())
+ assert entry.get('DTPlatformName')=='iphoneos'
  assert entry['CFBundleIdentifier']==bundle+suffix
  assert entry['FoxContainerBundleID']==bundle
  assert entry['NSExtension']['NSExtensionPointIdentifier']==kind

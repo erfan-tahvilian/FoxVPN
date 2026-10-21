@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import struct
 import copy, datetime as dt, importlib.util, unittest, uuid
 from pathlib import Path
 spec=importlib.util.spec_from_file_location("profiles",Path(__file__).with_name("ios-profiles.py"))
@@ -13,6 +14,14 @@ def fixtures():
     return values
 
 class ProfileTests(unittest.TestCase):
+    def test_device_platform_accepts_iphoneos(self):
+        spec=importlib.util.spec_from_file_location("inspect_ipa",Path(__file__).with_name("inspect-ios-ipa.py"));module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        header=struct.pack("<IIIIIIII",0xfeedfacf,0x100000c,0,2,1,24,0,0)
+        self.assertEqual(module.native_binary(header+struct.pack("<IIIIII",0x32,24,2,0,0,0)),[])
+    def test_arm64_simulator_is_not_a_device_binary(self):
+        spec=importlib.util.spec_from_file_location("inspect_ipa",Path(__file__).with_name("inspect-ios-ipa.py"));module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        header=struct.pack("<IIIIIIII",0xfeedfacf,0x100000c,0,2,1,24,0,0)
+        with self.assertRaisesRegex(ValueError,"simulator"):module.native_binary(header+struct.pack("<IIIIII",0x32,24,7,0,0,0))
     def test_valid_profile_and_legacy_prefix(self):
         config=p.validate(fixtures());self.assertEqual(config["keychain"],"com.example.fox.shared");self.assertEqual(config["eligibleDeviceCount"],1)
     def test_free_profile_cannot_silently_drop_vpn(self):
