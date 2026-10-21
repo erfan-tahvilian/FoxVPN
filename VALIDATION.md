@@ -1,5 +1,9 @@
 # v1.0.0 verification record
 
+## Android notification refinement — 2026-10-21
+
+The owner confirmed that downloaded/uploaded totals and the session timer in the preceding Android update worked on the physical phone. The notification refinement retains the system header status, location and chronometer, removes repeated status/time from the content, and schedules traffic refreshes every second. The [Android core, lint, package and emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39617398728) passed. Visual confirmation of the refined notification on the owner’s phone is pending.
+
 ## iOS client and Android session notifications — 2026-10-21
 
 - The [iOS build and simulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39611973436) passed. The native framework contains an ARM64 device slice and ARM64/Intel simulator slices. The device archive includes the main app, packet-tunnel extension and Control Center/Live Activity extension; validation checks their ARM64 executable headers, compiled icons, packaged interface, CA certificates and license resources.
