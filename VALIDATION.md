@@ -1,5 +1,12 @@
 # v1.0.0 verification record
 
+## iOS client and Android session notifications — 2026-10-21
+
+- The [iOS build and simulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39611973436) passed. The native framework contains an ARM64 device slice and ARM64/Intel simulator slices. The device archive includes the main app, packet-tunnel extension and Control Center/Live Activity extension; validation checks their ARM64 executable headers, compiled icons, packaged interface, CA certificates and license resources.
+- Simulator unit checks exercise the real native backend, saved location sorting, session formatting and country-name normalization. The interface test launches the packaged WKWebView and navigates to Locations. These checks do not establish authenticated VPN routing or background operation on physical Apple hardware.
+- The iOS IPA is an unsigned signing input. Apple certificates, provisioning profiles, installed entitlements, live device routing, handovers, Control Center actions and Live Activity updates still require verification using an appropriately signed build. No Apple signing identity was invented or uploaded.
+- The [Android core, package, lint and emulator integration checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39608423574) passed. Notification formatting covers byte totals and elapsed time. Only the ARM64 artifact was downloaded locally; its GitHub artifact SHA-256 was verified before signing with the existing project certificate. The updated APK is available for the owner's notification check; no physical notification result is claimed here.
+
 ## Published Android APK installation — 2026-10-16
 
 - The signed v1.0.0 x86_64 and universal APKs were downloaded directly from the release, checked against GitHub asset SHA-256 digests and the project's pinned signing certificate, then installed and launched on an Android 16 / API 36 x86_64 emulator. The test covers a fresh x86_64 installation and an update to the universal APK; the application remained running without a Java or native startup crash. See the [installation check](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38839111418).
