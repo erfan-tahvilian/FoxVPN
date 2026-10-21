@@ -7,7 +7,8 @@ import SwiftUI
     var body: some Scene {
         WindowGroup {
             VPNWebView(service: service)
-                .background(Color(red: 16/255, green: 17/255, blue: 23/255))
+                .background(Color(uiColor: .systemBackground))
+                .preferredColorScheme(service.appearance == "dark" ? .dark : service.appearance == "light" ? .light : nil)
                 .onAppear { service.setSystemDark(colorScheme == .dark);service.activate() }
                 .onChange(of: colorScheme) { _, scheme in service.setSystemDark(scheme == .dark) }
                 .onChange(of: scenePhase) { _, phase in if phase == .active { service.activate() } else { service.pause() } }

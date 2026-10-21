@@ -6,10 +6,16 @@ app=Path(sys.argv[1]);info=plistlib.loads((app/'Info.plist').read_bytes())
 assert info['CFBundleIdentifier']=='com.foxvpn.ios'
 assert info['CFBundleShortVersionString']=='1.0.0'
 assert float(info['MinimumOSVersion'])>=18
+def device_executable(folder,entry):
+ binary=folder/entry['CFBundleExecutable']
+ with binary.open('rb') as stream: magic,cpu=struct.unpack('<II',stream.read(8))
+ assert magic==0xfeedfacf and cpu==0x100000c, str(binary)+' must be an ARM64 device executable'
+device_executable(app,info)
+assert (app/'Assets.car').is_file()
 for extension,kind in [('FoxVPNTunnel','com.apple.networkextension.packet-tunnel'),('FoxVPNWidgets','com.apple.widgetkit-extension')]:
  folder=app/'PlugIns'/(extension+'.appex');entry=plistlib.loads((folder/'Info.plist').read_bytes())
  assert entry['NSExtension']['NSExtensionPointIdentifier']==kind
- assert (folder/entry['CFBundleExecutable']).is_file()
+ device_executable(folder,entry)
 for file in ['src/ui/index.html','src/ui/ios-bridge.js','src/ui/mobile.css','src/ui/ios.css','LICENSE','COPYRIGHT','licenses/GPL-3.0.txt','assets/logo.png','assets/logo-light.png']:
  assert (app/'Web'/file).is_file(),file
 assert (app/'cacert.pem').is_file()

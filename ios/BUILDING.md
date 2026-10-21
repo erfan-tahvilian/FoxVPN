@@ -10,7 +10,7 @@ The iOS application targets iOS/iPadOS 18 or later. One ARM64 device application
 - `Shared`: app-group status, Keychain session storage, native host adapter and session formatting.
 - `../android/core/apple`: Apple platform binding around the existing mobile authentication, discovery, latency, SOCKS and transport implementation. The containing app never starts a packet tunnel directly.
 
-The WebView accepts main-frame requests from packaged resources only. Credentials do not cross the JavaScript bridge. App and extension sessions are stored in a shared Keychain access group using this-device-only protection; the app-group status file contains connection telemetry, not account tokens.
+The WebView accepts main-frame requests from packaged resources only. Stored account tokens are never exposed to JavaScript; sign-in input is forwarded to native authentication. App and extension sessions are stored in a shared Keychain access group using this-device-only protection; the app-group status file contains connection telemetry, not account tokens.
 
 ## Build prerequisites
 

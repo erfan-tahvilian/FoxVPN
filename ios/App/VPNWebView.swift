@@ -25,7 +25,7 @@ final class AssetLoader: NSObject, WKURLSchemeHandler {
     init(service: AppService) { self.service = service; super.init(nibName: nil, bundle: nil) }
     required init?(coder: NSCoder) { fatalError("Unsupported initializer") }
     override func viewDidLoad() {
-        super.viewDidLoad(); view.backgroundColor = UIColor(red:16/255,green:17/255,blue:23/255,alpha:1)
+        super.viewDidLoad(); view.backgroundColor = .systemBackground
         let configuration = WKWebViewConfiguration(); configuration.websiteDataStore = .nonPersistent()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.setURLSchemeHandler(AssetLoader(), forURLScheme: "foxvpn")

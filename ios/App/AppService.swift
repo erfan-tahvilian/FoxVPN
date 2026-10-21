@@ -7,6 +7,7 @@ import ActivityKit
 import WidgetKit
 
 @MainActor final class AppService: ObservableObject {
+    @Published private(set) var appearance = "system"
     weak var web: WKWebView?
     private var client: AppleClient?
     private let host = CoreHost()
@@ -45,6 +46,7 @@ import WidgetKit
     func setSystemDark(_ value: Bool) {systemDark=value;client?.setDark(value)}
     private func publish(_ input: [String: Any]) {
         var state=input;state["systemDark"]=systemDark
+        if let settings=state["settings"] as? [String:Any],let theme=settings["theme"] as? String { appearance=theme }
         guard let data = try? JSONSerialization.data(withJSONObject: state), let text = String(data: data, encoding: .utf8) else { return }
         web?.evaluateJavaScript("if(window.fox)window.fox.receive(\(text))", completionHandler: nil)
         let snapshot = SessionSnapshot.from(state)
