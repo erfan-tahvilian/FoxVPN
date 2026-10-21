@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: iOS build
+on:
+  push:
+    branches: [main]
+    paths: ['ios/**', 'android/core/**', 'android/ui/mobile.css', 'android/app/src/main/res/raw/cacert.pem', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*ios*', '.github/workflows/ios.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.9'
+          cache: false
+      - name: Inspect Apple toolchain
+        run: |
+          xcodebuild -version
+          command -v xcodegen || brew install xcodegen
+      - name: Test shared mobile core
+        working-directory: android/core
+        run: |
+          gofmt -w mobile apple
+          go test -race -timeout 120s ./mobile
+          go test -tags with_gvisor,with_clash_api,with_conntrack ./apple
+          go vet ./mobile ./apple
+      - uses: actions/cache@v4
+        with:
+          path: ios/Frameworks/FoxCore.xcframework
+          key: ios-native-go1.26.9-${{ hashFiles('android/core/**/*.go', 'android/core/go.mod', 'android/core/go.sum', 'scripts/build-ios-core.sh') }}
+        id: native
+      - name: Build native iOS and simulator framework
+        if: steps.native.outputs.cache-hit != 'true'
+        run: bash scripts/build-ios-core.sh
+      - name: Build and inspect unsigned iPhone and iPad archive
+        run: bash scripts/build-ios.sh
+      - name: Test simulator interface and native core
+        run: |
+          device="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(v["udid"] for group in d["devices"].values() for v in group if v["name"].startswith("iPhone")))')"
+          xcodebuild -project ios/FoxVPN.xcodeproj -scheme FoxVPN -configuration Debug -destination "platform=iOS Simulator,id=$device" -resultBundlePath test-results/ios.xcresult test CODE_SIGNING_ALLOWED=NO > dist/ios/simulator.log 2>&1 || { tail -n 100 dist/ios/simulator.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iOS-build-diagnostics
+          path: |
+            ios/Frameworks/FoxCore.xcframework/**/Headers/*
+            dist/ios/*.log
+            test-results/ios.xcresult/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iOS-unsigned-signing-input
+          path: |
+            dist/ios/*unsigned.ipa
+            dist/ios/FoxVPN.xcarchive/

@@ -18,3 +18,14 @@ __pycache__/
 /graphify-out/
 /.graphify*/
 /.graphify*
+
+# Generated Apple platform build inputs and signing material
+ios/Generated/
+ios/Frameworks/
+ios/*.xcodeproj/
+ios/*.xcworkspace/
+*.xcarchive/
+*.xcresult/
+*.mobileprovision
+*.p12
+*.p8

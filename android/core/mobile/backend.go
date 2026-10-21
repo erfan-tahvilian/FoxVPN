@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Host is implemented by Android. Credentials never cross the WebView bridge.
+// Host is implemented by the mobile platform. Credentials never cross the WebView bridge.
 type Host interface {
 	Save(vault string) error
 	Changed(state string)
@@ -79,6 +79,7 @@ type Backend struct {
 	logs                      []object
 	latencies                 object
 	connection                string
+	platform                  string
 	started                   int64
 	exit, quota               object
 	lastError                 string
@@ -90,7 +91,7 @@ type Backend struct {
 }
 
 func NewBackend(host Host, vault string) *Backend {
-	b := &Backend{host: host, settings: defaults(), servers: []object{}, logs: []object{}, latencies: object{}, pingingIDs: []string{}, connection: "disconnected", systemDark: true}
+	b := &Backend{host: host, settings: defaults(), servers: []object{}, logs: []object{}, latencies: object{}, pingingIDs: []string{}, connection: "disconnected", platform: "android", systemDark: true}
 	var saved object
 	if json.Unmarshal([]byte(vault), &saved) == nil {
 		if s := obj(saved, "settings"); len(s) > 0 && validate(s) == nil {
@@ -133,6 +134,15 @@ func NewBackend(host Host, vault string) *Backend {
 	b.client = &http.Client{Timeout: 30 * time.Second, Jar: jar, Transport: &http.Transport{DialContext: b.dialer.DialContext, TLSClientConfig: &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}, ForceAttemptHTTP2: true}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return b
 }
+// NewAppleBackend uses Darwin's system resolver and identifies iOS snapshots.
+func NewAppleBackend(host Host, vault string) *Backend {
+    b := NewBackend(host, vault)
+    b.platform = "ios"
+    if str(b.settings,"locationSort")=="" { b.settings["locationSort"]="ping-asc" }
+    b.dialer.Resolver = nil
+    return b
+}
+
 func (b *Backend) snapshotLocked() object {
 	s := copyObject(b.settings)
 	u := obj(s, "upstream")
@@ -151,7 +161,7 @@ func (b *Backend) snapshotLocked() object {
 	if b.auth != nil {
 		email = str(b.auth, "email")
 	}
-	return object{"version": "1.0.0", "platform": "android", "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
+	return object{"version": "1.0.0", "platform": b.platform, "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
 }
 func (b *Backend) Snapshot() string {
 	b.mu.Lock()
@@ -333,7 +343,12 @@ func (b *Backend) Call(channel, argsJSON string) string {
 				b.mu.Unlock()
 			}
 		}
-	case "theme":
+    case "locationSort":
+        mode:=text(0)
+        if mode!="ping-asc"&&mode!="ping-desc"&&mode!="name-asc"&&mode!="name-desc" { err=errors.New("Invalid location order");break }
+        b.mu.Lock();old:=b.settings["locationSort"];b.settings["locationSort"]=mode;b.mu.Unlock()
+        err=b.save();if err!=nil {b.mu.Lock();b.settings["locationSort"]=old;b.mu.Unlock()}
+    case "theme":
 		theme := text(0)
 		if theme != "light" && theme != "dark" && theme != "system" {
 			err = errors.New("Invalid theme")
@@ -504,7 +519,7 @@ func (b *Backend) connect() error {
 	return err
 }
 
-// Ready is called only after Android's native VPN engine has started.
+// Ready is called only after the platform VPN engine has started.
 func (b *Backend) Ready() {
 	b.mu.Lock()
 	if b.tunnel == nil || b.connection != "connecting" {
@@ -584,7 +599,7 @@ func (b *Backend) stop(expected *proxyTunnel, message string) {
 	}
 	if t != nil {
 		t.close()
-		b.log("info", "Disconnected · Android routes restored")
+		b.log("info", "Disconnected · Device routes restored")
 	}
 	if message != "" {
 		b.log("error", message)

@@ -38,6 +38,13 @@ public class AndroidIntegrationTest {
         while(System.currentTimeMillis()<deadline){if("true".equals(js("!!window.fox && !!document.getElementById('connect') && typeof currentState!=='undefined' && currentState!==null")))return;Thread.sleep(250);}
         fail("Android interface did not initialize");
     }
+    @Test public void connectionNotificationStatistics(){
+        assertEquals("Downloaded: 1.0 MB\nUploaded: 2.0 KB\nSession: 01:01:01",ConnectionStats.details(1048576,2048,1000,3662000));
+        assertEquals("00:00:00",ConnectionStats.duration(0,50000));
+        assertEquals("00:00:00",ConnectionStats.duration(2000,1000));
+        assertEquals("0 B",ConnectionStats.bytes(-1));
+        assertTrue(ConnectionStats.summary(1024,2048,1000,6000).contains("00:00:05"));
+    }
     @Test public void interfaceAndStateIsolation()throws Exception{
         ready();assertEquals("\"Fox VPN\"",js("document.title"));assertEquals("true",js("document.documentElement.scrollWidth<=window.innerWidth"));
         assertEquals("\"none\"",js("getComputedStyle(document.querySelector('h1')).userSelect"));

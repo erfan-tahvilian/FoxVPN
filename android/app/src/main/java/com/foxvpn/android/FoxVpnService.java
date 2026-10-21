@@ -33,10 +33,19 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
     private volatile boolean starting,stopping;
     private final java.util.concurrent.atomic.AtomicBoolean cleanupQueued=new java.util.concurrent.atomic.AtomicBoolean();
     private InterfaceUpdateListener interfaceListener;
+    private final Runnable notificationTick=new Runnable(){
+        @Override public void run(){
+            if(stopping)return;
+            if(app().backend!=null&&"connected".equals(app().connection())){
+                try{app().state=new JSONObject(app().backend.snapshot());stateChanged();}catch(Exception ignored){}
+            }
+            app().main.postDelayed(this,5000);
+        }
+    };
     private FoxApp app(){return (FoxApp)getApplication();}
     public static void connect(Context context){context.startForegroundService(new Intent(context,FoxVpnService.class).setAction("connect"));}
     @Override public void onCreate(){
-        super.onCreate();app().vpn=this;
+        super.onCreate();app().vpn=this;app().main.postDelayed(notificationTick,1000);
         getSystemService(NotificationManager.class).createNotificationChannel(new NotificationChannel(CHANNEL,"VPN connection",NotificationManager.IMPORTANCE_LOW));
     }
     @Override public int onStartCommand(Intent intent,int flags,int startID){
@@ -103,12 +112,18 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
         JSONObject exit=app().state.optJSONObject("exit");
         if(exit!=null&&server!=null&&"connected".equals(app().connection())&&!exit.optString("country").equals(server.optString("code")))
             text=status+" · "+new java.util.Locale("",exit.optString("country")).getDisplayCountry(java.util.Locale.ENGLISH);
-        return new Notification.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_fox_tile).setContentTitle("Fox VPN").setContentText(text)
+        boolean connected="connected".equals(app().connection());
+        long started=app().state.optLong("startedAt",0);
+        String stats=ConnectionStats.summary(app().state.optLong("down"),app().state.optLong("up"),started,System.currentTimeMillis());
+        return new Notification.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_fox_tile).setContentTitle("Fox VPN")
+            .setContentText(connected?stats:text).setSubText(connected?text:null)
+            .setStyle(new Notification.BigTextStyle().bigText(connected?text+"\n"+ConnectionStats.details(app().state.optLong("down"),app().state.optLong("up"),started,System.currentTimeMillis()):text))
+            .setWhen(connected?started:0).setShowWhen(connected&&started>0).setUsesChronometer(connected&&started>0)
             .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).setCategory(Notification.CATEGORY_SERVICE)
             .addAction(new Notification.Action.Builder(null,"Disconnect",stop).build()).build();
     }
     void requestStop(){
-        stopping=true;if(app().backend!=null)app().backend.disconnect();
+        stopping=true;app().main.removeCallbacks(notificationTick);if(app().backend!=null)app().backend.disconnect();
         if(!cleanupQueued.compareAndSet(false,true))return;
         worker.execute(() -> {
             synchronized(engineLock){if(engine!=null){try{engine.close();}catch(Exception ignored){}engine=null;}if(tun!=null){try{tun.close();}catch(Exception ignored){}tun=null;}}
@@ -116,7 +131,7 @@ public class FoxVpnService extends VpnService implements PlatformInterface {
         });
     }
     @Override public void onRevoke(){app().stopVpn();super.onRevoke();}
-    @Override public void onDestroy(){stopping=true;if(app().backend!=null)app().backend.disconnect();synchronized(engineLock){if(engine!=null){try{engine.close();}catch(Exception ignored){}engine=null;}if(tun!=null){try{tun.close();}catch(Exception ignored){}tun=null;}}if(app().vpn==this)app().vpn=null;worker.shutdown();super.onDestroy();}
+    @Override public void onDestroy(){stopping=true;app().main.removeCallbacks(notificationTick);if(app().backend!=null)app().backend.disconnect();synchronized(engineLock){if(engine!=null){try{engine.close();}catch(Exception ignored){}engine=null;}if(tun!=null){try{tun.close();}catch(Exception ignored){}tun=null;}}if(app().vpn==this)app().vpn=null;worker.shutdown();super.onDestroy();}
 
     @Override public int openTun(TunOptions options)throws Exception{
         if(VpnService.prepare(this)!=null)throw new Exception("VPN permission was revoked");

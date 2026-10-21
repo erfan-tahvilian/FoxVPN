@@ -74,6 +74,12 @@ Android 8.0 or later · Up-to-date **Android System WebView**
 
 The architecture-specific APK is the smaller download. Choose **Universal** if you are unsure which architecture your device uses.
 
+### 📱 iOS and iPadOS
+
+iOS/iPadOS 18 or later · **iPhone and iPad**
+
+The iOS build includes the shared interface, a native VPN extension, a Control Center toggle and a Live Activity with session statistics. Device installation requires valid Apple signing and provisioning. Unsigned build artifacts are for signing and development; they are not direct-install downloads. See the [iOS build and distribution guide](ios/BUILDING.md).
+
 <details>
 <summary><strong>Before you install: package trust & verification</strong></summary>
 
