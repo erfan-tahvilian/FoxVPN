@@ -38,7 +38,7 @@ jobs:
           test "$(jq -r '.conclusion' /tmp/source-run.json)" = success
           test "$(jq -r '.path' /tmp/source-run.json)" = .github/workflows/android.yml
           source_sha="$(jq -r '.head_sha' /tmp/source-run.json)"
-          git diff --exit-code "$source_sha" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml
+          git diff --exit-code "$source_sha" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml ":(exclude)android/core/apple/**"
           echo "FOX_SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
           gh api "repos/$GITHUB_REPOSITORY/git/blobs/$FOX_PATCH_BLOB" > /tmp/signature-blob.json
           test "$(jq -r '.encoding' /tmp/signature-blob.json)" = base64

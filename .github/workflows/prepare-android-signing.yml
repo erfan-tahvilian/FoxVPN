@@ -37,7 +37,7 @@ jobs:
           done
           target_sha="$(jq -r '.head_sha' "/tmp/run-$FOX_TARGET_RUN.json")"
           base_sha="$(jq -r '.head_sha' "/tmp/run-$FOX_BASE_RUN.json")"
-          git diff --exit-code "$target_sha" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml
+          git diff --exit-code "$target_sha" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml ":(exclude)android/core/apple/**"
           echo "FOX_TARGET_SHA=$target_sha" >> "$GITHUB_ENV"
           echo "FOX_BASE_SHA=$base_sha" >> "$GITHUB_ENV"
           jq -n --arg target_run "$FOX_TARGET_RUN" --arg target_sha "$target_sha" --arg base_run "$FOX_BASE_RUN" --arg base_sha "$base_sha" '{target_run:$target_run,target_sha:$target_sha,base_run:$base_run,base_sha:$base_sha}' > build-identity.json

@@ -97,7 +97,7 @@ func(p *platform) UseProcFS()bool{return false}
 func(p *platform) FindConnectionOwner(protocol int32,source string,sourcePort int32,destination string,destinationPort int32)(int32,error){return -1,errors.New("Process routing is unavailable on iOS")}
 func(p *platform) PackageNameByUid(uid int32)(string,error){return "",nil}
 func(p *platform) UIDByPackageName(name string)(int32,error){return -1,errors.New("Per-app VPN requires device management")}
-func(p *platform) StartDefaultInterfaceMonitor(listener libbox.InterfaceUpdateListener)error{p.client.pathMu.Lock();p.client.listener=listener;p:=p.client.path;p.client.pathMu.Unlock();listener.UpdateDefaultInterface(p.Name,p.Index,p.Expensive,p.Constrained);return nil}
+func(p *platform) StartDefaultInterfaceMonitor(listener libbox.InterfaceUpdateListener)error{p.client.pathMu.Lock();p.client.listener=listener;state:=p.client.path;p.client.pathMu.Unlock();listener.UpdateDefaultInterface(state.Name,state.Index,state.Expensive,state.Constrained);return nil}
 func(p *platform) CloseDefaultInterfaceMonitor(listener libbox.InterfaceUpdateListener)error{p.client.pathMu.Lock();p.client.listener=nil;p.client.pathMu.Unlock();return nil}
 func(p *platform) GetInterfaces()(libbox.NetworkInterfaceIterator,error){
     values,err:=net.Interfaces();if err!=nil{return nil,err};result:=&interfaces{}

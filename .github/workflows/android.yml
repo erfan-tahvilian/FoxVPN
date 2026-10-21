@@ -4,7 +4,7 @@ name: Android build
 on:
   push:
     branches: [main]
-    paths: ['android/**', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*android*', '.github/workflows/android.yml']
+    paths: ['android/**', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*android*', '.github/workflows/android.yml', '!android/core/apple/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -60,7 +60,7 @@ jobs:
         id: native-cache
         with:
           path: android/app/libs/
-          key: android-native-go1.26.9-ndk28-bind0.1.7-${{ hashFiles('android/core/**/*.go', 'android/core/go.mod', 'android/core/go.sum') }}
+          key: android-native-go1.26.9-ndk28-bind0.1.7-${{ hashFiles('android/core/mobile/**/*.go', 'android/core/engine/**/*.go', 'android/core/tools.go', 'android/core/go.mod', 'android/core/go.sum') }}
       - name: Build native Android library
         if: steps.native-cache.outputs.cache-hit != 'true'
         working-directory: android/core

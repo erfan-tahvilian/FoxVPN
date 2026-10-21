@@ -19,7 +19,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26.9'
-          cache: false
+          cache: true
+          cache-dependency-path: android/core/go.sum
       - name: Inspect Apple toolchain
         run: |
           xcodebuild -version
