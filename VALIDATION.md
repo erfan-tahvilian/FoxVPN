@@ -1,8 +1,14 @@
 # v1.0.0 verification record
 
+## Published iOS signing distribution — 2026-10-21
+
+The [device build, simulator checks and automated publisher](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39623334814) passed for source `825d108bdb79b5041ab292f9b9345b9b20eb3071`. Eleven distribution-policy tests include explicit rejection of ARM64 simulator executables and profiles missing Packet Tunnel/shared-storage permissions. Package inspection checks iPhoneOS Mach-O platform identifiers, all three targets, required resources and non-system library references.
+
+The [v1.0.0 release](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.0) now contains the unsigned device IPA, bilingual installation guide, requested entitlements, matching source, signing tools, build report and checksums. The publisher checked every uploaded iOS asset against GitHub SHA-256 metadata and refreshed the global checksum file. No Apple signing credentials were available, so the real credential-import/export branch, physical installation, live VPN routing, background behavior and system controls remain unverified. Free Personal Team sideloading is not presented as a working Packet Tunnel installation method.
+
 ## Android notification refinement — 2026-10-21
 
-The owner confirmed that downloaded/uploaded totals and the session timer in the preceding Android update worked on the physical phone. The notification refinement retains the system header status, location and chronometer, removes repeated status/time from the content, and schedules traffic refreshes every second. The [Android core, lint, package and emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39617398728) passed. Visual confirmation of the refined notification on the owner’s phone is pending.
+The owner confirmed that downloaded/uploaded totals and the session timer in the preceding Android update worked on the physical phone. The notification refinement retains the system header status, location and chronometer, removes repeated status/time from the content, and schedules traffic refreshes every second. The [Android core, lint, package and emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39617398728) passed. The owner subsequently confirmed the refined expanded/collapsed notification and one-second traffic refresh on the physical phone.
 
 ## iOS client and Android session notifications — 2026-10-21
 
