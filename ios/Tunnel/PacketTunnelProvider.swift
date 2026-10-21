@@ -64,8 +64,12 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         } catch { return -1 }
     }
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        stopping = true; client?.stop()
-        worker.async { self.finish(); completionHandler() }
+        // Keep the provider callback free while an in-flight connection applies network settings.
+        stopping = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.client?.stop()
+            self.worker.async { self.finish(); completionHandler() }
+        }
     }
     private func finish() {
         stopping = true; ready = false; timer?.cancel(); timer = nil; path.stop(); client?.stop(); client = nil

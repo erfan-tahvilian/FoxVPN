@@ -39,7 +39,8 @@ targets:
         PROVISIONING_PROFILE_SPECIFIER: $(FOX_PROFILE_APP)
     dependencies:
       - framework: Frameworks/FoxCore.xcframework
-        embed: true
+        embed: false
+      - sdk: libresolv.tbd
       - target: FoxVPNTunnel
         embed: true
       - target: FoxVPNWidgets
@@ -62,7 +63,8 @@ targets:
         PROVISIONING_PROFILE_SPECIFIER: $(FOX_PROFILE_TUNNEL)
     dependencies:
       - framework: Frameworks/FoxCore.xcframework
-        embed: true
+        embed: false
+      - sdk: libresolv.tbd
   FoxVPNWidgets:
     type: app-extension
     platform: iOS
