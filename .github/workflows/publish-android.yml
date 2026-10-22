@@ -71,7 +71,7 @@ jobs:
             input="unsigned/app-$arch-release-unsigned.apk"
             output="signed/FoxVPN-1.0.0-Android-$arch.apk"
             test -s "$input"
-            java -jar signing-tools/apksigner.jar sign --ks "$RUNNER_TEMP/fox-sign/release.jks" --ks-key-alias foxvpn --ks-pass "file:$RUNNER_TEMP/fox-sign/password" --key-pass "file:$RUNNER_TEMP/fox-sign/password" --min-sdk-version 26 --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out "$output" "$input"
+            java -jar signing-tools/apksigner.jar sign --ks "$RUNNER_TEMP/fox-sign/release.jks" --ks-key-alias foxvpn --ks-pass "file:$RUNNER_TEMP/fox-sign/password" --key-pass "file:$RUNNER_TEMP/fox-sign/key-password" --min-sdk-version 26 --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out "$output" "$input"
             java -jar signing-tools/apksigner.jar verify --verbose --print-certs "$output" > /tmp/verify.txt
             grep -F "$(cat android/signing-certificate.sha256 | tr -d '\r\n')" /tmp/verify.txt
           done

@@ -16,5 +16,5 @@ if(mode==='generate'){
  const cipher=crypto.createDecipheriv('aes-256-gcm',key,Buffer.from(e.iv,'base64'));cipher.setAuthTag(Buffer.from(e.tag,'base64'));
  const payload=JSON.parse(Buffer.concat([cipher.update(Buffer.from(e.data,'base64')),cipher.final()]).toString());
  if(payload.run!==process.env.GITHUB_RUN_ID)throw Error('Signing run mismatch');
- fs.writeFileSync(folder+'/release.jks',Buffer.from(payload.keystore,'base64'),{mode:0o600});fs.writeFileSync(folder+'/password',payload.password,{mode:0o600});
+ fs.writeFileSync(folder+'/release.jks',Buffer.from(payload.keystore,'base64'),{mode:0o600});fs.writeFileSync(folder+'/password',payload.password,{mode:0o600});fs.writeFileSync(folder+'/key-password',payload.password,{mode:0o600});
 }else throw Error('Unsupported operation');
