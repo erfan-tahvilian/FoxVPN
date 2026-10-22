@@ -37,7 +37,7 @@ function trayState(){
   return {version:app.getVersion(),connection,signedIn:!!store.auth,busy,light:!nativeTheme.shouldUseDarkColors,location:[country,city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')};
 }
 async function trayCommand(action){
-  if(action==='open'){window.show();window.focus();return;}
+  if(action==='open'){showWindow();return;}
   if(action==='quit'){app.quit();return;}
   if(connection==='connecting'){await disconnect();return;}
   if(busy||connection==='disconnecting')return;
@@ -45,6 +45,12 @@ async function trayCommand(action){
   busy=true;emit();try{await connect();}finally{busy=false;emit();}
 }
 
+function showWindow() {
+  if(quitting)return;
+  if(!window||window.isDestroyed())createWindow();
+  if(window.isMinimized())window.restore();
+  window.show();window.focus();
+}
 function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'engine'):path.join(__dirname,mac?'../engine/darwin':'../engine',process.arch);}
 async function admin() {
   return new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command','([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)'],{windowsHide:true},(e,out)=>resolve(!e&&out.trim()==='True')));
@@ -162,19 +168,20 @@ function createWindow() {
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   window.webContents.on('will-navigate',event=>event.preventDefault());
   window.loadFile(path.join(__dirname,'ui/index.html'));
+  window.on('closed',()=>{window=null;});
   window.on('close',event=>{if(!quitting){event.preventDefault();window.hide();}});
 }
 if(!app.requestSingleInstanceLock())app.quit();
 else {
-  app.on('second-instance',()=>{window?.show();window?.focus();});
+  app.on('second-instance',()=>{showWindow();});
   app.whenReady().then(()=>{
-    if(mac)Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Fox VPN',submenu:[{role:'about'},{type:'separator'},{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'},{role:'quit'}]},{role:'editMenu'},{role:'windowMenu'}]));
+    if(mac)Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Fox VPN',submenu:[{role:'about'},{type:'separator'},{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'},{role:'quit'}]},{label:'File',submenu:[{label:'Close Window',accelerator:'Command+W',click:()=>{if(window&&!window.isDestroyed())window.close();}}]},{role:'editMenu'},{role:'windowMenu'}]));
     store=new Store(app.getPath('userData'),safeStorage);servers=store.servers;
     const control=new Control();guardian=new Guardian(control,new Auth(control,store));
     createWindow();tray=new Tray(mac?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');
     trayPopup=new TrayPopup({state:trayState,command:trayCommand,bounds:()=>{const bounds=tray.getBounds();if(mac)return bounds;const point=screen.getCursorScreenPoint();return point.x>=bounds.x-8&&point.x<=bounds.x+bounds.width+8&&point.y>=bounds.y-8&&point.y<=bounds.y+bounds.height+8?bounds:{...point,width:0,height:0};}});
     const showTray=()=>trayPopup.show().catch(error=>log('warn',error.message));
-    tray.on('right-click',showTray);tray.on('click',showTray);tray.on('double-click',()=>{trayPopup.hide();window.show();window.focus();});emit();
+    tray.on('right-click',showTray);tray.on('click',showTray);tray.on('double-click',()=>{trayPopup.hide();showWindow();});emit();
     handle('state',()=>state());
     handle('login',async({email,password})=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{return await guardian.auth.login(email,password);}finally{busy=false;emit();}});
     handle('verify',async code=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{return await guardian.auth.verify(code);}finally{busy=false;emit();}});
@@ -212,7 +219,7 @@ else {
     if(store.loadError)log('warn',store.loadError);
     refreshServers().catch(()=>log('warn','Locations could not be refreshed. Saved locations remain available; try Refresh again later.'));
   });
-  app.on('before-quit',event=>{if(quitting)return;event.preventDefault();quitting=true;disconnect().finally(()=>{trayPopup?.destroy();tray?.destroy();app.quit();});});
-  app.on('activate',()=>{window?.show();window?.focus();});
+  app.on('before-quit',event=>{if(quitting)return;event.preventDefault();quitting=true;disconnect().catch(()=>{}).finally(()=>{const popup=trayPopup;trayPopup=null;popup?.destroy();if(tray&&!tray.isDestroyed())tray.destroy();tray=null;app.quit();});});
+  app.on('activate',()=>{showWindow();});
   app.on('window-all-closed',()=>{});
 }

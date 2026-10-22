@@ -22,9 +22,9 @@ class TrayPopup {
       this.ready=this.window.loadFile(path.join(__dirname,'ui/tray.html'));
     }
     await this.ready;
-    if(request!==this.epoch||this.window.isDestroyed())return;
+    if(request!==this.epoch||!this.window||this.window.isDestroyed())return;
     const height=await this.window.webContents.executeJavaScript("Math.ceil(document.querySelector('main').getBoundingClientRect().bottom+5)");
-    if(request!==this.epoch||this.window.isDestroyed())return;
+    if(request!==this.epoch||!this.window||this.window.isDestroyed())return;
     this.window.setResizable(true);this.window.setSize(306,height);this.window.setResizable(false);
     const anchor=this.bounds(),point={x:Math.round(anchor.x+anchor.width/2),y:Math.round(anchor.y+anchor.height/2)};
     const work=screen.getDisplayNearestPoint(point).workArea;
@@ -35,6 +35,6 @@ class TrayPopup {
   }
   update(){if(this.window&&!this.window.isDestroyed())this.window.webContents.send('fox:tray-state',this.state());}
   hide(){this.epoch=(this.epoch||0)+1;if(this.window&&!this.window.isDestroyed())this.window.hide();}
-  destroy(){ipcMain.removeHandler('fox:tray');this.window?.destroy();}
+  destroy(){this.epoch=(this.epoch||0)+1;ipcMain.removeHandler('fox:tray');if(this.window&&!this.window.isDestroyed())this.window.destroy();this.window=null;}
 }
 module.exports={TrayPopup};

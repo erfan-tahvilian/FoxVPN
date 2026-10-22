@@ -31,7 +31,7 @@ test('unverified sign-in stores no token until email verification succeeds',asyn
   const calls=[],store={auth:null,setAuth(auth){this.auth=auth;}};
   const http={async json(url,options){calls.push({url,options});return {data:url.endsWith('/account/login')?{sessionToken:'ab'.repeat(32),verified:false}:url.endsWith('/oauth/token')?{access_token:'access',refresh_token:'refresh',expires_in:3600}:{}};}};
   const auth=new Auth(http,store);
-  assert.deepEqual(await auth.login('user@example.com','secret'),{needsCode:true});assert.equal(store.auth,null);
+  assert.deepEqual(await auth.login('user@example.com','secret'),{needsCode:true,verificationMethod:'email-2fa'});assert.equal(store.auth,null);
   await auth.verify('123456');assert.equal(store.auth.access_token,'access');assert.equal(auth.pending,null);
   assert(!JSON.stringify(calls).includes('secret'));
   assert(calls[1].options.authorization.startsWith('Hawk '));
@@ -114,4 +114,22 @@ test('location cache survives restart, preference changes and rejected refreshes
   const reloaded=new Store(dir,safe);assert.deepEqual(reloaded.servers,[server]);assert.throws(()=>reloaded.setServers([]));assert.deepEqual(reloaded.servers,[server]);
   safe.isEncryptionAvailable=()=>false;assert.throws(()=>reloaded.setServers([{...server,id:'new'}]));assert.deepEqual(reloaded.servers,[server]);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('TOTP sign-in retries invalid codes without issuing OAuth credentials early',async()=>{
+  const calls=[],store={auth:null,setAuth(value){this.auth=value;}};
+  let rejectCode=true;
+  const http={async json(url,options){
+    calls.push(url);
+    if(url.endsWith('/account/login'))return {data:{sessionToken:'ab'.repeat(32),verified:true,sessionVerified:false,verificationMethod:'totp-2fa'}};
+    if(url.endsWith('/session/verify/totp')){if(rejectCode)throw Error('Invalid code');return {data:{}};}
+    if(url.endsWith('/oauth/token'))return {data:{access_token:'access'}};
+    throw Error('Unexpected authentication endpoint');
+  }};
+  const auth=new Auth(http,store);
+  assert.deepEqual(await auth.login('user@example.com','secret'),{needsCode:true,verificationMethod:'totp-2fa'});
+  await assert.rejects(auth.verify('123456'));assert.equal(store.auth,null);assert(auth.pending);
+  assert(!calls.some(url=>url.endsWith('/oauth/token')));
+  rejectCode=false;await auth.verify('654321');assert.equal(store.auth.access_token,'access');assert.equal(auth.pending,null);
+  assert(!calls.some(url=>url.endsWith('/session/verify_code')));
 });

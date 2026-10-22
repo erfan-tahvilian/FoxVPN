@@ -24,16 +24,22 @@ class Auth {
   }
   async login(email, password) {
     if (!email || !password) throw Error('Enter your Firefox account email and password.');
+    this.pending = null;
     let result;
     try { result = await this.request('/account/login', {email, authPW:authPW(email,password), verificationMethod:'email-2fa'}); }
     catch (e) { if (e.errno !== 107) throw e; result = await this.request('/account/login', {email, authPW:authPW(email,password)}); }
-    this.pending = {session:result.sessionToken, email};
-    if (!result.verified) return {needsCode:true};
+    if (!result.sessionToken) throw Error('Sign-in returned no session.');
+    const method=result.verificationMethod || 'email-2fa';
+    this.pending = {session:result.sessionToken, email, method};
+    if (!result.verified || result.sessionVerified===false || result.emailVerified===false || result.verificationMethod) return {needsCode:true,verificationMethod:method};
     return this.complete();
   }
   async verify(code) {
     if (!this.pending) throw Error('Start sign-in again.');
-    await this.request('/session/verify_code', {code}, this.pending.session);
+    code=String(code).trim();
+    if (!code) throw Error('Enter the verification code.');
+    const path=this.pending.method==='totp-2fa'?'/session/verify/totp':'/session/verify_code';
+    await this.request(path, {code}, this.pending.session);
     return this.complete();
   }
   async complete() {

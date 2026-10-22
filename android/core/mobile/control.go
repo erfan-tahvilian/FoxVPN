@@ -144,6 +144,7 @@ func (b *Backend) login(ctx context.Context, email, password string) (object, er
 	if email == "" || password == "" {
 		return nil, errors.New("Enter your Firefox account email and password")
 	}
+	b.pending = nil
 	data := object{"email": email, "authPW": passwordHash(email, password), "verificationMethod": "email-2fa"}
 	result, err := b.authRequest(ctx, "/account/login", data, "")
 	var se *serviceError
@@ -157,9 +158,13 @@ func (b *Backend) login(ctx context.Context, email, password string) (object, er
 	if str(result, "sessionToken") == "" {
 		return nil, errors.New("Sign-in returned no session")
 	}
-	b.pending = object{"session": str(result, "sessionToken"), "email": email}
-	if !yes(result, "verified") {
-		return object{"needsCode": true}, nil
+	method := str(result, "verificationMethod")
+	if method == "" {
+		method = "email-2fa"
+	}
+	b.pending = object{"session": str(result, "sessionToken"), "email": email, "method": method}
+	if !yes(result, "verified") || result["sessionVerified"] == false || result["emailVerified"] == false || str(result, "verificationMethod") != "" {
+		return object{"needsCode": true, "verificationMethod": method}, nil
 	}
 	return b.complete(ctx)
 }
@@ -167,10 +172,15 @@ func (b *Backend) verify(ctx context.Context, code string) (object, error) {
 	if b.pending == nil {
 		return nil, errors.New("Start sign-in again")
 	}
+	code = strings.TrimSpace(code)
 	if code == "" {
 		return nil, errors.New("Enter the verification code")
 	}
-	_, err := b.authRequest(ctx, "/session/verify_code", object{"code": code}, str(b.pending, "session"))
+	path := "/session/verify_code"
+	if str(b.pending, "method") == "totp-2fa" {
+		path = "/session/verify/totp"
+	}
+	_, err := b.authRequest(ctx, path, object{"code": code}, str(b.pending, "session"))
 	if err != nil {
 		return nil, err
 	}
