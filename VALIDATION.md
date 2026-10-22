@@ -1,5 +1,13 @@
 # v1.0.0 verification record
 
+## Refreshed cross-platform release - 2026-10-22
+
+All 16 platform binaries in the existing v1.0.0 release were refreshed and their GitHub SHA-256 digests checked against the complete global checksum manifest. [Windows x64, x86 and ARM64 builds](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39789553502), [Intel and Apple Silicon macOS builds](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39789548926), and [desktop publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39790672969) passed. Windows application enumeration uses native PowerShell and bounds optional Store package discovery to avoid blocking the application catalog. Local regression and real Electron smoke checks passed; the current Windows x64 package was installed and its packaged source verified.
+
+The [Android build](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39785930614) passed. All five APK architectures were [signed and published on GitHub Actions](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39790151719) using the existing certificate. The owner explicitly authorized encrypted, single-use transfer of the signing identity; the temporary transfer asset was removed and the runner cleanup completed. Only the final ARM64 APK was downloaded locally for delivery to the owner's test folder; its digest is `280f21bbd57d1f8d0a985606610341d8c15f0c320be489f12fa9ccc0b91f85d3`. Android two-step sign-in remains pending owner testing.
+
+The [iOS device archive, simulator tests and publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39788742340) passed. The release includes the refreshed unsigned ARM64 IPA, corresponding source, signing tools, requested entitlements and bilingual installation guide. The IPA still requires authorized signing; physical iPhone VPN operation and macOS keyboard behavior remain unverified on physical devices.
+
 ## Two-step sign-in on Windows - 2026-10-22
 
 The updated Windows x64 v1.0.0 application was installed in `D:\Program Files\FoxVPN` and its packaged source was compared with commit `175692e`. The owner confirmed successful sign-in using the account with two-step authentication enabled. All 23 desktop regression tests passed, including authenticator-code verification and retry after an invalid code without issuing OAuth credentials before verification.
