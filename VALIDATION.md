@@ -1,5 +1,11 @@
 # v1.0.0 verification record
 
+## Two-step sign-in on Windows - 2026-10-22
+
+The updated Windows x64 v1.0.0 application was installed in `D:\Program Files\FoxVPN` and its packaged source was compared with commit `175692e`. The owner confirmed successful sign-in using the account with two-step authentication enabled. All 23 desktop regression tests passed, including authenticator-code verification and retry after an invalid code without issuing OAuth credentials before verification.
+
+The shared mobile implementation includes the corresponding authenticator-code flow, but real-account two-step sign-in on Android and iOS has not yet been confirmed. The macOS build passed; Command+Q cleanup, Command+W window closure and reopening still require verification on a physical Mac.
+
 ## Published iOS signing distribution - 2026-10-21
 
 The [device build, simulator checks and automated publisher](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39623334814) passed for source `825d108bdb79b5041ab292f9b9345b9b20eb3071`. Eleven distribution-policy tests include explicit rejection of ARM64 simulator executables and profiles missing Packet Tunnel/shared-storage permissions. Package inspection checks iPhoneOS Mach-O platform identifiers, all three targets, required resources and non-system library references.
