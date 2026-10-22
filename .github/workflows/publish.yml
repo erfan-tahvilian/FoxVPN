@@ -59,6 +59,7 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir release-assets
+          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > release-assets/FoxVPN-1.0.0-source.tar.gz
           for arch in x64 x86 arm64; do
             for ext in exe zip; do
               test -s "verified-build/dist/FoxVPN-1.0.0-Windows-$arch.$ext"
