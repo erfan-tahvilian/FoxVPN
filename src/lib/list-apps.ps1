@@ -25,17 +25,27 @@ foreach($foxKey in @('HKCU:\Software\Microsoft\Windows\CurrentVersion\App Paths'
   if($foxTarget){$foxTarget=$foxTarget.Trim('"');$foxName=(Get-Item -LiteralPath $foxTarget).VersionInfo.FileDescription;if(!$foxName){$foxName=[IO.Path]::GetFileNameWithoutExtension($foxTarget)};Add-FoxApplication $foxName $foxTarget}
  }
 }
-$foxNames=@{}
-$foxAppsFolder=(New-Object -ComObject Shell.Application).Namespace('shell:AppsFolder')
-foreach($foxItem in $foxAppsFolder.Items()){$foxNames[$foxItem.ExtendedProperty('System.AppUserModel.ID')]=$foxItem.Name}
-Get-AppxPackage | ForEach-Object {
- $foxPackage=$_
- try{
-  [xml]$foxManifest=Get-Content -LiteralPath (Join-Path $foxPackage.InstallLocation 'AppxManifest.xml') -Raw
-  foreach($foxApplication in $foxManifest.Package.Applications.Application){
-   $foxName=$foxNames[$foxPackage.PackageFamilyName+'!'+$foxApplication.Id]
-   if($foxName){Add-FoxApplication $foxName (Join-Path $foxPackage.InstallLocation $foxApplication.Executable)}
-  }
- }catch{}
+# Appx inventory can stall while Windows initializes package services. Keep the
+# Win32 catalog available and bound optional Store-app discovery independently.
+$foxAppxJob=Start-Job -ScriptBlock {
+ $ErrorActionPreference='SilentlyContinue'
+ Get-AppxPackage | ForEach-Object {
+  $package=$_
+  try {
+   [xml]$manifest=Get-Content -LiteralPath (Join-Path $package.InstallLocation 'AppxManifest.xml') -Raw
+   foreach($application in $manifest.Package.Applications.Application){
+    $name=[string]$application.VisualElements.DisplayName
+    if(!$name -or $name -like 'ms-resource:*'){$name=$package.Name}
+    if($application.Executable){[pscustomobject]@{Name=$name;Target=(Join-Path $package.InstallLocation $application.Executable)}}
+   }
+  }catch{}
+ }
+}
+try {
+ $null=Wait-Job -Job $foxAppxJob -Timeout 15
+ Receive-Job -Job $foxAppxJob | ForEach-Object {Add-FoxApplication $_.Name $_.Target}
+}finally{
+ Stop-Job -Job $foxAppxJob
+ Remove-Job -Job $foxAppxJob -Force
 }
 ConvertTo-Json -InputObject @($foxFound.ToArray()) -Compress -Depth 4

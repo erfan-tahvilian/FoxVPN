@@ -20,7 +20,7 @@ async function run(){
     await win.webContents.executeJavaScript(`new Promise(r=>{location.reload();setTimeout(r,200)})`).catch(()=>{});
     if(win.webContents.isLoading())await new Promise(resolve=>win.webContents.once('did-finish-load',resolve));
     const persisted=await win.webContents.executeJavaScript(`window.fox.call('state')`);assert.equal(persisted.data.settings.locationSort,'ping-desc');
-    const apps=await win.webContents.executeJavaScript(`window.fox.call('apps')`);assert(apps.ok&&Array.isArray(apps.data));
+    const apps=await win.webContents.executeJavaScript(`window.fox.call('apps')`);assert(apps.ok&&Array.isArray(apps.data),apps.error||'Application catalog must return a list');
     if(apps.data.length){const image=await win.webContents.executeJavaScript(`window.fox.call('appIcon',${JSON.stringify(apps.data[0].id)})`);assert(image.ok&&(image.data===null||image.data.startsWith('data:image/')));}
     const deniedIcon=await win.webContents.executeJavaScript(`window.fox.call('appIcon','../../vault.bin')`);assert(deniedIcon.ok&&deniedIcon.data===null);
     assert(fs.existsSync('test-results/main-profile/vault.bin'));
