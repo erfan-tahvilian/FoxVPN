@@ -16,7 +16,9 @@ class ApplicationCatalog {
       let entries=[];
       if(process.platform==='win32'){
         const source=await fs.readFile(path.join(__dirname,'list-apps.ps1'),'utf8');
-        const {stdout}=await run('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(source,'utf16le').toString('base64')],{windowsHide:true,timeout:45000,maxBuffer:8*1024*1024,encoding:'utf8'});
+        // A 32-bit Electron process must use native PowerShell for Appx and shell enumeration.
+        const powershell=path.join(process.env.SystemRoot||'C:\\Windows',process.arch==='ia32'&&process.env.PROCESSOR_ARCHITEW6432?'Sysnative':'System32','WindowsPowerShell','v1.0','powershell.exe');
+        const {stdout}=await run(powershell,['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(source,'utf16le').toString('base64')],{windowsHide:true,timeout:45000,maxBuffer:8*1024*1024,encoding:'utf8'});
         const data=JSON.parse(stdout.replace(/^\uFEFF/,'').trim()||'[]');
         entries=Array.isArray(data)?data:[data];
       }else if(process.platform==='darwin'){
