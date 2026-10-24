@@ -12,14 +12,15 @@ class Store {
     try{const data=this.read();if(data){this.accounts=Array.isArray(data.accounts)?data.accounts.filter(a=>a&&typeof a.id==='string'&&typeof a.email==='string'):data.auth?[{id:randomUUID(),email:data.auth.email||'',auth:data.auth,status:'ready',quota:null}]:[];this.activeAccountId=this.accounts.some(a=>a.id===data.activeAccountId)?data.activeAccountId:this.accounts.find(a=>a.auth)?.id||null;this.accountPreferences={autoSwitch:data.accountPreferences?.autoSwitch!==false};this.traffic=data.traffic||null;this.settings=validate(data.settings);this.servers=cachedServers(data.servers);}}
     catch{this.loadError='Saved data could not be decrypted. Sign in again and review your settings.';}
   }
+  encrypted(){return this.safe.isEncryptionAvailable()&&(process.platform!=='linux'||this.safe.getSelectedStorageBackend?.()!=='basic_text');}
   read() {
     const file=path.join(this.directory,'vault.bin');
     if(!fs.existsSync(file))return null;
-    if(!this.safe.isEncryptionAvailable())throw Error('System credential encryption is unavailable');
+    if(!this.encrypted())throw Error('System credential encryption is unavailable');
     return JSON.parse(this.safe.decryptString(fs.readFileSync(file)));
   }
   persist() {
-    if(!this.safe.isEncryptionAvailable())throw Error('System credential encryption is unavailable. No credentials have been saved.');
+    if(!this.encrypted())throw Error('System credential encryption is unavailable. Unlock your system keyring and try again. No credentials have been saved.');
     const file=path.join(this.directory,'vault.bin');
     fs.writeFileSync(file+'.tmp',this.safe.encryptString(JSON.stringify({schemaVersion:2,auth:this.auth,accounts:this.accounts,activeAccountId:this.activeAccountId,accountPreferences:this.accountPreferences,traffic:this.traffic,settings:this.settings,servers:this.servers})));
     fs.renameSync(file+'.tmp',file);

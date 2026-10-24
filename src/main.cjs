@@ -18,10 +18,12 @@ function makeTunnel(settings,log,onFatal){return new AdaptiveTunnel(settings,log
 const {measure,measureAll}=require('./lib/latency.cjs');
 const {engineConfig}=require('./lib/settings.cjs');
 const {MacEngine,networkDns:macNetworkDns}=require('./lib/mac-engine.cjs');
+const {LinuxEngine,networkDns:linuxNetworkDns}=require('./lib/linux-engine.cjs');
 const {ApplicationCatalog}=require('./lib/applications.cjs');
 const {TrayPopup}=require('./tray.cjs');
 const applications=new ApplicationCatalog(app);
-const mac=process.platform==='darwin';
+const mac=process.platform==='darwin',linux=process.platform==='linux';
+const osName=mac?'macOS':linux?'Linux':'Windows';
 const multiAccount=true;
 let accountCoordinator,traffic,loginGuardian,loginAccountId,switchingAccount=false,trafficSaveWarning=false;const accountGuardians=new Map();
 function accountGuardian(id){if(!accountGuardians.has(id)){const http=new Control();accountGuardians.set(id,new Guardian(http,new Auth(http,store.accountStore(id))));}return accountGuardians.get(id);}
@@ -34,7 +36,7 @@ let macEngine;
 let window,tray,trayPopup,store,guardian,tunnel,pendingTunnel,engine,refreshTimer,busy=false,quitting=false,generation=0;
 let latencies={},pinging=false;const pingingIds=new Set();
 let servers=[],logs=[],connection='disconnected',startedAt=null,exit=null,quota=null,lastError=null;
-const icon=path.join(__dirname,mac?'../assets/logo-light.png':'../assets/icon.ico');
+const icon=path.join(__dirname,mac||linux?'../assets/logo-light.png':'../assets/icon.ico');
 function log(level,message) {
   // Do not write service responses, tokens, credentials or destination traffic to logs.
   const entry={time:new Date().toISOString(),level,message:String(message).slice(0,1000)};
@@ -63,29 +65,30 @@ function showWindow() {
   if(window.isMinimized())window.restore();
   window.show();window.focus();
 }
-function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'engine'):path.join(__dirname,mac?'../engine/darwin':'../engine',process.arch);}
+function engineDir() {return app.isPackaged?path.join(process.resourcesPath,'engine'):path.join(__dirname,mac?'../engine/darwin':linux?'../engine/linux':'../engine',process.arch);}
 async function admin() {
   return new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command','([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)'],{windowsHide:true},(e,out)=>resolve(!e&&out.trim()==='True')));
 }
 async function refreshServers() {const next=await guardian.servers();store.setServers(next);servers=store.servers;log('info',`Updated server list · ${servers.length} available endpoints`);return servers;}
 async function launchEngine(candidate, epoch) {
-  const executable=path.join(engineDir(),mac?'sing-box':'sing-box.exe');
-  if(!fs.existsSync(executable)||(!mac&&!fs.existsSync(path.join(engineDir(),'wintun.dll'))))throw Error('The tunnel engine is missing. Reinstall Fox VPN.');
-  if(!mac&&!await admin())throw Error('System VPN mode requires Administrator access. Close Fox VPN and run it as administrator, or enable proxy-only mode.');
+  const executable=path.join(engineDir(),mac||linux?'sing-box':'sing-box.exe');
+  if(!fs.existsSync(executable)||(!mac&&!linux&&!fs.existsSync(path.join(engineDir(),'wintun.dll'))))throw Error('The tunnel engine is missing. Reinstall Fox VPN.');
+  if(!mac&&!linux&&!await admin())throw Error('System VPN mode requires Administrator access. Close Fox VPN and run it as administrator, or enable proxy-only mode.');
   const edgeHost=store.settings.edge||candidate.host;
   const edgeIP=tunnel?.edgeIP||(await dns.lookup(edgeHost)).address;
   const proxyIP=store.settings.upstream.enabled?(await dns.lookup(store.settings.upstream.host)).address:null;
   let networkDns;
   if(store.settings.doh==='off'&&!store.settings.customDns){
-    networkDns=mac?await macNetworkDns():await new Promise((resolve,reject)=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command',"Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -or $_.IPv6DefaultGateway } | ForEach-Object { $_.DNSServer.ServerAddresses } | Select-Object -First 1"],{windowsHide:true,timeout:10000},(e,out)=>{const ip=out.trim();if(e||!net.isIP(ip))reject(Error('Cannot identify the network DNS resolver. Choose a DoH provider or custom DNS.'));else resolve(ip);}));
+    networkDns=mac?await macNetworkDns():linux?await linuxNetworkDns():await new Promise((resolve,reject)=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command',"Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -or $_.IPv6DefaultGateway } | ForEach-Object { $_.DNSServer.ServerAddresses } | Select-Object -First 1"],{windowsHide:true,timeout:10000},(e,out)=>{const ip=out.trim();if(e||!net.isIP(ip))reject(Error('Cannot identify the network DNS resolver. Choose a DoH provider or custom DNS.'));else resolve(ip);}));
   }
   if(epoch!==generation)throw Error('Connection cancelled');
   const config=engineConfig({...store.settings,excludedApps:await applications.expand(store.settings.excludedApps)},edgeIP,proxyIP,networkDns);
-  if(mac){
-    const controller=new MacEngine(app.getPath('userData'),executable,()=>{if(macEngine===controller&&connection==='connected')fail(Error('The macOS tunnel engine stopped unexpectedly.'));});
+  if(mac||linux){
+    const Controller=linux?LinuxEngine:MacEngine;
+    const controller=new Controller(app.getPath('userData'),executable,()=>{if(macEngine===controller&&connection==='connected')fail(Error(`The ${osName} tunnel engine stopped unexpectedly.`));});
     macEngine=controller;await controller.start(config);
     if(epoch!==generation){await controller.stop();throw Error('Connection cancelled');}
-    log('info','macOS utun adapter ready · system traffic routed through Fox VPN');return;
+    log('info',`${osName} tunnel adapter ready · system traffic routed through Fox VPN`);return;
   }
   const configPath=path.join(app.getPath('userData'),'tunnel.json');
   fs.writeFileSync(configPath,JSON.stringify(config,null,2));
@@ -116,7 +119,7 @@ async function disconnect({keepSession=false}={}) {
   clearTimeout(refreshTimer);refreshTimer=null;
   connection='disconnecting';emit();
   observeTraffic();await stopEngine();observeTraffic();tunnel?.stop();tunnel=null;if(multiAccount&&traffic){if(keepSession)traffic.suspended=true;else traffic.finish();}connection='disconnected';startedAt=null;exit=null;
-  log('info',`Disconnected · ${mac?'macOS':'Windows'} routes restored`);
+  log('info',`Disconnected · ${osName} routes restored`);
 }
 async function fail(error) {
   if(switchingAccount)return;
@@ -147,7 +150,7 @@ async function connect({resumeTraffic=false,prepared=null}={}) {
   try {
     if(!store.auth)throw Error('Sign in to your Firefox account first.');
     if(!store.settings.proxyOnly&&store.settings.splitMode==='include'&&!store.settings.excludedApps.length)throw Error('Select at least one app in Split tunneling before connecting.');
-    if(!mac&&!store.settings.proxyOnly&&!await admin())throw Error('Run Fox VPN as administrator for system VPN, or enable proxy-only mode in Settings.');
+    if(!mac&&!linux&&!store.settings.proxyOnly&&!await admin())throw Error('Run Fox VPN as administrator for system VPN, or enable proxy-only mode in Settings.');
     if(!servers.length)await refreshServers();
     check();
     const id=store.settings.serverId;
@@ -168,7 +171,7 @@ async function connect({resumeTraffic=false,prepared=null}={}) {
     if(!store.settings.proxyOnly)await launchEngine(selected,epoch);
     check();
     if(multiAccount)traffic.begin(resumeTraffic);connection='connected';startedAt=multiAccount?traffic.startedAt:Date.now();lastError=null;renew(pass);void refreshAddresses(tunnel,epoch);
-    log('info',store.settings.proxyOnly?'Proxy-only mode active · configure your application to use the local SOCKS5 proxy':`Connected · ${mac?'macOS':'Windows'} system VPN active`);
+    log('info',store.settings.proxyOnly?'Proxy-only mode active · configure your application to use the local SOCKS5 proxy':`Connected · ${osName} system VPN active`);
   }catch(e){if(epoch===generation){lastError=e.message;log('error',e.message);await disconnect();}}
 }
 async function refreshAddresses(active,epoch) {
@@ -199,7 +202,7 @@ else {
     if(mac)Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Fox VPN',submenu:[{role:'about'},{type:'separator'},{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'},{role:'quit'}]},{label:'File',submenu:[{label:'Close Window',accelerator:'Command+W',click:()=>{if(window&&!window.isDestroyed())window.close();}}]},{role:'editMenu'},{role:'windowMenu'}]));
     store=new Store(app.getPath('userData'),safeStorage);servers=store.servers;if(multiAccount){traffic=new TrafficLedger(store.traffic,value=>store.setTraffic(value));accountCoordinator=new AccountCoordinator(store,accountGuardian);quota=store.activeAccount?.quota||null;}
     const control=new Control();guardian=new Guardian(control,new Auth(control,store));
-    syncGuardian();createWindow();tray=new Tray(mac?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');
+    syncGuardian();createWindow();tray=new Tray(mac||linux?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');
     trayPopup=new TrayPopup({state:trayState,command:trayCommand,bounds:()=>{const bounds=tray.getBounds();if(mac)return bounds;const point=screen.getCursorScreenPoint();return point.x>=bounds.x-8&&point.x<=bounds.x+bounds.width+8&&point.y>=bounds.y-8&&point.y<=bounds.y+bounds.height+8?bounds:{...point,width:0,height:0};}});
     const showTray=()=>trayPopup.show().catch(error=>log('warn',error.message));
     tray.on('right-click',showTray);tray.on('click',showTray);tray.on('double-click',()=>{trayPopup.hide();showWindow();});emit();

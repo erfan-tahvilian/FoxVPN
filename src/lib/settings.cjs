@@ -17,7 +17,7 @@ function validate(input, platform=process.platform) {
   if(s.edge && !host(s.edge))throw Error('Custom edge must be a hostname or IP address.');
   if(!['socks5','http'].includes(s.upstream.type)||!port(s.upstream.port))throw Error('Invalid upstream proxy type or port.');
   if(s.upstream.enabled&&!host(s.upstream.host))throw Error('Enter a valid upstream proxy hostname.');
-  if(!Array.isArray(s.excludedApps)||s.excludedApps.length>100||s.excludedApps.some(p=>typeof p!=='string'||!(platform==='darwin'?/^[-\p{L}\p{N}_ .()+]+$/u:/^[-\p{L}\p{N}_ .()+]+\.exe$/iu).test(p)))throw Error('One or more selected apps have an unsupported process name.');
+  if(!Array.isArray(s.excludedApps)||s.excludedApps.length>100||s.excludedApps.some(p=>typeof p!=='string'||!(platform!=='win32'?/^[-\p{L}\p{N}_ .()+]+$/u:/^[-\p{L}\p{N}_ .()+]+\.exe$/iu).test(p)))throw Error('One or more selected apps have an unsupported process name.');
   for(const key of ['proxyOnly','exitCheck'])if(typeof s[key]!=='boolean')throw Error('Invalid setting.');
   if(typeof s.upstream.enabled!=='boolean'||typeof s.upstream.username!=='string'||typeof s.upstream.password!=='string')throw Error('Invalid upstream credentials.');
   if(typeof s.serverId!=='string'||s.serverId.length>512)throw Error('Invalid server selection.');
@@ -28,13 +28,13 @@ function engineConfig(s, edgeIP, proxyIP, networkDns, platform=process.platform)
   const dns=s.customDns ? {type:'tcp',server:s.customDns} : s.doh==='off' ? (networkDns?{type:'tcp',server:networkDns,detour:'direct'}:{type:'local'}) : s.doh==='automatic' ? {type:'udp',server:'1.1.1.1'} : {type:'https',server:providers[s.doh],path:'/dns-query'};
   if(dns.type!=='local'&&!dns.detour)dns.detour='fox';
   const excluded=[edgeIP,proxyIP].filter(Boolean).map(ip=>ip+(net.isIP(ip)===6?'/128':'/32'));
-  const own=platform==='darwin'?['Fox VPN','Fox VPN Helper','Electron','sing-box','fox-h3']:['Fox VPN.exe','electron.exe','sing-box.exe','fox-h3.exe'];
+  const own=platform==='linux'?['fox-vpn','Fox VPN','electron','sing-box','fox-h3']:platform==='darwin'?['Fox VPN','Fox VPN Helper','Electron','sing-box','fox-h3']:['Fox VPN.exe','electron.exe','sing-box.exe','fox-h3.exe'];
   const selected=[...new Set(s.excludedApps.map(name=>platform==='darwin'?name.replace(/\.app$/i,''):name))];
   const only=s.splitMode==='include';
   return {
     log:{level:'info',timestamp:true},
     dns:{servers:[{tag:'private',...dns}],final:'private',strategy:'prefer_ipv4'},
-    inbounds:[{type:'tun',tag:'tun',...(platform==='darwin'?{}:{interface_name:'FoxVPN'}),address:['172.29.0.1/30','fdfe:dcba:9876::1/126'],mtu:1500,auto_route:true,strict_route:true,stack:'mixed',...(excluded.length?{route_exclude_address:excluded}:{})}],
+    inbounds:[{type:'tun',tag:'tun',...(platform==='darwin'?{}:{interface_name:platform==='linux'?'foxvpn0':'FoxVPN'}),address:['172.29.0.1/30','fdfe:dcba:9876::1/126'],mtu:1500,auto_route:true,strict_route:true,stack:platform==='linux'?'gvisor':'mixed',...(excluded.length?{route_exclude_address:excluded}:{})}],
     outbounds:[{type:'socks',tag:'fox',server:'127.0.0.1',server_port:s.socksPort,version:'5'},{type:'direct',tag:'direct'}],
     route:{auto_detect_interface:true,final:only?'direct':'fox',rules:[
       {action:'sniff'}, {protocol:'dns',action:'hijack-dns'},

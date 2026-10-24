@@ -4,7 +4,7 @@ const {spawnSync}=require('node:child_process');
 const fs=require('node:fs');
 const path=require('node:path');
 const {target}=require('./windows-target.cjs');
-const electron=process.platform==='darwin'?require('electron'):path.resolve('.tools/electron',target().arch,'electron.exe');
+const electron=process.platform!=='win32'?require('electron'):path.resolve('.tools/electron',target().arch,'electron.exe');
 for(const [script,status] of [['scripts/smoke.cjs','test-results/smoke-status.txt'],['scripts/smoke-main.cjs','test-results/main-smoke-status.txt'],['scripts/smoke-tray.cjs','test-results/tray-smoke-status.txt'],['scripts/smoke-accounts.cjs','test-results/accounts-smoke-status.txt']]){
   if(fs.existsSync(status))fs.unlinkSync(status);
   const run=spawnSync(electron,[script],{stdio:'inherit',timeout:60000,windowsHide:true});

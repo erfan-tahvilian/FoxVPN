@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Linux build
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'assets/**', 'desktop/h3/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'package*.json', 'scripts/**', '!scripts/*android*', '.github/workflows/linux.yml']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      FOX_TARGET_ARCH: ${{ matrix.arch }}
+      USE_SYSTEM_FPM: 'true'
+      XDG_CURRENT_DESKTOP: GNOME
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.9'
+          cache-dependency-path: desktop/h3/go.sum
+      - name: Prepare desktop test and packaging dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb dbus-x11 gnome-keyring libsecret-1-0 libgtk-3-0 libnss3 libasound2t64 libfuse2t64 ruby ruby-dev rpm
+          sudo gem install fpm --no-document
+          # Enable Chromium's user-namespace sandbox on this ephemeral CI host.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: npm ci
+      - run: node scripts/download-linux-engine.cjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build native HTTP3 transport
+        working-directory: desktop/h3
+        run: |
+          go test -race ./...
+          case "$FOX_TARGET_ARCH" in x64) export GOARCH=amd64;; arm64) export GOARCH=arm64;; esac
+          CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o ../../engine/linux/$FOX_TARGET_ARCH/fox-h3 .
+      - run: npm test
+      - run: npm run check
+      - run: node scripts/validate-engine.cjs
+      - run: node scripts/validate-linux-tun.cjs
+      - name: Test Electron with a real session keyring
+        run: |
+          xvfb-run -a dbus-run-session -- bash -e -c '
+            printf "fox-ci-keyring" | gnome-keyring-daemon --unlock
+            eval "$(gnome-keyring-daemon --start --components=secrets)"
+            npm run smoke
+          '
+      - run: node scripts/build-linux.cjs
+      - run: node scripts/validate-linux-package.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoxVPN-Linux-${{ matrix.arch }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            test-results/*.png

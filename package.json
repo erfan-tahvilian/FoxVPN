@@ -13,6 +13,8 @@
     "dist": "node scripts/build-windows.cjs",
     "check": "node scripts/check.cjs",
     "smoke": "node scripts/smoke-runner.cjs",
+    "engine:linux": "node scripts/download-linux-engine.cjs",
+    "dist:linux": "node scripts/build-linux.cjs",
     "engine:mac": "node scripts/download-mac-engine.cjs",
     "dist:mac": "node scripts/build-mac.cjs"
   },

@@ -21,6 +21,8 @@ class ApplicationCatalog {
         const {stdout}=await run(powershell,['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(source,'utf16le').toString('base64')],{windowsHide:true,timeout:45000,maxBuffer:8*1024*1024,encoding:'utf8'});
         const data=JSON.parse(stdout.replace(/^\uFEFF/,'').trim()||'[]');
         entries=Array.isArray(data)?data:[data];
+      }else if(process.platform==='linux'){
+        entries=await require('./linux-apps.cjs').applications();
       }else if(process.platform==='darwin'){
         const bundles=[];
         const walk=async(dir,depth)=>{for(const entry of await fs.readdir(dir,{withFileTypes:true}).catch(()=>[])){
@@ -35,7 +37,7 @@ class ApplicationCatalog {
       for(const entry of entries){
         if(!entry?.id||!entry.name||!path.isAbsolute(entry.path)||!Array.isArray(entry.processes))continue;
         try{validate({...DEFAULTS,excludedApps:[entry.id]});}catch{continue;}
-        if(['fox vpn.exe','electron.exe','sing-box.exe','fox vpn','electron','sing-box'].includes(entry.id.toLowerCase()))continue;
+        if(['fox vpn.exe','electron.exe','sing-box.exe','fox vpn','fox-vpn','electron','sing-box','fox-h3'].includes(entry.id.toLowerCase()))continue;
         const key=process.platform==='win32'?entry.id.toLowerCase():entry.id;
         if(!this.entries.has(key))this.entries.set(key,entry);
       }
@@ -65,6 +67,7 @@ class ApplicationCatalog {
     const entry=this.entries.get(process.platform==='win32'?String(id).toLowerCase():id);
     if(!entry)return null;
     if(!this.icons.has(entry.id))this.icons.set(entry.id,(async()=>{
+      if(process.platform==='linux'){const image=await require('./linux-apps.cjs').icon(entry.icon);if(image)return image;}
       if(process.platform==='darwin'){
         // NSWorkspace resolves each bundle's real icon, including asset catalogs.
         const script=`function run(args){ObjC.import('AppKit');var original=$.NSWorkspace.sharedWorkspace.iconForFile(args[0]);var image=$.NSImage.alloc.initWithSize($.NSMakeSize(64,64));image.lockFocus;original.drawInRectFromRectOperationFraction($.NSMakeRect(0,0,64,64),$.NSMakeRect(0,0,0,0),2,1);image.unlockFocus;var bitmap=$.NSBitmapImageRep.imageRepWithData(image.TIFFRepresentation);var data=bitmap.representationUsingTypeProperties($.NSPNGFileType,$());return ObjC.unwrap(data.base64EncodedStringWithOptions(0));}`;
