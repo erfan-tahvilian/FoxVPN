@@ -137,3 +137,5 @@ test('TOTP sign-in retries invalid codes without issuing OAuth credentials early
 test('exit verification stays mandatory for legacy and updated preferences',()=>{
   for(const platform of ['win32','darwin'])assert.equal(validate({...DEFAULTS,exitCheck:false},platform).exitCheck,true);
 });
+
+require('./allowance.test.cjs');
