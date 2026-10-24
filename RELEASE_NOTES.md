@@ -6,7 +6,7 @@ Licensed under the GNU General Public License, version 3 or later. Independent d
 
 Application-based split tunneling supports both selected-app and exclusion modes, with a searchable app list and synchronized manual identifier entry on Windows, macOS and Android. Private DNS, real-delay HTTPS checks and saved connection preferences are available across the supported platforms. Downloaded locations remain available between sessions. Android includes a Quick Settings tile and background connection controls.
 
-Connection details include separate IPv4 and IPv6 addresses when available, with latency checks directly from Overview. Desktop tray controls reflect the current connection state. Android improves installation compatibility and provides direct access to the app by holding its Quick Settings tile.
+Connection details include separate IPv4 and IPv6 addresses when available, with latency checks directly from Overview. Location delay checks display each result as it completes. Connections verify their exit location before becoming active. Desktop tray controls reflect the current connection state. Android improves installation compatibility and provides direct access to the app by holding its Quick Settings tile.
 
 Authenticator-based two-step sign-in is supported alongside email verification. macOS supports closing the window with Command+W and quitting with Command+Q.
 
