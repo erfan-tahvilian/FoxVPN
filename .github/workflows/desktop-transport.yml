@@ -1,0 +1,36 @@
+name: Desktop HTTP3 transport
+on:
+  push:
+    branches: [main]
+    paths: ['desktop/h3/**', '.github/workflows/desktop-transport.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transport:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.9'
+          cache-dependency-path: desktop/h3/go.mod
+      - name: Resolve and test HTTP3 transport
+        working-directory: desktop/h3
+        run: |
+          go mod tidy
+          gofmt -w .
+          go test -race ./...
+          go vet ./...
+      - name: Cross-compile Windows helpers
+        working-directory: desktop/h3
+        run: |
+          for arch in amd64 386 arm64; do
+            mkdir -p ../../transport/$arch
+            CGO_ENABLED=0 GOOS=windows GOARCH=$arch go build -trimpath -ldflags='-s -w' -o ../../transport/$arch/fox-h3.exe .
+          done
+          cp go.mod go.sum ../../transport/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoxHTTP3-Windows
+          path: transport/
