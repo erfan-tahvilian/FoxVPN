@@ -133,15 +133,6 @@ func NewBackend(host Host, vault string) *Backend {
 	b.client = &http.Client{Timeout: 30 * time.Second, Jar: jar, Transport: &http.Transport{DialContext: b.dialer.DialContext, TLSClientConfig: &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}, ForceAttemptHTTP2: true}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return b
 }
-// NewAppleBackend uses Darwin's system resolver and identifies iOS snapshots.
-func NewAppleBackend(host Host, vault string) *Backend {
-    b := NewBackend(host, vault)
-    b.platform = "ios"
-    if str(b.settings,"locationSort")=="" { b.settings["locationSort"]="ping-asc" }
-    b.dialer.Resolver = nil
-    return b
-}
-
 func (b *Backend) snapshotLocked() object {
 	s := copyObject(b.settings)
 	u := obj(s, "upstream")

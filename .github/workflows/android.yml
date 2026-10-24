@@ -4,7 +4,7 @@ name: Android build
 on:
   push:
     branches: [main]
-    paths: ['android/**', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*android*', '.github/workflows/android.yml', '!android/core/apple/**']
+    paths: ['android/**', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*android*', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: read

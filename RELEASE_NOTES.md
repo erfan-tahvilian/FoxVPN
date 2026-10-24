@@ -1,6 +1,6 @@
 # Fox VPN v1.0.0
 
-VPN client for Windows, macOS, Android and iOS.
+VPN client for Windows, macOS and Android.
 
 Licensed under the GNU General Public License, version 3 or later. Independent dependencies retain their original licenses and notices.
 
@@ -44,7 +44,3 @@ TCP and DNS are supported. General UDP/QUIC and a persistent kill switch are not
 See the [verification record](https://github.com/erfan-tahvilian/FoxVPN/blob/main/VALIDATION.md) for device test coverage and remaining validation limits.
 
 See the [README](https://github.com/erfan-tahvilian/FoxVPN#readme) for setup, features and licenses.
-
-## iOS and iPadOS
-
-Requires iOS/iPadOS 18 or later. The ARM64 IPA contains the main app, Packet Tunnel extension and system controls. It is supplied unsigned for an authorized signer and is not directly installable. Free Apple Account sideloading does not grant the Network Extension permissions required by this VPN. See [the bilingual installation guide](https://github.com/erfan-tahvilian/FoxVPN/blob/main/IOS_INSTALL.md) for supported signing requirements and installation limitations. Physical iPhone VPN operation remains unverified.

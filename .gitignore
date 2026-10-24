@@ -19,11 +19,12 @@ __pycache__/
 /.graphify*/
 /.graphify*
 
-# Generated Apple platform build inputs and signing material
-ios/Generated/
-ios/Frameworks/
-ios/*.xcodeproj/
-ios/*.xcworkspace/
+# Local platform sources withheld from publication
+/ios/
+/IOS_INSTALL.md
+/android/core/apple/
+/scripts/*ios*
+/.github/workflows/ios.yml
 *.xcarchive/
 *.xcresult/
 *.mobileprovision

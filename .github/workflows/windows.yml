@@ -4,7 +4,7 @@ name: Windows build
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'package*.json', 'scripts/**', '!scripts/*android*', '!scripts/*ios*', '.github/workflows/windows.yml']
+    paths: ['src/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'package*.json', 'scripts/**', '!scripts/*android*', '.github/workflows/windows.yml']
   pull_request:
   workflow_dispatch:
 permissions:
