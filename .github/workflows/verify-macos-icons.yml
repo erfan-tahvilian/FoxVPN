@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Verify native macOS application icons
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  icons:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve distinct real application icons without generic fallback
+        run: |
+          node <<'JS'
+          const assert=require('node:assert/strict');
+          const {ApplicationCatalog}=require('./src/lib/applications.cjs');
+          (async()=>{
+            const catalog=new ApplicationCatalog({getFileIcon:async()=>{throw Error('Generic fallback disabled for this test');}});
+            const apps=await catalog.list();
+            const chosen=apps.filter(app=>['Calculator','Notes','TextEdit','Safari'].includes(app.id)).slice(0,2);
+            assert.equal(chosen.length,2,'Expected system application bundles');
+            const images=await Promise.all(chosen.map(app=>catalog.icon(app.id)));
+            for(const image of images)assert(image&&image.startsWith('data:image/png;base64,'),'Native icon was not resolved');
+            assert.notEqual(images[0],images[1],'Different applications must not share a generic icon');
+            console.log('Resolved distinct native icons for '+chosen.map(app=>app.name).join(' and '));
+          })().catch(error=>{console.error(error);process.exitCode=1;});
+          JS
