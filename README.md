@@ -89,7 +89,7 @@ Compare your download's SHA-256 hash with [SHA256SUMS.txt](https://github.com/er
 
 ## 🖥️ The workspace
 
-A focused overview of your connection, chosen location and session activity.
+A focused overview of your connection, chosen location, monthly data allowance and session activity.
 
 <a href="docs/screenshots/overview-dark.png">
   <picture>
