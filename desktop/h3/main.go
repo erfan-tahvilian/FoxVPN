@@ -6,6 +6,7 @@ import (
  "context"
  "crypto/subtle"
  "crypto/tls"
+ "crypto/x509"
  "encoding/binary"
  "encoding/json"
  "errors"
@@ -34,8 +35,21 @@ func(w *worker) connection(ctx context.Context)(*http3.ClientConn,error){
  host:=w.cfg.Edge;if host==""{host=w.cfg.Host};timeout:=time.Duration(w.cfg.Timeout)*time.Millisecond;if timeout<=0{timeout=3500*time.Millisecond}
  tlsCfg:=w.tlsConfig;if tlsCfg==nil{tlsCfg=&tls.Config{ServerName:w.cfg.Host,MinVersion:tls.VersionTLS13,NextProtos:[]string{http3.NextProtoH3}}}
  conn,err:=quic.DialAddr(ctx,net.JoinHostPort(host,strconv.Itoa(w.cfg.Port)),tlsCfg,&quic.Config{HandshakeIdleTimeout:timeout,MaxIdleTimeout:60*time.Second,KeepAlivePeriod:15*time.Second,MaxIncomingStreams:-1})
- if err!=nil{return nil,errors.New("HTTP/3 connection could not be established")}
+ if err!=nil{return nil,handshakeError(err)}
  w.transport=&http3.Transport{MaxResponseHeaderBytes:64*1024};w.conn=conn;w.client=w.transport.NewClientConn(conn);return w.client,nil
+}
+// Classify transport failures without exposing peer addresses, tokens or raw TLS errors.
+func handshakeError(err error)error{
+ var timeout *quic.HandshakeTimeoutError
+ var idle *quic.IdleTimeoutError
+ var certificate *tls.CertificateVerificationError
+ var unknownCA x509.UnknownAuthorityError
+ var hostname x509.HostnameError
+ var dnsError *net.DNSError
+ if errors.As(err,&certificate)||errors.As(err,&unknownCA)||errors.As(err,&hostname){return errors.New("HTTP/3 certificate verification failed. Check the system clock and trusted certificates")}
+ if errors.As(err,&dnsError){return errors.New("HTTP/3 server name could not be resolved. Check your DNS connection")}
+ if errors.Is(err,context.DeadlineExceeded)||errors.As(err,&timeout)||errors.As(err,&idle){return errors.New("HTTP/3 handshake timed out. UDP may be blocked on this network. Choose Automatic or HTTP/2")}
+ return errors.New("HTTP/3 transport could not be established. Choose Automatic or HTTP/2")
 }
 func(w *worker)open(ctx context.Context,host string,port int)(*http3.RequestStream,error){
  client,err:=w.connection(ctx);if err!=nil{return nil,err}

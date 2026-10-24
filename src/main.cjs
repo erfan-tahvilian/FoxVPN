@@ -162,7 +162,7 @@ async function connect({resumeTraffic=false,prepared=null}={}) {
       const attempt=makeTunnel(structuredClone(store.settings),log,fail);
       pendingTunnel=attempt;
       try{await attempt.start(candidate,pass);check();exit=await attempt.exit(id==='REC'?null:candidate.code);check();tunnel=attempt;pendingTunnel=null;selected=candidate;break;}
-      catch(e){attempt.stop();pendingTunnel=null;check();lastError=e.message;log('warn',`Could not connect to ${[candidate.country,candidate.city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')}. Trying another endpoint.`);}
+      catch(e){attempt.stop();pendingTunnel=null;check();lastError=e.message;log('warn',`Could not connect to ${[candidate.country,candidate.city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')}. ${e.message}`);}
     }
     if(!selected)throw Error(lastError || 'No server could be reached.');
     if(!store.settings.proxyOnly)await launchEngine(selected,epoch);

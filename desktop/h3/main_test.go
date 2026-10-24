@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package main
-import("context";"crypto/tls";"crypto/x509";"io";"net";"net/http";"os";"strconv";"testing";"time";"github.com/quic-go/quic-go/http3")
+import("errors";"strings";"github.com/quic-go/quic-go";"context";"crypto/tls";"crypto/x509";"io";"net";"net/http";"os";"strconv";"testing";"time";"github.com/quic-go/quic-go/http3")
 func TestRealHTTP3ConnectAndRejection(t *testing.T){
  cert,err:=tls.LoadX509KeyPair("../../tests/fixtures/localhost-cert.pem","../../tests/fixtures/localhost-test-key.pem");if err!=nil{t.Fatal(err)}
  udp,err:=net.ListenPacket("udp","127.0.0.1:0");if err!=nil{t.Fatal(err)}
@@ -9,4 +9,9 @@ func TestRealHTTP3ConnectAndRejection(t *testing.T){
  _,port,_:=net.SplitHostPort(udp.LocalAddr().String());p,_:=strconv.Atoi(port)
  worker:=&worker{cfg:config{Host:"localhost",Edge:"127.0.0.1",Port:p,Timeout:2000},token:"fixture",tlsConfig:&tls.Config{ServerName:"localhost",RootCAs:roots,MinVersion:tls.VersionTLS13,NextProtos:[]string{"h3"}}}
  ctx,cancel:=context.WithTimeout(context.Background(),5*time.Second);defer cancel();stream,err:=worker.open(ctx,"example.com",443);if err!=nil{t.Fatal(err)};defer stream.CancelRead(0);defer stream.CancelWrite(0);if _,err=stream.Write([]byte("ping"));err!=nil{t.Fatal(err)};data:=make([]byte,4);if _,err=io.ReadFull(stream,data);err!=nil{t.Fatal(err)};if string(data)!="ping"{t.Fatal("wrong tunnel payload")};worker.tokenMu.Lock();worker.token="rejected";worker.tokenMu.Unlock();_,err=worker.open(ctx,"example.com",443);if rejected,ok:=err.(*connectError);!ok||rejected.Status!=429||rejected.Quota["remaining"]!="0"{t.Fatalf("missing quota rejection: %v",err)};worker.conn.CloseWithError(0,"")
+}
+
+func TestHandshakeDiagnostics(t *testing.T){
+ cases:=[]struct{err error;part string}{{context.DeadlineExceeded,"UDP may be blocked"},{&quic.HandshakeTimeoutError{},"UDP may be blocked"},{&net.DNSError{Err:"unreachable",Name:"private-name.example"},"DNS"},{&tls.CertificateVerificationError{Err:x509.UnknownAuthorityError{}},"certificate"},{errors.New("private-peer-address"),"transport"}}
+ for _,c:=range cases{message:=handshakeError(c.err).Error();if !strings.Contains(message,c.part)||strings.Contains(message,"private-"){t.Fatalf("unsafe or incorrect transport diagnostic: %s",message)}}
 }
