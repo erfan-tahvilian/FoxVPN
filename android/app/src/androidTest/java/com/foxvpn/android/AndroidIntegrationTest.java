@@ -54,7 +54,7 @@ public class AndroidIntegrationTest {
             js("navigate('"+page+"')");assertEquals("true",js("document.querySelector('.page.active').id==='"+page+"'"));
         }
         assertEquals("false",js("'access_token' in currentState || 'refresh_token' in currentState"));
-        assertEquals("true",js("document.getElementById('excludedApps').closest('label').hidden"));
+        assertEquals("false",js("document.getElementById('excludedApps').closest('label').hidden"));
         assertEquals("true",js("!!document.getElementById('choose-apps') && !document.querySelector('#settings-form button[type=submit]')"));
         assertEquals("false",js("Array.from(document.querySelectorAll('button')).some(x=>x.textContent==='Add Quick Settings tile')"));
         js("window.fox.call('theme','light')");Thread.sleep(500);
@@ -116,9 +116,15 @@ public class AndroidIntegrationTest {
             assertEquals("include",app.state.getJSONObject("settings").getString("splitMode"));
             activity.finishActivity();activity.launchActivity(null);ready();
             assertEquals("\"include\"",js("document.getElementById('split-mode').value"));
+            js("navigate('settings');document.getElementById('excludedApps').value='com.myirancell';document.getElementById('excludedApps').dispatchEvent(new Event('change',{bubbles:true}))");
+            deadline=System.currentTimeMillis()+5000;
+            while(!app.state.getJSONObject("settings").getJSONArray("excludedApps").toString().contains("com.myirancell")&&System.currentTimeMillis()<deadline)Thread.sleep(100);
+            assertTrue(app.state.getJSONObject("settings").getJSONArray("excludedApps").toString().contains("com.myirancell"));
             js("navigate('settings');document.getElementById('choose-apps').click()");
             UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
             assertNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText").text("Search apps")),5000));
+            UiObject2 manual=device.wait(Until.findObject(By.text("com.myirancell")),5000);assertNotNull(manual);manual.click();
+            Thread.sleep(500);assertEquals("false",js("document.getElementById('excludedApps').value.includes('com.myirancell')"));
             UiObject2 search=device.findObject(By.clazz("android.widget.EditText"));search.setText("no-such-foxvpn-app-123");
             assertNotNull(device.wait(Until.findObject(By.text("No apps found")),5000));
             device.pressBack();UiObject2 done=device.findObject(By.text("Done"));if(done!=null)done.click();
