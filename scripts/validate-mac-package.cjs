@@ -9,8 +9,8 @@ for(const dir of ['src','assets','licenses'])walk(dir);assert.equal(hash(asar.ex
 assert.equal(hash(asar.extractFile(archive,'COPYRIGHT')),hash(fs.readFileSync('COPYRIGHT')));
 assert.equal(JSON.parse(asar.extractFile(archive,'package.json')).version,'1.0.0');
 assert.equal(JSON.parse(asar.extractFile(archive,'package.json')).license,'GPL-3.0-or-later');
-for(const f of ['sing-box','LICENSE-sing-box.txt','provenance.txt'])assert.equal(hash(fs.readFileSync(path.join(resources,'engine',f))),hash(fs.readFileSync(path.join(engineRoot(),f))),f);
-assert.equal(machine(path.join(resources,'engine/sing-box')),target().cpu);assert.equal(machine(path.join(root,'Contents/MacOS/Fox VPN')),target().cpu);
+for(const f of ['sing-box','fox-h3','LICENSE-sing-box.txt','provenance.txt'])assert.equal(hash(fs.readFileSync(path.join(resources,'engine',f))),hash(fs.readFileSync(path.join(engineRoot(),f))),f);
+assert.equal(machine(path.join(resources,'engine/sing-box')),target().cpu);assert.equal(machine(path.join(resources,'engine/fox-h3')),target().cpu);assert(fs.statSync(path.join(resources,'engine/fox-h3')).mode&0o111);assert.equal(machine(path.join(root,'Contents/MacOS/Fox VPN')),target().cpu);
 assert(!fs.existsSync(path.join(resources,'engine/wintun.dll')));assert(fs.statSync(path.join(resources,'engine/sing-box')).mode&0o111);
 execFileSync('/usr/bin/plutil',['-lint',path.join(root,'Contents/Info.plist')],{stdio:'inherit'});
 assert(fs.readdirSync(resources).some(f=>f.endsWith('.icns')));console.log('macOS app source, icons, flags, licenses, Mach-O architecture, engine permissions and version verified.');

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 let addingAccount=false,accountListKey='',removeAccountId=null;
-function hasAccountManager(s=currentState){return Array.isArray(s?.accounts)&&s.platform==='win32';}
+function hasAccountManager(s=currentState){return Array.isArray(s?.accounts)&&['win32','darwin','linux','android'].includes(s.platform);}
 function openAccountSignIn(email=''){addingAccount=true;needsCode=false;navigate('account');$('email').value=email;$('password').value='';render(currentState);$('email').focus();}
 function renderAccountManager(s){
   const enabled=hasAccountManager(s);$('accounts-panel').hidden=!enabled||!s.accounts.length;$('cancel-add-account').hidden=!enabled||!addingAccount||!s.accounts.length;

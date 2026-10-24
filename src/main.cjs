@@ -14,7 +14,7 @@ const {Control,Guardian}=require('./lib/control.cjs');
 const {Auth}=require('./lib/auth.cjs');
 const {Tunnel}=require('./lib/tunnel.cjs');
 const {AdaptiveTunnel}=require('./lib/h3-tunnel.cjs');
-function makeTunnel(settings,log,onFatal){return process.platform==='win32'?new AdaptiveTunnel(settings,log,onFatal,path.join(engineDir(),'fox-h3.exe')):new Tunnel(settings,log,onFatal);}
+function makeTunnel(settings,log,onFatal){return new AdaptiveTunnel(settings,log,onFatal,path.join(engineDir(),process.platform==='win32'?'fox-h3.exe':'fox-h3'));}
 const {measure,measureAll}=require('./lib/latency.cjs');
 const {engineConfig}=require('./lib/settings.cjs');
 const {MacEngine,networkDns:macNetworkDns}=require('./lib/mac-engine.cjs');
@@ -22,7 +22,7 @@ const {ApplicationCatalog}=require('./lib/applications.cjs');
 const {TrayPopup}=require('./tray.cjs');
 const applications=new ApplicationCatalog(app);
 const mac=process.platform==='darwin';
-const multiAccount=process.platform==='win32';
+const multiAccount=true;
 let accountCoordinator,traffic,loginGuardian,loginAccountId,switchingAccount=false,trafficSaveWarning=false;const accountGuardians=new Map();
 function accountGuardian(id){if(!accountGuardians.has(id)){const http=new Control();accountGuardians.set(id,new Guardian(http,new Auth(http,store.accountStore(id))));}return accountGuardians.get(id);}
 function syncGuardian(){if(multiAccount&&store.activeAccountId)guardian=accountGuardian(store.activeAccountId);}

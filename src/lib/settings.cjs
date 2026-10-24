@@ -28,7 +28,7 @@ function engineConfig(s, edgeIP, proxyIP, networkDns, platform=process.platform)
   const dns=s.customDns ? {type:'tcp',server:s.customDns} : s.doh==='off' ? (networkDns?{type:'tcp',server:networkDns,detour:'direct'}:{type:'local'}) : s.doh==='automatic' ? {type:'udp',server:'1.1.1.1'} : {type:'https',server:providers[s.doh],path:'/dns-query'};
   if(dns.type!=='local'&&!dns.detour)dns.detour='fox';
   const excluded=[edgeIP,proxyIP].filter(Boolean).map(ip=>ip+(net.isIP(ip)===6?'/128':'/32'));
-  const own=platform==='darwin'?['Fox VPN','Fox VPN Helper','Electron','sing-box']:['Fox VPN.exe','electron.exe','sing-box.exe','fox-h3.exe'];
+  const own=platform==='darwin'?['Fox VPN','Fox VPN Helper','Electron','sing-box','fox-h3']:['Fox VPN.exe','electron.exe','sing-box.exe','fox-h3.exe'];
   const selected=[...new Set(s.excludedApps.map(name=>platform==='darwin'?name.replace(/\.app$/i,''):name))];
   const only=s.splitMode==='include';
   return {

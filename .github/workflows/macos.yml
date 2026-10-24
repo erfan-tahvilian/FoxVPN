@@ -4,7 +4,7 @@ name: macOS build
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'package*.json', 'scripts/**', '!scripts/*android*', '.github/workflows/macos.yml']
+    paths: ['desktop/h3/**', 'src/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'package*.json', 'scripts/**', '!scripts/*android*', '.github/workflows/macos.yml']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -33,6 +33,16 @@ jobs:
       - run: npm run engine:mac
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.9'
+          cache-dependency-path: desktop/h3/go.sum
+      - name: Build native HTTP3 transport
+        working-directory: desktop/h3
+        run: |
+          go test -race ./...
+          case "$FOX_TARGET_ARCH" in x64) export GOARCH=amd64;; arm64) export GOARCH=arm64;; esac
+          CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o ../../engine/darwin/$FOX_TARGET_ARCH/fox-h3 .
       - run: npm test
       - run: npm run check
       - run: node scripts/validate-engine.cjs
