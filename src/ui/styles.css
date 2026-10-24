@@ -21,3 +21,5 @@ body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:trans
 #settings-form :disabled,#settings-form label:has(:disabled),#settings-form .select-trigger:disabled{cursor:default}
 
 #split-tunneling{scroll-margin-top:100px}.app-loading{max-width:360px;width:calc(100% - 40px);border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--text);padding:28px}.app-loading::backdrop{background:#0008}.app-loading p{color:var(--muted)}
+
+#source{display:inline-flex;align-items:center;gap:8px}#source svg{width:16px;height:16px;flex-shrink:0}
