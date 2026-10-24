@@ -43,8 +43,34 @@ function fillSettings(s) {
   for(const key of ['type','host','port','username'])$('upstream'+key[0].toUpperCase()+key.slice(1)).value=s.upstream[key];
   $('upstreamPassword').value='';
 }
+let allowanceData=null,allowanceEmail=null,allowanceRequested=false,allowanceLoading=false,lastAllowanceQuota='';
+function renderAllowance(s){
+  if(!s.signedIn||allowanceEmail!==s.email){allowanceData=null;allowanceEmail=s.signedIn?s.email:null;allowanceRequested=false;lastAllowanceQuota='';}
+  const key=JSON.stringify(s.quota);if(s.signedIn&&key!==lastAllowanceQuota){lastAllowanceQuota=key;if(s.quota)allowanceData=s.quota;}
+  const summary=allowanceSummary(s.signedIn?allowanceData:null),ring=$('allowance-ring');
+  ring.closest('.allowance-card').dataset.status=summary.kind;
+  ring.style.setProperty('--usage',(summary.percent||0)+'%');
+  ring.setAttribute('aria-valuemin','0');ring.setAttribute('aria-valuemax','100');
+  if(summary.kind==='limited')ring.setAttribute('aria-valuenow',summary.percent);else ring.removeAttribute('aria-valuenow');
+  $('allowance-percent').textContent=summary.kind==='limited'?summary.percent+'%':summary.kind==='unlimited'?'∞':'-';
+  $('allowance-used').textContent=summary.kind==='limited'?bytes(summary.used)+' used':summary.kind==='unlimited'?'Unlimited data':'Your data allowance';
+  $('allowance-detail').textContent=!s.signedIn?'Sign in to view your usage.':summary.kind==='limited'?`${bytes(summary.remaining)} remaining of ${bytes(summary.limit)}${summary.reset?' · Resets '+summary.reset.toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}`:summary.kind==='unlimited'?'No monthly data limit reported.':allowanceLoading?'Checking your allowance…':'Refresh to view your data allowance.';
+  $('allowance-progress').style.width=(summary.percent||0)+'%';
+  $('refresh-allowance').disabled=!s.signedIn||allowanceLoading;
+  $('refresh-allowance').setAttribute('aria-busy',String(allowanceLoading));
+  if(s.signedIn&&!allowanceRequested){allowanceRequested=true;queueMicrotask(()=>refreshAllowance(false));}
+}
+async function refreshAllowance(announce){
+  if(allowanceLoading||!currentState?.signedIn)return;
+  const email=currentState.email;allowanceLoading=true;renderAllowance(currentState);
+  try{const data=await call('account');if(currentState?.signedIn&&currentState.email===email)accountInfo(data);}
+  catch(e){if(announce)toast(e.message);}
+  finally{allowanceLoading=false;if(currentState.email!==email)allowanceRequested=false;renderAllowance(currentState);}
+}
+$('refresh-allowance').addEventListener('click',()=>refreshAllowance(true));
+$('allowance-account').addEventListener('click',()=>navigate('account'));
 function render(s) {
-  currentState=s;applyTheme(s);
+  currentState=s;applyTheme(s);renderAllowance(s);
   if(!initialized){fillSettings(s.settings);initialized=true;}
   syncSelects();
   const connected=s.connection==='connected', transitional=['connecting','disconnecting'].includes(s.connection);
@@ -185,6 +211,8 @@ $('code-form').addEventListener('submit',action(async e=>{e.preventDefault();awa
 $('restart-login').addEventListener('click',()=>{needsCode=false;render(currentState);});
 $('logout').addEventListener('click',action(async()=>{await call('logout');needsCode=false;$('account-stats').textContent='Refresh to view your account details and data allowance.';toast('Signed out.');}));
 function accountInfo(data) {
+  allowanceData={limit:data.quotaLimit!=null&&String(data.quotaLimit).trim()!==''?data.quotaLimit:data.maxBytes,remaining:data.quotaRemaining,reset:data.quotaReset??allowanceData?.reset,unlimited:data.limited_bandwidth===false};
+  if(currentState)renderAllowance(currentState);
   const parts=[`Account ID: ${data.uid||'Not reported'}`,`Monthly allowance: ${data.maxBytes==null?'Not reported':bytes(data.maxBytes)}`,`Data remaining: ${!data.limited_bandwidth?'Unlimited':data.quotaRemaining==null?'Not reported':bytes(data.quotaRemaining)}`];
   $('account-stats').replaceChildren(...parts.map(text=>{const p=document.createElement('div');p.textContent=text;return p;}));
 }

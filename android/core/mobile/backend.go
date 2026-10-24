@@ -305,6 +305,8 @@ func (b *Backend) Call(channel, argsJSON string) string {
 				_, headers, e := b.pass(ctx)
 				if e == nil {
 					d["quotaRemaining"] = headers.Get("x-quota-remaining")
+					d["quotaLimit"] = headers.Get("x-quota-limit")
+					d["quotaReset"] = headers.Get("x-quota-reset")
 				}
 			}
 		}

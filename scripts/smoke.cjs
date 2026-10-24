@@ -98,6 +98,14 @@ app.whenReady().then(async()=>{
 
     assert(await win.webContents.executeJavaScript(`(()=>{const r=document.querySelector('.avatar').getBoundingClientRect();return Math.abs(r.width-r.height)<1&&getComputedStyle(document.body).userSelect==='none'})()`));
     assert(await win.webContents.executeJavaScript(`document.querySelector('#selected-symbol .country-flag').naturalWidth>0`));
+    await win.webContents.executeJavaScript(`(()=>{window.beforeAllowance=currentState;render({...currentState,quota:{limit:1000,remaining:730}})})()`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('allowance-percent').textContent`),'27%');
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('allowance-ring').getAttribute('aria-valuenow')`),'27');
+    await win.webContents.executeJavaScript(`render({...currentState,quota:{limit:1000,remaining:0}})`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('allowance-percent').textContent`),'100%');
+    await win.webContents.executeJavaScript(`render({...currentState,quota:{unlimited:true}})`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('allowance-used').textContent`),'Unlimited data');
+    await win.webContents.executeJavaScript(`render(window.beforeAllowance)`);
     fs.writeFileSync('test-results/selected-location.png',(await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`window.fox.call('select','REC').then(()=>window.fox.call('connect'));new Promise(r=>setTimeout(r,100))`);
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('selected-location').textContent`),'Canada');

@@ -95,7 +95,7 @@ class Guardian {
   async servers() { return candidates((await this.http.json('https://firefox.settings.services.mozilla.com/v1/buckets/main/collections/vpn-serverlist/records')).data.data || []); }
   async account() {
     const data=(await this.request('status')).data;
-    if(data.limited_bandwidth)try{data.quotaRemaining=(await this.pass()).quotaRemaining;}catch{/* Entitlement can still be shown while quota is unavailable. */}
+    if(data.limited_bandwidth)try{const pass=await this.pass();data.quotaRemaining=pass.quotaRemaining;data.quotaLimit=pass.quotaLimit;data.quotaReset=pass.quotaReset;}catch{/* Entitlement can still be shown while quota is unavailable. */}
     return data;
   }
 }
