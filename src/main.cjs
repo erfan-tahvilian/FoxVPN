@@ -125,7 +125,7 @@ async function fail(error) {
     switchingAccount=true;const id=store.activeAccountId,epoch=generation;busy=true;emit();
     try{if(await accountCoordinator.confirmExhausted(id,error)&&generation===epoch&&connection==='connected'){
       log('info','Account data allowance exhausted. Switching to another saved account.');await disconnect({keepSession:true});
-      const prepared=await accountCoordinator.prepare({exclude:[id]});syncGuardian();await connect({resumeTraffic:true,prepared});return;
+      const recoveryEpoch=generation;const prepared=await accountCoordinator.prepare({exclude:[id]});if(generation!==recoveryEpoch)return;syncGuardian();await connect({resumeTraffic:true,prepared});return;
     }}catch(e){lastError=e.message;log('error',e.message);await disconnect();return;}
     finally{switchingAccount=false;busy=false;emit();}
   }

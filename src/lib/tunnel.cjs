@@ -57,7 +57,7 @@ class Tunnel {
       this.accept(socket).catch(()=>{if(!socket.destroyed)socket.end(Buffer.from([5,1,0,1,0,0,0,0,0,0]));});
     });
     await new Promise((resolve,reject)=>{this.server.once('error',reject);this.server.listen(this.settings.socksPort,this.settings.bind,resolve);});
-    this.log('info',`HTTP/2 tunnel ready · ${[candidate.country,candidate.city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')}`);
+    this.log('info',`${this.protocol==='h3'?'HTTP/3':'HTTP/2'} tunnel ready · ${[candidate.country,candidate.city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')}`);
     this.keepalive=setInterval(()=>{for(const s of this.sessions)if(!s.closed&&!s.destroyed)s.ping((e)=>{if(e)s.destroy();});},20000);
   }
   async session() {

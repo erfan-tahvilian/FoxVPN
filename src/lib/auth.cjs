@@ -52,11 +52,17 @@ class Auth {
     const auth = this.store.auth;
     if (!auth) throw Error('Sign in to your Firefox account first.');
     if (!force && Date.now()+60000 < auth.expiresAt) return auth.access_token;
+    if(this.refreshing)return this.refreshing;
+    const pending=this.refresh(auth);this.refreshing=pending;
+    try{return await pending;}finally{if(this.refreshing===pending)this.refreshing=null;}
+  }
+  async refresh(auth) {
     if (!auth.refresh_token) { this.store.setAuth(null); throw Error('Your session expired. Please sign in again.'); }
     let renewed;
     try { renewed = await this.request('/oauth/token', {client_id:CLIENT, grant_type:'refresh_token', refresh_token:auth.refresh_token, scope:SCOPE}); }
-    catch(e) { if ([400,401,403].includes(e.status)) this.store.setAuth(null); throw e; }
+    catch(e) { if ([400,401,403].includes(e.status)&&this.store.auth===auth) this.store.setAuth(null); throw e; }
     if (!renewed.access_token) throw Error('Token refresh returned no access token.');
+    if(this.store.auth!==auth)throw Error('Account changed while renewing the session.');
     this.store.setAuth({...auth, ...renewed, expiresAt:Date.now()+(renewed.expires_in || 86400)*1000});
     return renewed.access_token;
   }

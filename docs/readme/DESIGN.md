@@ -7,7 +7,9 @@ The README uses a connection-path motif drawn from Fox VPN's orange fox-and-shie
 | Asset | Purpose |
 | --- | --- |
 | `badge-{version,windows,macos,android}.svg` | Local version and platform badges, without third-party image requests. |
-| `hero-{dark,light}.webp` | Wide brand introduction with the original transparent logo. |
+| `hero-{dark,light}.webp` | Wide brand introduction with the original transparent logo, Firefox infrastructure attribution and four target platform icons. |
+| `social-preview.{svg,png}` | Repository social preview artwork, 1280 × 640 pixels. |
+| `download-badges/*.svg` | Platform and architecture download badges shared by the README and release notes. |
 | `hero-{dark,light}-mobile.webp` | Narrow-screen composition with larger relative type. |
 | `download-{windows,macos,android}-{dark,light}.svg` | Direct downloads for Windows x64, macOS Apple Silicon and Android ARM64. |
 | `workspace-{dark,light}.webp` | Framed, unmodified overview screenshots. |
@@ -31,6 +33,6 @@ The README uses a connection-path motif drawn from Fox VPN's orange fox-and-shie
 
 Images use repository-relative paths, with `<picture>` sources for color scheme and a 600 px breakpoint for compact compositions. The fallback is the light, wide variant. Meaningful information, download links and instructions remain available as Markdown text; image descriptions provide equivalent context.
 
-SVGs contain only vector paths, shapes and system-font text. They have a viewBox, title and description, and contain no scripts, embedded HTML, external resources or animations. WebP artwork contains the logo or screenshots, so its display does not depend on nested SVG image loading. No third-party badge or image service is used.
+README SVGs contain vector paths, shapes and system-font text. The editable social preview additionally embeds the original transparent PNG logo. They have a viewBox, title and description, and contain no scripts, embedded HTML, external resources or animations. Platform silhouettes adapted from Simple Icons are CC0. WebP artwork contains the logo or screenshots, so its display does not depend on nested SVG image loading. No third-party badge or image service is used.
 
 Changing the README does not require rebuilding the application. Keep release filenames, platform requirements, supported capabilities and license statements synchronized with the project. Do not present the workspace crop as a mobile application screenshot.

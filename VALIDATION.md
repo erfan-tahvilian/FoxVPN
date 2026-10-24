@@ -1,5 +1,13 @@
 # v1.0.0 verification record
 
+## Monthly account allowance in Overview - 2026-10-24
+
+The shared Overview displays service-reported monthly usage, remaining allowance and a renewal date only when a valid future date is available. Account information loads once per signed-in application session and can be refreshed manually. Unknown data is not shown as zero usage; exhausted and unlimited allowances have distinct states. The display uses account quota rather than per-session traffic totals.
+
+All 27 local Node tests passed, including zero remaining bytes, missing and invalid quota values, clamping, unlimited accounts and epoch/ISO reset dates. Electron renderer checks exercise limited, exhausted and unlimited card states. Dark/light desktop and narrow mobile layouts were captured and visually inspected. The updated Windows x64 application was installed at the configured destination and its packaged source verified. The owner confirmed the displayed values, refresh control and appearance using a real account.
+
+[Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40119141275) and [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40119141240) builds passed for runtime source `520fa94bf95e07f97e5dddb3bebd0c3570476e4b`. Physical macOS and the new Android allowance card remain pending owner/device checks.
+
 ## Mandatory verification and progressive delay checks - 2026-10-24
 
 Exit verification is mandatory in the desktop and shared mobile connection paths. Legacy disabled preferences are normalized to enabled. A connection cannot be reported ready until its authenticated exit check succeeds. Regression tests cover saved-setting migration in both cores and the absence of the former preference in the renderer.
@@ -130,3 +138,13 @@ The updated application passed [Windows x64, x86 and ARM64 builds](https://githu
 The update passed [Windows x64, x86 and ARM64 checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38904278347), [Intel and Apple Silicon macOS checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38904278357), and [Android core, package and device integration checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38904278855). The final signed release APKs passed [Android 16 installation and startup verification](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/38908357443). The Windows ARM64 installed-application discovery check timed out on its first run and passed on rerun.
 
 The owner confirmed the installed update on Windows and Redmi Note 9 Pro: the tray menu opens close to its icon, the settings order is correct, the Android Overview country and heading remain on one line, and refreshed locations remain visible after fully closing and reopening the app without internet access. Windows x64 was installed and its packaged source verified at the configured local destination. The phone update preserved application data and launched successfully. Physical macOS verification remains outside this device check.
+
+
+## Windows multiple-account and transport preview
+
+- Thirty-eight Node tests pass. Added coverage verifies legacy-vault migration, account-bound token refresh, rollback after encryption failures, manual account selection, bounded quota failover, network-error handling, concurrent refresh deduplication and logout during refresh.
+- Traffic-ledger fixtures verify retained session totals, cumulative device totals and uninterrupted accounting across account handover. These fixtures do not consume real account allowances.
+- Four Electron smoke suites pass: renderer isolation/navigation, real main-process encrypted storage and IPC, tray behavior, and Windows account-manager actions with retained traffic.
+- The standalone HTTP/3 helper passes a real local QUIC/TLS HTTP/3 CONNECT fixture, including authenticated bidirectional traffic and explicit quota rejection. The public Fastly edge probe completed an HTTP/3 exchange on port 2499; its unauthenticated CONNECT was rejected. This is not evidence of authenticated production VPN forwarding.
+- [Windows x64, x86 and ARM64 packaging](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40121750127) and [HTTP/3 helper checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40121750113) passed. The final local x64 package additionally includes token-refresh serialization and cancellation safeguards.
+- Live multi-account switching, production HTTP/3 traffic and user acceptance remain pending on Windows. New capabilities remain Windows-only until that validation is complete; Linux development and the macOS/Android rollout follow it.

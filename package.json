@@ -2,7 +2,7 @@
   "name": "fox-vpn",
   "productName": "Fox VPN",
   "version": "1.0.0",
-  "description": "Independent desktop client for Firefox VPN's HTTP/2 proxy service",
+  "description": "Independent VPN client built on Mozilla's Firefox VPN infrastructure",
   "author": "Erfan Tahvilian",
   "license": "GPL-3.0-or-later",
   "main": "src/main.cjs",

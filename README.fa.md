@@ -43,38 +43,17 @@
 
 دانلود سریع برای دستگاه‌های رایج. **همهٔ معماری‌های پشتیبانی‌شده در جدول‌های زیر آمده‌اند.**
 
-### 🪟 ویندوز
+<!-- foxvpn-downloads:start -->
 
-ویندوز ۱۰ یا جدیدتر برای **x64 و x86** · ویندوز ۱۱ برای **ARM64**
-
-| دستگاه شما | نصب‌کننده | نسخهٔ قابل‌حمل |
-| ---: | ---: | ---: |
-| **اینتل و AMD، ۶۴ بیتی** · x64 | [دانلود EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe) | [دانلود ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.zip) |
-| **اینتل و AMD، ۳۲ بیتی** · x86 | [دانلود EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.exe) | [دانلود ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.zip) |
-| **ویندوز با پردازندهٔ ARM** · ARM64 | [دانلود EXE](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.exe) | [دانلود ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.zip) |
-
-### 🍎 مک
-
-macOS 13 Ventura یا جدیدتر · **اپل سیلیکون و اینتل**
-
-| پردازندهٔ مک | تصویر دیسک | فایل فشردهٔ برنامه |
-| ---: | ---: | ---: |
-| **اپل سیلیکون** · ARM64 | [دانلود DMG](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg) | [دانلود ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.zip) |
-| **اینتل** · x64 | [دانلود DMG](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.dmg) | [دانلود ZIP](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.zip) |
-
-### 🤖 اندروید
-
-اندروید ۸ یا جدیدتر · نسخهٔ به‌روز **Android System WebView**
-
-| دستگاه شما | بستهٔ امضاشده |
+| سیستم‌عامل | دانلود |
 | ---: | ---: |
-| **بیشتر گوشی‌ها و تبلت‌های امروزی** · ARM64 | [دانلود APK برای ARM64](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk) |
-| **دستگاه‌های قدیمی‌تر با پردازندهٔ ARM** · ۳۲ بیتی | [دانلود APK برای ARM](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-armeabi-v7a.apk) |
-| **دستگاه‌ها و شبیه‌سازهای اینتل ۶۴ بیتی** · x86_64 | [دانلود APK برای x86_64](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86_64.apk) |
-| **دستگاه‌ها و شبیه‌سازهای اینتل ۳۲ بیتی** · x86 | [دانلود APK برای x86](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86.apk) |
-| **هر چهار معماری پشتیبانی‌شده** | [دانلود APK جامع](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-universal.apk) |
+| **ویندوز** | [![Windows Setup x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x64-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe) &nbsp; [![Windows Portable x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x64-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.zip)<br> &nbsp; [![Windows Setup x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x86-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.exe) &nbsp; [![Windows Portable x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x86-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.zip)<br> &nbsp; [![Windows Setup ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-arm64-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.exe) &nbsp; [![Windows Portable ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-arm64-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.zip) |
+| **مک** | [![macOS DMG Apple Silicon](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-arm64-dmg.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg) &nbsp; [![macOS ZIP Apple Silicon](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-arm64-zip.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.zip)<br> &nbsp; [![macOS DMG Intel x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-x64-dmg.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.dmg) &nbsp; [![macOS ZIP Intel x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-x64-zip.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.zip) |
+| **اندروید** | [![Android APK Universal](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-universal-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-universal.apk)<br> &nbsp; [![Android APK ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-arm64-v8a-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk)<br> &nbsp; [![Android APK ARMv7](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-armeabi-v7a-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-armeabi-v7a.apk)<br> &nbsp; [![Android APK x86_64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-x86_64-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86_64.apk)<br> &nbsp; [![Android APK x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-x86-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86.apk) |
 
-بستهٔ مخصوص معماری دستگاه، حجم کمتری دارد. اگر از معماری دستگاهتان مطمئن نیستید، نسخهٔ **جامع (Universal)** را انتخاب کنید.
+<!-- foxvpn-downloads:end -->
+
+**پیش‌نیازها:** ویندوز ۱۰ یا جدیدتر برای x64/x86 و ویندوز ۱۱ برای ARM64؛ مک ۱۳ یا جدیدتر؛ اندروید ۸ یا جدیدتر به‌همراه Android System WebView به‌روز. بستهٔ مخصوص معماری دستگاه، حجم کمتری دارد؛ اگر مطمئن نیستید، APK جامع (Universal) را انتخاب کنید.
 
 <details>
 <summary><strong>پیش از نصب: بررسی اصالت و سلامت بسته‌ها</strong></summary>
@@ -86,6 +65,8 @@ macOS 13 Ventura یا جدیدتر · **اپل سیلیکون و اینتل**
 - **اندروید:** به‌روزرسانی‌های APK با هویت امضای ثابت پروژه ارائه می‌شوند. [اثر انگشت گواهی عمومی امضا](android/signing-certificate.sha256) در مخزن موجود است.
 
 </details>
+
+**پیش‌نمایش توسعهٔ ویندوز:** ذخیرهٔ چند حساب فایرفاکس، انتخاب حساب فعال و جابه‌جایی خودکار پس از پایان سهمیه؛ حفظ آمار نشست پس از قطع اتصال و نمایش مجموع ترافیک دستگاه. انتخاب خودکار پروتکل، HTTP/3 را با امکان بازگشت به HTTP/2 پشتیبانی می‌کند. ارائهٔ این قابلیت‌ها برای دیگر سیستم‌عامل‌ها پس از تأیید نسخهٔ ویندوز انجام می‌شود. پشتیبانی لینوکس در حال توسعه است.
 
 <a name="the-workspace"></a>
 
@@ -198,7 +179,7 @@ APK را نصب کنید و در صورت درخواست، اجازهٔ نصب �
 
 ## 🌐 پشتیبانی شبکه
 
-فاکس وی‌پی‌ان از حساب‌های فایرفاکس و سرویس وی‌پی‌ان موزیلا استفاده می‌کند. شرایط حساب، دسترسی منطقه‌ای و سهمیهٔ مصرف را سرویس تعیین می‌کند.
+فاکس وی‌پی‌ان یک کلاینت مستقل بر پایهٔ زیرساخت وی‌پی‌ان فایرفاکس موزیلا است و اتصال‌های آن از سرورهای لبهٔ Fastly عبور می‌کنند. شرایط حساب، دسترسی منطقه‌ای و سهمیهٔ مصرف را سرویس تعیین می‌کند.
 
 | قابلیت‌های پشتیبانی‌شده | محدودیت‌ها |
 | ---: | ---: |

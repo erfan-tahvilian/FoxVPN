@@ -5,6 +5,7 @@
 - Node.js 22 or later.
 - Git and network access.
 - A compatible native Windows or macOS build host.
+- Go 1.26 or later for the Windows HTTP/3 transport.
 
 Release builds use the npm lockfile. Build output is written to `dist/`.
 
@@ -14,11 +15,19 @@ Release builds use the npm lockfile. Build output is written to `dist/`.
 npm ci
 node scripts/prepare-electron.cjs
 npm run engine
+cd desktop/h3
+go test ./...
+$env:GOARCH="amd64" # 386 for x86, arm64 for ARM64
+$env:CGO_ENABLED="0"
+go build -trimpath -ldflags "-s -w" -o ../../engine/x64/fox-h3.exe .
+cd ../..
 npm test
 npm run check
 npm start
 npm run dist
 ```
+
+Match the helper output directory to the selected target (`engine/x64`, `engine/ia32` or `engine/arm64`). HTTP/3 uses TLS-verified QUIC streams; Automatic mode falls back to HTTP/2 when UDP is unavailable. A TCP upstream proxy requires HTTP/2.
 
 Set `FOX_TARGET_ARCH` to `x64`, `ia32` or `arm64` before preparing dependencies and building. Run smoke and engine checks on a compatible host. The CI matrix uses x64 Windows hosts for x64/x86 and a native Windows ARM64 host for ARM64.
 
@@ -53,7 +62,7 @@ The Electron main process owns authentication, encrypted storage, network stream
 
 Electron `safeStorage` protects session credentials and proxy passwords using Windows DPAPI or macOS Keychain. The Firefox password is never persisted.
 
-The local SOCKS5 bridge carries authenticated HTTP/2 CONNECT streams. DNS uses the configured tunneled resolver; general UDP is rejected. Local/private traffic, excluded applications and control-plane requests use the direct network. Binding the local proxy to all interfaces exposes an unauthenticated proxy; the default binding is loopback only.
+The local SOCKS5 bridge carries authenticated CONNECT streams over HTTP/2, or HTTP/3 on Windows. The HTTP/3 helper receives credentials through its private stdin pipe and accepts only authenticated loopback connections. DNS uses the configured tunneled resolver; general UDP is rejected. Local/private traffic, excluded applications and control-plane requests use the direct network. Binding the local proxy to all interfaces exposes an unauthenticated proxy; the default binding is loopback only.
 
 ## Verification
 
