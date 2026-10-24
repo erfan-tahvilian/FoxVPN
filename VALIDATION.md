@@ -1,5 +1,19 @@
 # v1.0.0 verification record
 
+## Mandatory verification and progressive delay checks - 2026-10-24
+
+Exit verification is mandatory in the desktop and shared mobile connection paths. Legacy disabled preferences are normalized to enabled. A connection cannot be reported ready until its authenticated exit check succeeds. Regression tests cover saved-setting migration in both cores and the absence of the former preference in the renderer.
+
+The delay probe follows v2rayN's two-request HTTPS sampling method: two GET requests to `https://www.google.com/generate_204`, a 100 ms pause after each response, the smaller measured sample and a five-second timeout. Requests reuse their HTTPS agent/client through the authenticated HTTP/2 tunnel. Credentials are obtained before sampling. Different VPN protocols and network conditions can still produce different measurements. The integration fixture verifies completed HTTPS responses and connection reuse.
+
+All 24 Node tests and Electron renderer/main/tray checks passed. Renderer regression checks cover a successful latency result and an unreachable result while the remaining batch stays in progress. Earlier readings are cleared when a new check starts. The owner confirmed progressive results and the removed preference on the installed Windows version. The Android app picker opens its loading interface before app enumeration; package discovery runs in the background.
+
+[Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40097043606), [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40097043671), [Android core/package/lint/emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40097043635), and [iOS device build/simulator tests](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40097045222) passed for runtime source `8954568155b06967cd9bc909f385fdcb16e6aa76`. The GitHub link uses the same filled icon across platforms. Windows x64 was installed and its packaged source verified at the configured destination. Physical Android checks remain with the owner; physical macOS and iPhone behavior remains unverified. The iOS IPA is unsigned signing input, not a directly installable package.
+
+All five Android architecture packages were [signed and published on GitHub](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40097480229) using the existing identity and the previously authorized encrypted, single-use transfer. The temporary release asset was removed by the workflow.
+
+[Desktop publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40097633244) completed successfully. All 16 platform binaries and all 25 release-asset checksum entries were verified against GitHub digests. Only the Android ARM64 package was downloaded locally and copied to `E:\Other\FoxVPN`; its SHA-256 is `ae18fc502249be4619638e6442b4a4ea7033447b3fb23d1f87a9093c629c9711`. No temporary signing assets remain in the release.
+
 ## Routing editors, shutdown and real delay - 2026-10-24
 
 [Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697770), [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697771) and [desktop publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40092065204) passed. Electron main-process smoke checks now install a renderer closure veto before quitting and still require successful process termination. Quit cleanup has a ten-second upper bound and ends with `app.exit(0)`. The existing native macOS utun creation/disconnect checks also passed. Physical Command+Q behavior remains pending confirmation on a physical Mac.
