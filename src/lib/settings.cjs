@@ -5,7 +5,7 @@ const DEFAULTS={theme:'system',locationSort:'ping-asc',splitMode:'exclude',proxy
 function host(value) {return typeof value==='string' && value.length<=253 && (net.isIP(value)>0 || /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i.test(value));}
 function port(value) {return Number.isInteger(value)&&value>0&&value<=65535;}
 function validate(input, platform=process.platform) {
-  const s={...DEFAULTS,...input,upstream:{...DEFAULTS.upstream,...input.upstream}};
+  const s={...DEFAULTS,...input,exitCheck:true,upstream:{...DEFAULTS.upstream,...input.upstream}};
   if(!['dark','light','system'].includes(s.theme))throw Error('Choose a valid theme.');
   if(!['ping-asc','ping-desc','name-asc','name-desc'].includes(s.locationSort))throw Error('Choose a valid location order.');
   if(!['exclude','include'].includes(s.splitMode))throw Error('Choose a valid VPN routing mode.');

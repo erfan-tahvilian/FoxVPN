@@ -140,7 +140,7 @@ async function connect() {
     for(const candidate of list.slice(0,5)) {
       const attempt=new Tunnel(structuredClone(store.settings),log,fail);
       pendingTunnel=attempt;
-      try{await attempt.start(candidate,pass);check();if(store.settings.exitCheck||id==='REC')exit=await attempt.exit(id==='REC'?null:candidate.code);check();tunnel=attempt;pendingTunnel=null;selected=candidate;break;}
+      try{await attempt.start(candidate,pass);check();exit=await attempt.exit(id==='REC'?null:candidate.code);check();tunnel=attempt;pendingTunnel=null;selected=candidate;break;}
       catch(e){attempt.stop();pendingTunnel=null;check();lastError=e.message;log('warn',`Could not connect to ${[candidate.country,candidate.city].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')}. Trying another endpoint.`);}
     }
     if(!selected)throw Error(lastError || 'No server could be reached.');

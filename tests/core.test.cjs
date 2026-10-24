@@ -133,3 +133,7 @@ test('TOTP sign-in retries invalid codes without issuing OAuth credentials early
   rejectCode=false;await auth.verify('654321');assert.equal(store.auth.access_token,'access');assert.equal(auth.pending,null);
   assert(!calls.some(url=>url.endsWith('/session/verify_code')));
 });
+
+test('exit verification stays mandatory for legacy and updated preferences',()=>{
+  for(const platform of ['win32','darwin'])assert.equal(validate({...DEFAULTS,exitCheck:false},platform).exitCheck,true);
+});

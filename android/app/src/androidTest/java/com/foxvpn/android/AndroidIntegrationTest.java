@@ -102,14 +102,14 @@ public class AndroidIntegrationTest {
     @Test public void androidPreferencesSaveWithoutSubmit()throws Exception{
         ready();FoxApp app=(FoxApp)InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
         JSONObject original=new JSONObject(app.state.getJSONObject("settings").toString());
-        boolean before=app.state.getJSONObject("settings").getBoolean("exitCheck");
+        boolean before=app.state.getJSONObject("settings").getBoolean("proxyOnly");
         try{
-            js("navigate('settings');document.getElementById('exitCheck').click()");
+            js("navigate('settings');document.getElementById('proxyOnly').click()");
             long deadline=System.currentTimeMillis()+5000;
-            while(app.state.getJSONObject("settings").getBoolean("exitCheck")==before&&System.currentTimeMillis()<deadline)Thread.sleep(100);
-            assertEquals(!before,app.state.getJSONObject("settings").getBoolean("exitCheck"));
+            while(app.state.getJSONObject("settings").getBoolean("proxyOnly")==before&&System.currentTimeMillis()<deadline)Thread.sleep(100);
+            assertEquals(!before,app.state.getJSONObject("settings").getBoolean("proxyOnly"));
             activity.finishActivity();activity.launchActivity(null);ready();
-            assertEquals(String.valueOf(!before),js("document.getElementById('exitCheck').checked"));
+            assertEquals(String.valueOf(!before),js("document.getElementById('proxyOnly').checked"));
             js("navigate('settings');document.getElementById('split-mode').value='include';document.getElementById('split-mode').dispatchEvent(new Event('change',{bubbles:true}))");
             deadline=System.currentTimeMillis()+5000;
             while(!"include".equals(app.state.getJSONObject("settings").optString("splitMode"))&&System.currentTimeMillis()<deadline)Thread.sleep(100);

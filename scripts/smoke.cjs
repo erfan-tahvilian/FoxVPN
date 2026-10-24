@@ -42,6 +42,11 @@ app.whenReady().then(async()=>{
         assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.server-row').length`),await win.webContents.executeJavaScript(`new Set(currentState.servers.filter(s=>!automaticServer(s)).map(s=>s.code+'/'+s.cityCode)).size`));
         await win.webContents.executeJavaScript(`document.getElementById('ping-servers').click();new Promise(r=>setTimeout(r,100))`);
         assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('.latency')].every(e=>/ms$|Unreachable/.test(e.textContent))`));
+        await win.webContents.executeJavaScript(`(()=>{window.beforeStreaming=currentState;const first=currentState.servers.find(s=>!automaticServer(s));window.streamingId=first.id;const waiting={...first,id:'DE/stream/fixture:443',code:'DE',country:'Germany',city:'',cityCode:'stream'};render({...currentState,servers:[...currentState.servers,waiting],pinging:true,latencies:{[first.id]:{ms:23,measuredAt:Date.now()}}});})()`);
+        assert(await win.webContents.executeJavaScript(`document.querySelector('[data-server-id="'+window.streamingId+'"]').querySelector('.latency').textContent==='23 ms'&&[...document.querySelectorAll('.server-row .latency')].some(e=>e.textContent==='Checking…')`));
+        await win.webContents.executeJavaScript(`render({...currentState,pinging:true,latencies:{[window.streamingId]:{ms:null,measuredAt:Date.now()}}})`);
+        assert.equal(await win.webContents.executeJavaScript(`document.querySelector('[data-server-id="'+window.streamingId+'"]').querySelector('.latency').textContent`),'Unreachable');
+        await win.webContents.executeJavaScript(`render(window.beforeStreaming)`);
         for(const mode of ['name-asc','name-desc','ping-asc','ping-desc']) {
           await win.webContents.executeJavaScript(`document.getElementById('server-sort').value='${mode}';document.getElementById('server-sort').dispatchEvent(new Event('change'))`);
           assert(await win.webContents.executeJavaScript(`(()=>{const rows=[...document.querySelectorAll('.server-choice')],mode='${mode}';if(mode.startsWith('name')){const names=rows.map(e=>e.querySelector('strong').textContent);return names.every((name,i)=>i===0||(mode==='name-asc'?names[i-1].localeCompare(name)<=0:names[i-1].localeCompare(name)>=0));}const values=rows.map(e=>currentState.latencies[e.dataset.serverId]?.ms).filter(Number.isFinite);return values.every((value,i)=>i===0||(mode==='ping-asc'?values[i-1]<=value:values[i-1]>=value))&&rows.slice(values.length).every(e=>!Number.isFinite(currentState.latencies[e.dataset.serverId]?.ms));})()`));
@@ -105,7 +110,7 @@ app.whenReady().then(async()=>{
     assert.equal(await win.webContents.executeJavaScript(`locationLabel({country:'Germany',city:'Germany'})`),'Germany');
     assert.equal(await win.webContents.executeJavaScript(`locationLabel({country:'Germany',city:'Frankfurt'})`),'Germany, Frankfurt');
     assert.equal(await win.webContents.executeJavaScript(`typeof require`),'undefined');
-    assert(await win.webContents.executeJavaScript(`!!(document.getElementById('exitCheck').compareDocumentPosition(document.getElementById('proxyOnly')) & Node.DOCUMENT_POSITION_FOLLOWING)`));
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('exitCheck')`),null);
     await win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='../../android/ui/mobile.css';link.onload=resolve;link.onerror=reject;document.head.append(link)})`);
     win.setContentSize(360,800);
     await win.webContents.executeJavaScript(`document.getElementById('selected-location').textContent='United Kingdom';document.getElementById('selected-latency').textContent='Unreachable';new Promise(r=>setTimeout(r,100))`);

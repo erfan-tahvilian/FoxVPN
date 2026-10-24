@@ -389,3 +389,10 @@ func TestRealDelayUsesTwoReusableHTTPSRequests(t *testing.T) {
     delay,err:=tunnel.realDelay(ctx,origin.URL)
     if err!=nil||delay<1||!reused { t.Fatalf("Invalid real delay: ms=%d reused=%t err=%v",delay,reused,err) }
 }
+
+func TestExitVerificationCannotBeDisabled(t *testing.T) {
+	s := defaults()
+	s["exitCheck"] = false
+	if err := validate(s); err != nil { t.Fatal(err) }
+	if !yes(s, "exitCheck") { t.Fatal("exit verification must remain enabled") }
+}

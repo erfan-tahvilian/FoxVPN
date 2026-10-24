@@ -204,6 +204,7 @@ func (b *Backend) setAuth(auth object) error {
 	return nil
 }
 func validate(s object) error {
+	s["exitCheck"] = true // Exit verification cannot be disabled by saved preferences.
 	switch str(s, "theme") {
 	case "dark", "light", "system":
 	default:
@@ -488,7 +489,7 @@ func (b *Backend) connect() error {
 			continue
 		}
 		var exit object
-		if yes(s, "exitCheck") || str(s, "serverId") == "REC" {
+		{ // Always verify the authenticated tunnel before accepting the connection.
 			expected := ""
 			if str(s, "serverId") != "REC" {
 				expected = str(server, "code")
@@ -633,8 +634,10 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 	settings := copyObject(b.settings)
 	servers := append([]object{}, b.servers...)
 	if id == "" {
+        b.latencies = object{}
 		b.pinging = true
 	} else {
+        delete(b.latencies,id)
 		b.pingingIDs = []string{id}
 	}
 	b.mu.Unlock()

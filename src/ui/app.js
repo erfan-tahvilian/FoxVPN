@@ -29,7 +29,7 @@ function locationCity(server) {const city=(server?.city||'').trim();return city&
 function locationLabel(server) {return [server?.country,locationCity(server)].filter(Boolean).join(', ');}
 function renderLatency(element,server,s) {
   const result=server?s.latencies?.[server.id]:null;
-  const pending=server&&(s.pinging||(s.pingingIds||[]).includes(server.id));
+  const pending=server&&!result&&(s.pinging||(s.pingingIds||[]).includes(server.id));
   element.className='latency';element.textContent=pending?'Checking…':result?(result.ms==null?'Unreachable':`${result.ms} ms`):'- ms';
   if(!pending&&result?.ms!=null)element.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
   element.title='Real delay: HTTPS response through the authenticated VPN tunnel';
@@ -37,7 +37,7 @@ function renderLatency(element,server,s) {
 function automaticServer(server) {return /recom+end|anycast/i.test(server.country+' '+server.city)||server.code==='REC';}
 function fillSettings(s) {
   for(const key of ['theme','bind','socksPort','doh','customDns','edge'])$(key).value=s[key];
-  for(const key of ['proxyOnly','exitCheck'])$(key).checked=s[key];
+  for(const key of ['proxyOnly'])$(key).checked=s[key];
   $('excludedApps').value=s.excludedApps.join('\n');
   $('upstreamEnabled').checked=s.upstream.enabled;
   for(const key of ['type','host','port','username'])$('upstream'+key[0].toUpperCase()+key.slice(1)).value=s.upstream[key];
@@ -192,7 +192,7 @@ $('refresh-account').addEventListener('click',action(async()=>accountInfo(await 
 function readSettings(){
   const settings={...currentState.settings};
   for(const key of ['theme','bind','doh','customDns','edge'])settings[key]=$(key).value.trim();
-  settings.socksPort=Number($('socksPort').value);for(const key of ['proxyOnly','exitCheck'])settings[key]=$(key).checked;
+  settings.socksPort=Number($('socksPort').value);for(const key of ['proxyOnly'])settings[key]=$(key).checked;
   settings.excludedApps=[...new Set($('excludedApps').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];
   settings.upstream={enabled:$('upstreamEnabled').checked,type:$('upstreamType').value,host:$('upstreamHost').value.trim(),port:Number($('upstreamPort').value),username:$('upstreamUsername').value,password:$('upstreamPassword').value};
   settings.clearUpstreamPassword=$('clearUpstreamPassword').checked;
