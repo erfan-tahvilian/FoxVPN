@@ -22,6 +22,9 @@ jobs:
             const apps=await catalog.list();
             const chosen=apps.filter(app=>['Calculator','Notes','TextEdit','Safari'].includes(app.id)).slice(0,2);
             assert.equal(chosen.length,2,'Expected system application bundles');
+            const fs=require('node:fs'),{execFileSync}=require('node:child_process');
+            const source=fs.readFileSync('src/lib/applications.cjs','utf8').match(/const script=`([^`]+)`/)[1];
+            try{const text=execFileSync('/usr/bin/osascript',['-l','JavaScript','-e',source,catalog.entries.get(chosen[0].id).path],{maxBuffer:8*1024*1024});console.log('Native result length: '+text.length);}catch(error){console.log(String(error.stderr));}
             const images=await Promise.all(chosen.map(app=>catalog.icon(app.id)));
             for(const image of images)assert(image&&image.startsWith('data:image/png;base64,'),'Native icon was not resolved');
             assert.notEqual(images[0],images[1],'Different applications must not share a generic icon');
