@@ -6,9 +6,9 @@ const net=require('node:net');
 const {measure,measureAll}=require('../src/lib/latency.cjs');
 test('real delay requires a completed HTTPS probe and always closes its tunnel',async()=>{
   let closed=0,called=0;
-  const factory=()=>({async request(url){assert.equal(url,'https://www.cloudflare.com/cdn-cgi/trace');called++;await new Promise(r=>setTimeout(r,15));},stop(){closed++;}});
+  const factory=()=>({async request(url){assert.equal(url,'https://www.google.com/generate_204');called++;await new Promise(r=>setTimeout(r,15));},stop(){closed++;}});
   const result=await measure({host:'edge.example',port:443},{},{token:'pass'},1000,factory);
-  assert(result.ms>=10);assert.equal(result.kind,'real-delay');assert.equal(closed,1);assert.equal(called,1);
+  assert(result.ms>=10);assert.equal(result.kind,'real-delay');assert.equal(closed,1);assert.equal(called,2);
   const failure=await measure({}, {}, {token:'pass'},1000,()=>({async request(){throw Error('CONNECT rejected');},stop(){closed++;}}));
   assert.equal(failure.ms,null);assert.equal(closed,2);
   const timeout=await measure({}, {}, {token:'pass'},5,()=>({request(){return new Promise(()=>{});},stop(){closed++;}}));

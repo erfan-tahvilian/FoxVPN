@@ -381,3 +381,11 @@ func TestLocationCacheSurvivesRestart(t *testing.T) {
  if len(NewBackend(host,host.saved).servers)!=1 { t.Fatal("Preference save lost locations") }
  if len(cachedServers([]any{object{"host":"bad/host","port":443}}))!=0 { t.Fatal("Invalid cached endpoint accepted") }
 }
+
+func TestRealDelayUsesTwoReusableHTTPSRequests(t *testing.T) {
+    tunnel,origin:=protocolTunnel(t)
+    reused:=false
+    ctx:=httptrace.WithClientTrace(context.Background(),&httptrace.ClientTrace{GotConn:func(info httptrace.GotConnInfo){if info.Reused{reused=true}}})
+    delay,err:=tunnel.realDelay(ctx,origin.URL)
+    if err!=nil||delay<1||!reused { t.Fatalf("Invalid real delay: ms=%d reused=%t err=%v",delay,reused,err) }
+}

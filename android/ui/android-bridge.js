@@ -35,9 +35,9 @@
   }
   window.addEventListener('DOMContentLoaded',()=>{
     const field=document.getElementById('excludedApps');
-    field.closest('label').hidden=false;field.closest('label').firstChild.textContent='Package names';field.placeholder='com.myirancell\nir.mci.ecareapp\ncom.anydesk.anydeskandroid';field.closest('label').querySelector('small').textContent='One Android package name per line. Kept in sync with Choose apps.';
+    field.closest('label').hidden=false;field.closest('label').firstChild.textContent='Package names';field.removeAttribute('placeholder');field.closest('label').querySelector('small').textContent='One Android package name per line. Kept in sync with Choose apps.';
     const summary=document.createElement('p');summary.id='excluded-summary';summary.className='muted';
-    const choose=document.createElement('button');choose.id='choose-apps';choose.type='button';choose.className='secondary';choose.textContent='Choose apps';choose.addEventListener('click',async()=>{await window.flushSettings();await window.fox.call('chooseApps');});field.closest('label').before(summary,choose);
+    const choose=document.createElement('button');choose.id='choose-apps';choose.type='button';choose.className='secondary';choose.textContent='Choose apps';choose.addEventListener('click',async()=>{if(choose.disabled)return;choose.disabled=true;const loading=document.createElement('dialog');loading.className='app-loading';loading.setAttribute('aria-label','Choose apps');const title=document.createElement('h2');title.textContent='Choose apps';const message=document.createElement('p');message.textContent='Loading apps…';message.setAttribute('role','status');loading.append(title,message);document.body.append(loading);loading.showModal();try{await window.flushSettings();const result=await window.fox.call('chooseApps');if(!result.ok)throw Error(result.error);}catch(error){toast(error.message);}finally{loading.close();loading.remove();choose.disabled=currentState?.connection!=='disconnected';}});field.closest('label').before(summary,choose);
     const form=document.getElementById('settings-form');
     form.querySelector('button[type="submit"]').remove();
     document.querySelector('#settings .page-heading p').textContent='Network changes apply to your next connection.';

@@ -119,21 +119,34 @@ class Tunnel {
     socket.once('close',()=>stream.destroy());stream.once('close',()=>socket.destroy());
     socket.pipe(stream);stream.pipe(socket);socket.resume();
   }
-  async request(url, body, contentType) {
-    const u=new URL(url), host=u.hostname.replace(/^\[|\]$/g,''), stream=await this.open(host,Number(u.port)||443);
-    const agent=new https.Agent({keepAlive:false});
+  createProbeAgent(url) {
+    const u=new URL(url),host=u.hostname.replace(/^\[|\]$/g,'');
+    const agent=new https.Agent({keepAlive:true,maxSockets:1});
     agent.createConnection=(_options,callback)=>{
+      this.open(host,Number(u.port)||443).then(stream=>{
+        let finished=false;const done=(err,socket)=>{if(!finished){finished=true;callback(err,socket);}};
+        const socket=tls.connect({socket:stream,servername:net.isIP(host)?undefined:host,rejectUnauthorized:true,checkServerIdentity:(_host,cert)=>tls.checkServerIdentity(host,cert)});
+        socket.once('secureConnect',()=>done(null,socket));socket.once('error',done);
+      },callback);
+    };
+    return agent;
+  }
+  async request(url, body, contentType, options={}) {
+    const u=new URL(url), host=u.hostname.replace(/^\[|\]$/g,'');
+    const stream=options.agent?null:await this.open(host,Number(u.port)||443);
+    const agent=options.agent||new https.Agent({keepAlive:false});
+    if(!options.agent)agent.createConnection=(_options,callback)=>{
       const socket=tls.connect({socket:stream,servername:net.isIP(host)?undefined:host,rejectUnauthorized:true,checkServerIdentity:(_host,cert)=>tls.checkServerIdentity(host,cert)});
       socket.once('secureConnect',()=>callback(null,socket));socket.once('error',callback);
     };
     try {
       return await new Promise((resolve,reject)=>{
         const req=https.request(u,{agent,method:body?'POST':'GET',headers:body?{'Content-Type':contentType,Accept:contentType,'Content-Length':body.length}:{}},res=>{
-          if(res.statusCode!==200){res.resume();reject(Error(`Tunneled request failed (${res.statusCode})`));return;}
+          if(!(options.statuses||[200]).includes(res.statusCode)){res.resume();reject(Error(`Tunneled request failed (${res.statusCode})`));return;}
           let size=0;const chunks=[];res.on('data',b=>{size+=b.length;if(size>1024*1024)req.destroy(Error('Response too large'));else chunks.push(b);});res.on('end',()=>resolve(Buffer.concat(chunks)));res.on('error',reject);
         });req.setTimeout(15000,()=>req.destroy(Error('Tunneled request timed out')));req.on('error',reject);req.end(body);
       });
-    } finally {agent.destroy();stream.destroy();}
+    } finally {if(!options.agent){agent.destroy();stream.destroy();}}
   }
   async dns(query, host) {
     const providers={automatic:['1.1.1.1','8.8.8.8','9.9.9.9'],cloudflare:['1.1.1.1'],google:['8.8.8.8'],quad9:['9.9.9.9']};

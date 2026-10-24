@@ -164,7 +164,7 @@ public final class MainActivity extends Activity {
         if (!"disconnected".equals(app().connection()))return;
         JSONObject settings=app().state.optJSONObject("settings");
         if(settings!=null&&!settings.optBoolean("proxyOnly")&&"include".equals(settings.optString("splitMode"))&&(settings.optJSONArray("excludedApps")==null||settings.optJSONArray("excludedApps").length()==0)){
-            new android.app.AlertDialog.Builder(this).setTitle("No apps selected").setMessage("Choose at least one app in Settings > Split tunneling before connecting.").setPositiveButton("Open settings",(dialog,which)->{if(web!=null)web.evaluateJavascript("navigate('settings')",null);}).setNegativeButton("Cancel",null).show();return;
+            new android.app.AlertDialog.Builder(this).setTitle("No apps selected").setMessage("Choose at least one app in Settings > Split tunneling before connecting.").setPositiveButton("Open settings",(dialog,which)->{if(web!=null)web.evaluateJavascript("showSplitSettings()",null);}).setNegativeButton("Cancel",null).show();return;
         }
 
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED&&!getPreferences(MODE_PRIVATE).getBoolean("notificationAsked",false)){

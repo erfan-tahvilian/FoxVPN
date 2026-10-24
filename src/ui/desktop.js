@@ -7,7 +7,7 @@
   const label=document.createElement('label');label.htmlFor='split-mode';label.textContent='VPN routing';
   const mode=document.createElement('select');mode.id='split-mode';
   for(const [value,text] of [['exclude','All apps except selected'],['include','Only selected apps']]){const option=document.createElement('option');option.value=value;option.textContent=text;mode.append(option);}
-  label.append(mode);field.closest('label').before(label);field.closest('label').hidden=false;field.closest('label').firstChild.textContent='App identifiers';field.placeholder=navigator.platform.includes('Mac')?'Safari\nGoogle Chrome':'chrome.exe\nfirefox.exe';field.closest('label').querySelector('small').textContent='One process name per line. Kept in sync with Choose apps.';
+  label.append(mode);field.closest('label').before(label);field.closest('label').hidden=false;field.closest('label').firstChild.textContent='App identifiers';field.removeAttribute('placeholder');field.closest('label').querySelector('small').textContent='One process name per line. Kept in sync with Choose apps.';
   const description=field.closest('.settings-card').querySelector('p'),summary=document.createElement('p'),choose=document.createElement('button');
   summary.className='muted';summary.id='excluded-summary';choose.id='choose-apps';choose.type='button';choose.className='secondary';choose.textContent='Choose apps';field.closest('label').before(summary,choose);
   form.querySelector('button[type="submit"]').remove();

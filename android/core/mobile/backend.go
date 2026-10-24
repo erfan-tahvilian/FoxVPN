@@ -660,15 +660,14 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 			defer wg.Done()
 			limit <- struct{}{}
 			defer func() { <-limit }()
-			start := time.Now()
-			pctx, cancel := context.WithTimeout(ctx, 12*time.Second)
+			pctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 			probe := newTunnel(b, settings, server, token, pctx)
             defer probe.close()
-            _, err := probe.request(pctx, "https://www.cloudflare.com/cdn-cgi/trace", nil, "")
+            delay, err := probe.realDelay(pctx, "https://www.google.com/generate_204")
 			var latency any
 			if err == nil {
-				latency = time.Since(start).Milliseconds()
+				latency = delay
 				if latency.(int64) < 1 {
 					latency = int64(1)
 				}

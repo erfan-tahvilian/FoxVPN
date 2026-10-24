@@ -21,6 +21,7 @@ final class AppPicker {
     private final Set<String> selected=new LinkedHashSet<>();
     private final Consumer<List<String>> changed;
     private final boolean onlySelected;
+    private final String ownPackage;
     private final BaseAdapter adapter=new BaseAdapter(){
         @Override public int getCount(){return filtered.size();}
         @Override public Object getItem(int index){return filtered.get(index);}
@@ -41,22 +42,26 @@ final class AppPicker {
         }
     };
     AppPicker(Context context,String ownPackage,JSONArray saved,boolean onlySelected,Consumer<List<String>> changed){
-        this.context=context;this.changed=changed;this.onlySelected=onlySelected;
+        this.context=context;this.changed=changed;this.onlySelected=onlySelected;this.ownPackage=ownPackage;
         if(saved!=null)for(int i=0;i<saved.length();i++)selected.add(saved.optString(i));
+    }
+    private List<App> loadApps(){
+        List<App> result=new ArrayList<>();
         Set<String> seen=new HashSet<>();
         for(ResolveInfo info:context.getPackageManager().queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0)){
             String name=info.activityInfo.packageName;
-            if(!name.equals(ownPackage)&&seen.add(name))apps.add(new App(info.loadLabel(context.getPackageManager()).toString(),name,info));
+            if(!name.equals(ownPackage)&&seen.add(name))result.add(new App(info.loadLabel(context.getPackageManager()).toString(),name,info));
         }
-        for(String name:selected)if(!seen.contains(name)&&!name.equals(ownPackage))apps.add(new App(name,name,null));
-        apps.sort(Comparator.comparing((App app)->!selected.contains(app.packageName)).thenComparing(App::name,String.CASE_INSENSITIVE_ORDER));filtered.addAll(apps);
+        for(String name:selected)if(!seen.contains(name)&&!name.equals(ownPackage))result.add(new App(name,name,null));
+        result.sort(Comparator.comparing((App app)->!selected.contains(app.packageName)).thenComparing(App::name,String.CASE_INSENSITIVE_ORDER));return result;
     }
     private int dp(int value){return Math.round(value*context.getResources().getDisplayMetrics().density);}
     void show(){
         LinearLayout content=new LinearLayout(context);content.setOrientation(LinearLayout.VERTICAL);
-        EditText search=new EditText(context);search.setSingleLine(true);search.setHint("Search apps");search.setInputType(android.text.InputType.TYPE_CLASS_TEXT);search.setPadding(dp(20),dp(12),dp(20),dp(12));content.addView(search);
+        EditText search=new EditText(context);search.setSingleLine(true);search.setHint("Search apps");search.setInputType(android.text.InputType.TYPE_CLASS_TEXT);search.setPadding(dp(20),dp(12),dp(20),dp(12));search.setEnabled(false);content.addView(search);
+        ProgressBar progress=new ProgressBar(context);content.addView(progress,new LinearLayout.LayoutParams(dp(32),dp(32)));
         ListView list=new ListView(context);list.setDivider(null);list.setVerticalScrollBarEnabled(false);list.setAdapter(adapter);content.addView(list,new LinearLayout.LayoutParams(-1,dp(360)));
-        TextView empty=new TextView(context);empty.setText("No apps found");empty.setPadding(dp(20),dp(20),dp(20),dp(20));content.addView(empty);list.setEmptyView(empty);
+        TextView empty=new TextView(context);empty.setText("Loading apps…");empty.setPadding(dp(20),dp(20),dp(20),dp(20));content.addView(empty);list.setEmptyView(empty);
         search.addTextChangedListener(new android.text.TextWatcher(){
             public void beforeTextChanged(CharSequence s,int start,int count,int after){}
             public void onTextChanged(CharSequence s,int start,int before,int count){String query=s.toString().trim().toLowerCase(Locale.ROOT);filtered.clear();for(App app:apps)if(app.name.toLowerCase(Locale.ROOT).contains(query)||app.packageName.toLowerCase(Locale.ROOT).contains(query))filtered.add(app);adapter.notifyDataSetChanged();}
@@ -65,5 +70,16 @@ final class AppPicker {
         AlertDialog dialog=new AlertDialog.Builder(context).setTitle(onlySelected?"Apps using VPN":"Exclude apps").setView(content).setPositiveButton("Done",null).create();
         dialog.setOnShowListener(ignored->{dialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN|android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.rgb(255,117,24));});
         dialog.show();
+        new Thread(()->{
+            try{
+                List<App> loaded=loadApps();
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+                    if(!dialog.isShowing())return;
+                    apps.addAll(loaded);filtered.addAll(loaded);empty.setText("No apps found");progress.setVisibility(View.GONE);search.setEnabled(true);adapter.notifyDataSetChanged();
+                });
+            }catch(RuntimeException error){
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{if(dialog.isShowing()){progress.setVisibility(View.GONE);empty.setText("Apps could not be loaded. Close this window and try again.");}});
+            }
+        },"FoxVPN-app-catalog").start();
     }
 }

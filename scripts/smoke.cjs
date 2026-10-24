@@ -84,6 +84,13 @@ app.whenReady().then(async()=>{
     await win.webContents.executeJavaScript(`document.querySelector('[data-page="locations"]').click(); document.querySelector('.server-choice').click(); new Promise(r=>setTimeout(r,100))`);
     await win.webContents.executeJavaScript(`window.fox.call('login',{});new Promise(r=>setTimeout(r,100))`);
     assert.equal(await win.webContents.executeJavaScript(`document.querySelector('.avatar').textContent`),'A');
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('excludedApps').hasAttribute('placeholder')`),false);
+    await win.webContents.executeJavaScript(`(()=>{const before=currentState;window.emptySelectionBefore=before;render({...before,settings:{...before.settings,splitMode:'include',excludedApps:[]}});document.getElementById('connect').click();})()`);
+    await new Promise(r=>setTimeout(r,500));
+    assert.equal(await win.webContents.executeJavaScript(`page`),'settings');
+    assert(await win.webContents.executeJavaScript(`document.getElementById('split-tunneling').getBoundingClientRect().top<160`));
+    await win.webContents.executeJavaScript(`render(window.emptySelectionBefore);navigate('home')`);
+
     assert(await win.webContents.executeJavaScript(`(()=>{const r=document.querySelector('.avatar').getBoundingClientRect();return Math.abs(r.width-r.height)<1&&getComputedStyle(document.body).userSelect==='none'})()`));
     assert(await win.webContents.executeJavaScript(`document.querySelector('#selected-symbol .country-flag').naturalWidth>0`));
     fs.writeFileSync('test-results/selected-location.png',(await win.webContents.capturePage()).toPNG());

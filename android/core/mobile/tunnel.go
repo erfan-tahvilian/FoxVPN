@@ -490,7 +490,7 @@ func (t *proxyTunnel) accept(conn net.Conn) error {
 	<-done
 	return nil
 }
-func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, contentType string) ([]byte, error) {
+func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, contentType string, accepted ...int) ([]byte, error) {
 	method := "GET"
 	if body != nil {
 		method = "POST"
@@ -508,14 +508,27 @@ func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, 
 		return nil, err
 	}
 	defer response.Body.Close()
-	if response.StatusCode != 200 {
-		return nil, fmt.Errorf("Tunneled request failed (%d)", response.StatusCode)
-	}
+	valid := response.StatusCode == 200
+    if len(accepted)>0 { valid=false;for _,status:=range accepted { if response.StatusCode==status { valid=true } } }
+    if !valid { return nil, fmt.Errorf("Tunneled request failed (%d)", response.StatusCode) }
 	data, err := io.ReadAll(io.LimitReader(response.Body, 1024*1024+1))
 	if len(data) > 1024*1024 {
 		return nil, errors.New("Response too large")
 	}
 	return data, err
+}
+// realDelay mirrors the two-request, keep-alive minimum used by v2rayN.
+func (t *proxyTunnel) realDelay(ctx context.Context, address string) (int64,error) {
+    var best int64
+    for i:=0;i<2;i++ {
+        start:=time.Now()
+        if _,err:=t.request(ctx,address,nil,"",200,204);err!=nil{return 0,err}
+        elapsed:=time.Since(start).Milliseconds();if elapsed<1 {elapsed=1}
+        if best==0||elapsed<best {best=elapsed}
+        timer:=time.NewTimer(100*time.Millisecond)
+        select {case <-ctx.Done():timer.Stop();return 0,ctx.Err();case <-timer.C:}
+    }
+    return best,nil
 }
 func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byte, error) {
 	providers := map[string][]string{"automatic": {"cloudflare-dns.com", "dns.google", "dns.quad9.net"}, "cloudflare": {"cloudflare-dns.com"}, "google": {"dns.google"}, "quad9": {"dns.quad9.net"}}

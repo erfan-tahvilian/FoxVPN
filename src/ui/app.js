@@ -13,10 +13,10 @@ function action(fn) {return async event=>{try{await fn(event);}catch(e){toast(e.
 function navigate(next) {page=next;document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id===page));
 
 document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));$('page-label').textContent=labels[page];if(page==='locations')renderServers();if(page==='logs')renderLogs();}
+function showSplitSettings(){navigate('settings');const section=$('split-tunneling');section?.scrollIntoView({behavior:'auto',block:'start'});$('choose-apps')?.focus({preventScroll:true});}
 function bytes(n) {n=Number(n)||0;const units=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++;}return `${n.toFixed(i&&n<10?1:0)} ${units[i]}`;}
 function time(n) {const s=Math.max(0,Math.floor(n/1000));return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(v=>String(v).padStart(2,'0')).join(':');}
 function applyTheme(s) {
-  if(s.platform==='darwin')$('excludedApps').placeholder='Google Chrome\nSteam';
   const light=s.settings.theme==='light'||s.settings.theme==='system'&&!s.systemDark;
   document.body.classList.toggle('light',light);
   $('theme-toggle').replaceChildren(icon(light?'moon':'sun'));
@@ -169,7 +169,7 @@ document.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click'
 for(const id of ['account-shortcut','home-account'])$(id).addEventListener('click',()=>navigate('account'));
 for(const id of ['choose-location','choose-location-arrow'])$(id).addEventListener('click',()=>navigate('locations'));
 $('ping-selected').addEventListener('click',action(async()=>{const selected=currentState.activeServer||currentState.servers.find(s=>s.id===currentState.settings.serverId);if(selected)await call('ping',selected.id);}));
-$('connect').addEventListener('click',action(async()=>{if(currentState.connection==='disconnected')await window.flushSettings?.();if(!currentState.signedIn){navigate('account');return;}if(currentState.connection==='disconnected'&&!currentState.settings.proxyOnly&&currentState.settings.splitMode==='include'&&!currentState.settings.excludedApps.length){toast('No apps selected. Choose at least one app in Settings > Split tunneling before connecting.');navigate('settings');return;}await call(currentState.connection==='connected'?'disconnect':currentState.connection==='connecting'?'cancel':'connect');}));
+$('connect').addEventListener('click',action(async()=>{if(currentState.connection==='disconnected')await window.flushSettings?.();if(!currentState.signedIn){navigate('account');return;}if(currentState.connection==='disconnected'&&!currentState.settings.proxyOnly&&currentState.settings.splitMode==='include'&&!currentState.settings.excludedApps.length){toast('No apps selected. Choose at least one app in Settings > Split tunneling before connecting.');showSplitSettings();return;}await call(currentState.connection==='connected'?'disconnect':currentState.connection==='connecting'?'cancel':'connect');}));
 $('theme-toggle').addEventListener('click',action(async()=>{const theme=document.body.classList.contains('light')?'dark':'light';await call('theme',theme);$('theme').value=theme;syncSelects();}));
 $('ping-servers').addEventListener('click',action(async()=>{await call('ping');toast('Location latency check complete.');}));
 $('source').addEventListener('click',action(()=>call('openLink','source')));
