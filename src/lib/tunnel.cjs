@@ -90,7 +90,7 @@ class Tunnel {
       const timer=setTimeout(()=>{stream.close();reject(Error('CONNECT timed out'));},15000);
       const fail=e=>{clearTimeout(timer);reject(e);};
       stream.once('error',fail);stream.once('close',()=>fail(Error('CONNECT closed')));
-      stream.once('response',headers=>{clearTimeout(timer);if(headers[':status']>=200 && headers[':status']<300)resolve();else{stream.close();if([401,403,429].includes(headers[':status']))this.onFatal(Error('The proxy pass was rejected or the account quota was exhausted.'));reject(Error(`CONNECT rejected (${headers[':status']})`));}});
+      stream.once('response',headers=>{clearTimeout(timer);if(headers[':status']>=200 && headers[':status']<300)resolve();else{stream.close();if([401,403,429].includes(headers[':status'])){const error=Object.assign(Error('The proxy pass was rejected or the account quota was exhausted.'),{status:Number(headers[':status']),quota:{limit:headers['x-quota-limit'],remaining:headers['x-quota-remaining'],reset:headers['x-quota-reset']}});this.onFatal(error);}reject(Error(`CONNECT rejected (${headers[':status']})`));}});
     });
     // Count ingress without putting the stream into flowing mode before its consumer attaches.
     const originalPush=stream.push;

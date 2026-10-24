@@ -48,7 +48,8 @@
           "sing-box.exe",
           "wintun.dll",
           "LICENSE*",
-          "*.txt"
+          "*.txt",
+          "fox-h3.exe"
         ]
       }
     ],

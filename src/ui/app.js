@@ -36,6 +36,7 @@ function renderLatency(element,server,s) {
 }
 function automaticServer(server) {return /recom+end|anycast/i.test(server.country+' '+server.city)||server.code==='REC';}
 function fillSettings(s) {
+  if($('transport'))$('transport').value=s.transport||'auto';
   for(const key of ['theme','bind','socksPort','doh','customDns','edge'])$(key).value=s[key];
   for(const key of ['proxyOnly'])$(key).checked=s[key];
   $('excludedApps').value=s.excludedApps.join('\n');
@@ -70,7 +71,7 @@ async function refreshAllowance(announce){
 $('refresh-allowance').addEventListener('click',()=>refreshAllowance(true));
 $('allowance-account').addEventListener('click',()=>navigate('account'));
 function render(s) {
-  currentState=s;applyTheme(s);renderAllowance(s);
+  currentState=s;applyTheme(s);renderAllowance(s);$('transport-field').hidden=s.platform!=='win32';$('protocol-name').textContent=s.protocol==='h3'?'HTTP/3 over QUIC':'HTTP/2 over TLS';
   if(!initialized){fillSettings(s.settings);initialized=true;}
   syncSelects();
   const connected=s.connection==='connected', transitional=['connecting','disconnecting'].includes(s.connection);
@@ -99,13 +100,13 @@ function render(s) {
   $('downloaded').textContent=bytes(s.down);$('uploaded').textContent=bytes(s.up);
   const now=Date.now(), elapsed=(now-lastTick)/1000;
   if(elapsed>.5){$('download-speed').textContent=bytes(Math.max(0,s.down-lastDown)/elapsed)+'/s';$('upload-speed').textContent=bytes(Math.max(0,s.up-lastUp)/elapsed)+'/s';lastUp=s.up;lastDown=s.down;lastTick=now;}
-  $('session-time').textContent=time(s.startedAt?now-s.startedAt:0);
+  $('session-time').textContent=time(s.sessionDuration??(s.startedAt?now-s.startedAt:0));
   $('location-count').textContent=new Set(s.servers.filter(c=>!automaticServer(c)).map(c=>c.code)).size || '-';
   $('account-name').textContent=s.signedIn?s.email.split('@')[0]:'Sign in';
   document.querySelector('#account-shortcut .avatar').textContent=s.signedIn?(Array.from((s.email||'').trim())[0]?.toUpperCase()||'?'):'F';
   $('signin-panel').hidden=s.signedIn;$('signedin-panel').hidden=!s.signedIn;$('signedin-email').textContent=s.email;
   $('login-form').hidden=needsCode;$('code-form').hidden=!needsCode;
-  $('login-button').disabled=s.busy;
+  $('login-button').disabled=s.busy;renderAccountManager(s);
   $('home-info').textContent=s.lastError||(s.signedIn?(s.quota?.remaining?`${bytes(s.quota.remaining)} remaining in your current service allowance.`:'Your Firefox account is ready. Choose a location and connect.'):'Sign in with your Firefox account to get started.');
   $('settings-notice').textContent=s.connection==='disconnected'?'Credentials are encrypted on this device.':'Disconnect before saving network preferences.';
   $('ping-servers').disabled=s.pinging||(s.pingingIds||[]).length>0;
@@ -206,8 +207,8 @@ $('server-search').addEventListener('input',renderServers);
 $('server-sort').addEventListener('change',renderServers);
 $('recommended').addEventListener('click',action(async()=>{await call('select','REC');navigate('home');}));
 $('verify-exit').addEventListener('click',action(async()=>{const result=await call('exit');toast(`Exit verified · ${result.ip} · ${result.country}`);}));
-$('login-form').addEventListener('submit',action(async e=>{e.preventDefault();const email=$('email').value.trim(),password=$('password').value;$('password').value='';const result=await call('login',{email,password});needsCode=result.needsCode;render(await call('state'));if(needsCode){const totp=result.verificationMethod==='totp-2fa';$('code').placeholder=totp?'Code from your authenticator app':'Code from your email';$('code').value='';$('code').focus();toast(totp?'Enter the code from your authenticator app.':'Enter the verification code sent to your Firefox account email.');}else{toast('Signed in successfully.');navigate('home');}}));
-$('code-form').addEventListener('submit',action(async e=>{e.preventDefault();await call('verify',$('code').value.trim());$('code').value='';needsCode=false;render(await call('state'));toast('Your account is ready.');navigate('home');}));
+$('login-form').addEventListener('submit',action(async e=>{e.preventDefault();const email=$('email').value.trim(),password=$('password').value;$('password').value='';const result=await call('login',{email,password});needsCode=result.needsCode;if(!needsCode&&hasAccountManager())addingAccount=false;render(await call('state'));if(needsCode){const totp=result.verificationMethod==='totp-2fa';$('code').placeholder=totp?'Code from your authenticator app':'Code from your email';$('code').value='';$('code').focus();toast(totp?'Enter the code from your authenticator app.':'Enter the verification code sent to your Firefox account email.');}else{toast('Signed in successfully.');navigate(hasAccountManager()?'account':'home');}}));
+$('code-form').addEventListener('submit',action(async e=>{e.preventDefault();await call('verify',$('code').value.trim());$('code').value='';needsCode=false;addingAccount=false;render(await call('state'));toast('Your account is ready.');navigate(hasAccountManager()?'account':'home');}));
 $('restart-login').addEventListener('click',()=>{needsCode=false;render(currentState);});
 $('logout').addEventListener('click',action(async()=>{await call('logout');needsCode=false;$('account-stats').textContent='Refresh to view your account details and data allowance.';toast('Signed out.');}));
 function accountInfo(data) {
@@ -218,7 +219,7 @@ function accountInfo(data) {
 }
 $('refresh-account').addEventListener('click',action(async()=>accountInfo(await call('account'))));
 function readSettings(){
-  const settings={...currentState.settings};
+  const settings={...currentState.settings};if(currentState.platform==='win32')settings.transport=$('transport').value;
   for(const key of ['theme','bind','doh','customDns','edge'])settings[key]=$(key).value.trim();
   settings.socksPort=Number($('socksPort').value);for(const key of ['proxyOnly'])settings[key]=$(key).checked;
   settings.excludedApps=[...new Set($('excludedApps').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];
@@ -234,5 +235,6 @@ $('log-filter').addEventListener('change',renderLogs);
 $('clear-logs').addEventListener('click',action(()=>call('clearLogs')));
 $('export-logs').addEventListener('click',action(()=>call('exportLogs')));
 $('manage-account').addEventListener('click',action(()=>call('openLink','accountSettings')));
+setupAccountManager();
 window.fox.onState(render);
 call('state').then(render).catch(e=>toast(e.message));

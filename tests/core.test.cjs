@@ -139,3 +139,7 @@ test('exit verification stays mandatory for legacy and updated preferences',()=>
 });
 
 require('./allowance.test.cjs');
+
+require('./accounts.test.cjs');
+
+require('./h3.test.cjs');

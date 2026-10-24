@@ -32,5 +32,25 @@ jobs:
           cp go.mod go.sum ../../transport/
       - uses: actions/upload-artifact@v4
         with:
-          name: FoxHTTP3-Windows
-          path: transport/
+          name: FoxHTTP3-Windows-amd64
+          path: transport/amd64/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoxHTTP3-Windows-386
+          path: transport/386/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoxHTTP3-Windows-arm64
+          path: transport/arm64/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoxHTTP3-module
+          path: |
+            transport/go.mod
+            transport/go.sum
+      - name: Probe public HTTP3 endpoint without account credentials
+        continue-on-error: true
+        working-directory: desktop/h3
+        env:
+          FOX_PUBLIC_H3_HOST: eglc860.m1.fastly-masque.net
+        run: go test -v -run TestPublicProxyCapability ./...

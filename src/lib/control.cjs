@@ -29,7 +29,7 @@ class Control {
     for(let attempt=0; response.status === 406 && attempt<3; attempt++) { await response.arrayBuffer(); await this.challenge(); response = await this.fetch(url, options); }
     const raw = await response.text();
     let data; try { data = JSON.parse(raw || '{}'); } catch { throw Error(`The service returned an invalid response (HTTP ${response.status}).`); }
-    if (!response.ok) { const e = Error(data.message || `Service request failed (HTTP ${response.status}).`); e.status = response.status; e.errno = data.errno; throw e; }
+    if (!response.ok) { const e = Error(data.message || `Service request failed (HTTP ${response.status}).`); e.status = response.status; e.errno = data.errno; e.quota={limit:response.headers.get('x-quota-limit'),remaining:response.headers.get('x-quota-remaining'),reset:response.headers.get('x-quota-reset')}; throw e; }
     return {data, headers:response.headers};
   }
   async challenge() {

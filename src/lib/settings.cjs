@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Erfan Tahvilian
 const net = require('node:net');
-const DEFAULTS={theme:'system',locationSort:'ping-asc',splitMode:'exclude',proxyOnly:false,bind:'127.0.0.1',socksPort:1080,doh:'automatic',customDns:'',edge:'',exitCheck:true,excludedApps:[],upstream:{enabled:false,type:'socks5',host:'',port:1080,username:'',password:''},serverId:'REC'};
+const DEFAULTS={transport:'auto',theme:'system',locationSort:'ping-asc',splitMode:'exclude',proxyOnly:false,bind:'127.0.0.1',socksPort:1080,doh:'automatic',customDns:'',edge:'',exitCheck:true,excludedApps:[],upstream:{enabled:false,type:'socks5',host:'',port:1080,username:'',password:''},serverId:'REC'};
 function host(value) {return typeof value==='string' && value.length<=253 && (net.isIP(value)>0 || /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i.test(value));}
 function port(value) {return Number.isInteger(value)&&value>0&&value<=65535;}
 function validate(input, platform=process.platform) {
   const s={...DEFAULTS,...input,exitCheck:true,upstream:{...DEFAULTS.upstream,...input.upstream}};
+  if(!['auto','h2','h3'].includes(s.transport))throw Error('Choose a valid connection protocol.');
   if(!['dark','light','system'].includes(s.theme))throw Error('Choose a valid theme.');
   if(!['ping-asc','ping-desc','name-asc','name-desc'].includes(s.locationSort))throw Error('Choose a valid location order.');
   if(!['exclude','include'].includes(s.splitMode))throw Error('Choose a valid VPN routing mode.');
@@ -27,7 +28,7 @@ function engineConfig(s, edgeIP, proxyIP, networkDns, platform=process.platform)
   const dns=s.customDns ? {type:'tcp',server:s.customDns} : s.doh==='off' ? (networkDns?{type:'tcp',server:networkDns,detour:'direct'}:{type:'local'}) : s.doh==='automatic' ? {type:'udp',server:'1.1.1.1'} : {type:'https',server:providers[s.doh],path:'/dns-query'};
   if(dns.type!=='local'&&!dns.detour)dns.detour='fox';
   const excluded=[edgeIP,proxyIP].filter(Boolean).map(ip=>ip+(net.isIP(ip)===6?'/128':'/32'));
-  const own=platform==='darwin'?['Fox VPN','Fox VPN Helper','Electron','sing-box']:['Fox VPN.exe','electron.exe','sing-box.exe'];
+  const own=platform==='darwin'?['Fox VPN','Fox VPN Helper','Electron','sing-box']:['Fox VPN.exe','electron.exe','sing-box.exe','fox-h3.exe'];
   const selected=[...new Set(s.excludedApps.map(name=>platform==='darwin'?name.replace(/\.app$/i,''):name))];
   const only=s.splitMode==='include';
   return {
