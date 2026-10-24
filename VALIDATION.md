@@ -1,5 +1,19 @@
 # v1.0.0 verification record
 
+## Routing editors, shutdown and real delay - 2026-10-24
+
+[Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697770), [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697771) and [desktop publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40092065204) passed. Electron main-process smoke checks now install a renderer closure veto before quitting and still require successful process termination. Quit cleanup has a ten-second upper bound and ends with `app.exit(0)`. The existing native macOS utun creation/disconnect checks also passed. Physical Command+Q behavior remains pending confirmation on the owner's Mac.
+
+[Independent macOS icon validation](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091699607) disabled generic fallbacks and confirmed distinct native PNG icons for Calculator and Notes. NSWorkspace icons are rasterized at a small size before transport. Desktop renderer checks cover the visible manual routing editor, selection synchronization and disabled settings cursor.
+
+Latency checks now time a complete HTTPS response through each authenticated tunnel rather than a TCP connection alone. The 23 desktop regression tests passed, including a real TLS/HTTP2 CONNECT integration test for the delay probe, failed-probe cleanup, timeout handling and bounded batch concurrency. Credentials are fetched outside the measured interval; only three probes run concurrently. Checking delay requires sign-in.
+
+The [Android core, package, lint and emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091388767) passed, including manual package entry, native-picker visibility and removal synchronization. [All five architectures were signed and published](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091849129) using the existing signing identity and the previously authorized encrypted single-use transfer; cleanup removed the transfer asset. Only the signed ARM64 APK was downloaded locally, and delivery to `E:\Other\FoxVPN` was verified against release SHA-256 `d41c6146185f3f5c377dfbc5aaa1251ae0bb19cef8578b24795bfbaabb42970e`. Physical Android validation remains with the owner.
+
+The [iOS device build, simulator tests and publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091108023) passed. Its shared core includes real-delay checking. Standalone iOS does not expose nonfunctional per-app routing controls: Apple requires MDM-managed app/VPN mappings for production per-app VPN. The UI states this limitation. The IPA remains unsigned and physical iPhone VPN behavior remains unverified.
+
+All 16 platform binaries in v1.0.0 were refreshed and checked against the complete global checksum manifest. The repository description was updated successfully. The final Windows x64 installer was built locally to avoid a redundant download; installation awaits Windows UAC confirmation.
+
 ## Refreshed cross-platform release - 2026-10-22
 
 All 16 platform binaries in the existing v1.0.0 release were refreshed and their GitHub SHA-256 digests checked against the complete global checksum manifest. [Windows x64, x86 and ARM64 builds](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39789553502), [Intel and Apple Silicon macOS builds](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39789548926), and [desktop publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/39790672969) passed. Windows application enumeration uses native PowerShell and bounds optional Store package discovery to avoid blocking the application catalog. Local regression and real Electron smoke checks passed; the current Windows x64 package was installed and its packaged source verified.
