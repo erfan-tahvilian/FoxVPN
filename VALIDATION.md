@@ -2,7 +2,7 @@
 
 ## Routing editors, shutdown and real delay - 2026-10-24
 
-[Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697770), [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697771) and [desktop publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40092065204) passed. Electron main-process smoke checks now install a renderer closure veto before quitting and still require successful process termination. Quit cleanup has a ten-second upper bound and ends with `app.exit(0)`. The existing native macOS utun creation/disconnect checks also passed. Physical Command+Q behavior remains pending confirmation on the owner's Mac.
+[Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697770), [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091697771) and [desktop publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40092065204) passed. Electron main-process smoke checks now install a renderer closure veto before quitting and still require successful process termination. Quit cleanup has a ten-second upper bound and ends with `app.exit(0)`. The existing native macOS utun creation/disconnect checks also passed. Physical Command+Q behavior remains pending confirmation on a physical Mac.
 
 [Independent macOS icon validation](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091699607) disabled generic fallbacks and confirmed distinct native PNG icons for Calculator and Notes. NSWorkspace icons are rasterized at a small size before transport. Desktop renderer checks cover the visible manual routing editor, selection synchronization and disabled settings cursor.
 
@@ -12,7 +12,7 @@ The [Android core, package, lint and emulator checks](https://github.com/erfan-t
 
 The [iOS device build, simulator tests and publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40091108023) passed. Its shared core includes real-delay checking. Standalone iOS does not expose nonfunctional per-app routing controls: Apple requires MDM-managed app/VPN mappings for production per-app VPN. The UI states this limitation. The IPA remains unsigned and physical iPhone VPN behavior remains unverified.
 
-All 16 platform binaries in v1.0.0 were refreshed and checked against the complete global checksum manifest. The repository description was updated successfully. The final Windows x64 installer was built locally to avoid a redundant download; installation awaits Windows UAC confirmation.
+All 16 platform binaries in v1.0.0 were refreshed and checked against the complete global checksum manifest. The repository description was updated successfully. The final Windows x64 installer was built locally to avoid a redundant download. After the owner approved Windows UAC, installation in `D:\Program Files\FoxVPN` completed successfully; packaged source, native engine architecture and v1.0.0 metadata were verified against the current source.
 
 ## Refreshed cross-platform release - 2026-10-22
 
