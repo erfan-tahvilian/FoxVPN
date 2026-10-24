@@ -145,7 +145,7 @@ Desktop routing follows application process names; macOS includes app helper pro
 | Find your connection | Make it your own |
 | :--- | :--- |
 | **🌍 Location choice** - use a recommended endpoint or choose a country manually. | **💾 Saved preferences** - settings, downloaded locations and your preferred location order persist between sessions. |
-| **⚡ Latency checks** - check all locations or one at a time; sort by latency or name. | **⚙️ Connection options** - use system VPN or a local SOCKS5 proxy, with HTTP / SOCKS5 upstream support. |
+| **⚡ Latency checks** - measure an HTTPS response through the authenticated VPN tunnel for one location or all locations; sort by real delay or name. | **⚙️ Connection options** - use system VPN or a local SOCKS5 proxy, with HTTP / SOCKS5 upstream support. |
 | **📊 At-a-glance activity** - view connection statistics and export diagnostic logs. | **🔐 Local credential protection** - encrypted session storage, configurable DNS and Firefox account email verification. |
 
 **Android:** Connect or disconnect from Quick Settings, with an active-state tile and persistent notification controls. **Desktop:** Keep Fox VPN available in the system tray when its window is closed.
