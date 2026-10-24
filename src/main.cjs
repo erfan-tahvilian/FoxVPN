@@ -29,7 +29,7 @@ function log(level,message) {
   logs.push(entry);if(logs.length>1000)logs.shift();emit();
 }
 function state() {return {version:app.getVersion(),platform:process.platform,settings:store.publicSettings(),signedIn:!!store.auth,email:store.auth?.email || '',servers,latencies,pinging,pingingIds:[...pingingIds],activeServer:connection==='connected'?tunnel?.candidate:null,logs,connection,startedAt,exit,quota,lastError,up:tunnel?.up || 0,down:tunnel?.down || 0,systemDark:nativeTheme.shouldUseDarkColors,busy};}
-function emit() {if(store&&nativeTheme.themeSource!==store.settings.theme)nativeTheme.themeSource=store.settings.theme;if(window&&!window.isDestroyed())window.webContents.send('fox:state',state());trayPopup?.update();}
+function emit() {if(quitting)return;if(store&&nativeTheme.themeSource!==store.settings.theme)nativeTheme.themeSource=store.settings.theme;if(window&&!window.isDestroyed())window.webContents.send('fox:state',state());trayPopup?.update();}
 function trayState(){
   const server=tunnel?.candidate;
   const country=exit?.country?new Intl.DisplayNames(['en'],{type:'region'}).of(exit.country):server?.country;
@@ -188,16 +188,19 @@ else {
     handle('logout',async()=>{if(busy)throw Error('Wait for the current operation to finish.');await disconnect();store.setAuth(null);guardian.auth.pending=null;quota=null;emit();});
     handle('servers',refreshServers);
     handle('ping',async id=>{
+      if(!store.auth)throw Error('Sign in before checking real delay.');
+      const pass=await guardian.pass();
+      const probe=server=>measure(server,structuredClone(store.settings),pass);
       if(id!==undefined){
         const server=servers.find(s=>s.id===id);if(!server)throw Error('Unknown location.');
         if(pinging||pingingIds.has(id))throw Error('A latency check is already running for this location.');
         pingingIds.add(id);delete latencies[id];emit();
-        try{const result=await measure(server);latencies[id]=result;return result;}
+        try{const result=await probe(server);latencies[id]=result;return result;}
         finally{pingingIds.delete(id);emit();}
       }
       if(pinging||pingingIds.size)throw Error('Wait for the current location latency checks.');
       pinging=true;latencies={};emit();
-      try{if(!servers.length)await refreshServers();await measureAll([...servers],(id,result)=>{latencies[id]=result;emit();});return latencies;}
+      try{if(!servers.length)await refreshServers();await measureAll([...servers],(id,result)=>{latencies[id]=result;emit();},3,probe);return latencies;}
       finally{pinging=false;emit();}
     });
     handle('account',()=>guardian.account());
@@ -219,7 +222,15 @@ else {
     if(store.loadError)log('warn',store.loadError);
     refreshServers().catch(()=>log('warn','Locations could not be refreshed. Saved locations remain available; try Refresh again later.'));
   });
-  app.on('before-quit',event=>{if(quitting)return;event.preventDefault();quitting=true;disconnect().catch(()=>{}).finally(()=>{const popup=trayPopup;trayPopup=null;popup?.destroy();if(tray&&!tray.isDestroyed())tray.destroy();tray=null;app.quit();});});
+  app.on('before-quit',event=>{
+    event.preventDefault();if(quitting)return;quitting=true;
+    let finished=false;
+    const finish=()=>{if(finished)return;finished=true;clearTimeout(deadline);try{trayPopup?.destroy();}catch{}trayPopup=null;try{if(tray&&!tray.isDestroyed())tray.destroy();}catch{}tray=null;app.exit(0);};
+    // A second quit cycle can be cancelled by a window; exit once cleanup has
+    // finished instead. Bound cleanup so a hung child cannot retain the app.
+    const deadline=setTimeout(finish,10000);
+    Promise.resolve().then(disconnect).catch(()=>{}).finally(finish);
+  });
   app.on('activate',()=>{showWindow();});
   app.on('window-all-closed',()=>{});
 }

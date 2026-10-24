@@ -19,7 +19,7 @@
   for(const mode of ['ping-asc','ping-desc','name-asc','name-desc'])sort.append(sort.querySelector(`option[value="${mode}"]`));
   sort.addEventListener('change',()=>call('locationSort',sort.value).catch(error=>toast(error.message)));
   window.addEventListener('DOMContentLoaded',()=>{
-    document.getElementById('excludedApps').closest('.settings-card').hidden=true;
+    const splitCard=document.getElementById('excludedApps').closest('.settings-card');const hiddenField=document.getElementById('excludedApps');splitCard.replaceChildren();hiddenField.hidden=true;splitCard.append(hiddenField);const splitTitle=document.createElement('h3');splitTitle.textContent='Split tunneling';const splitNote=document.createElement('p');splitNote.textContent='Per-app VPN on iOS requires apps and VPN settings managed by an organization through MDM. It is not available in this standalone app.';splitCard.append(splitTitle,splitNote);
     document.getElementById('proxyOnly').closest('.setting-row').hidden=true;
     document.getElementById('bind').closest('.field-grid').hidden=true;
     document.getElementById('bind').closest('.settings-card').querySelector('p.muted').hidden=true;

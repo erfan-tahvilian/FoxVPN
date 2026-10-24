@@ -30,6 +30,8 @@ async function run(){
     fs.writeFileSync('test-results/main-smoke-status.txt','PASS: real main process, sandboxed preload IPC, OS-encrypted vault, settings rejection, signed-out behavior and URL allowlist');
     console.log('Main-process smoke checks passed.');
   }catch(e){fs.writeFileSync('test-results/main-smoke-status.txt','FAIL: '+e.stack);}
+  // Regression: quitting must finish even if a renderer vetoes normal closure.
+  if(!win.isDestroyed())await win.webContents.executeJavaScript(`window.onbeforeunload=()=>false;void 0`);
   app.quit();
 }
 app.whenReady().then(()=>setTimeout(run,250));

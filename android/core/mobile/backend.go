@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/cookiejar"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -442,6 +441,9 @@ func (b *Backend) connect() error {
 		}
 		b.emit()
 	}()
+	if !yes(s, "proxyOnly") && str(s, "splitMode") == "include" && len(list(s, "excludedApps")) == 0 {
+		return errors.New("No apps selected. Choose at least one app in Settings > Split tunneling before connecting.")
+	}
 	if b.auth == nil {
 		return errors.New("Sign in to your Firefox account first")
 	}
@@ -625,7 +627,10 @@ func (b *Backend) EngineConfig() string {
 	return string(v)
 }
 func (b *Backend) ping(ctx context.Context, id string) error {
+	token, _, passErr := b.pass(ctx)
+	if passErr != nil { return passErr }
 	b.mu.Lock()
+	settings := copyObject(b.settings)
 	servers := append([]object{}, b.servers...)
 	if id == "" {
 		b.pinging = true
@@ -644,7 +649,7 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 	}
 	found := id == ""
 	var wg sync.WaitGroup
-	limit := make(chan struct{}, 6)
+	limit := make(chan struct{}, 3)
 	for _, s := range servers {
 		if id != "" && str(s, "id") != id {
 			continue
@@ -656,19 +661,20 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 			limit <- struct{}{}
 			defer func() { <-limit }()
 			start := time.Now()
-			pctx, cancel := context.WithTimeout(ctx, 4*time.Second)
+			pctx, cancel := context.WithTimeout(ctx, 12*time.Second)
 			defer cancel()
-			conn, err := b.dialer.DialContext(pctx, "tcp", net.JoinHostPort(str(server, "host"), strconv.Itoa(int(num(server, "port")))))
+			probe := newTunnel(b, settings, server, token, pctx)
+            defer probe.close()
+            _, err := probe.request(pctx, "https://www.cloudflare.com/cdn-cgi/trace", nil, "")
 			var latency any
 			if err == nil {
-				conn.Close()
 				latency = time.Since(start).Milliseconds()
 				if latency.(int64) < 1 {
 					latency = int64(1)
 				}
 			}
 			b.mu.Lock()
-			b.latencies[str(server, "id")] = object{"ms": latency, "measuredAt": millis()}
+			b.latencies[str(server, "id")] = object{"ms": latency, "measuredAt": millis(), "kind": "real-delay"}
 			b.mu.Unlock()
 			b.emit()
 		}(s)

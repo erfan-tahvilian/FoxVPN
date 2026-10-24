@@ -4,14 +4,15 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const net=require('node:net');
 const {measure,measureAll}=require('../src/lib/latency.cjs');
-test('TCP latency measures reachable endpoints and marks refused endpoints unreachable',async()=>{
-  const server=net.createServer(socket=>socket.end());
-  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const endpoint={host:'127.0.0.1',port:server.address().port};
-  const result=await measure(endpoint);
-  assert(result.ms>=1);assert(result.measuredAt<=Date.now());
-  await new Promise(resolve=>server.close(resolve));
-  assert.equal((await measure(endpoint)).ms,null);
+test('real delay requires a completed HTTPS probe and always closes its tunnel',async()=>{
+  let closed=0,called=0;
+  const factory=()=>({async request(url){assert.equal(url,'https://www.cloudflare.com/cdn-cgi/trace');called++;await new Promise(r=>setTimeout(r,15));},stop(){closed++;}});
+  const result=await measure({host:'edge.example',port:443},{},{token:'pass'},1000,factory);
+  assert(result.ms>=10);assert.equal(result.kind,'real-delay');assert.equal(closed,1);assert.equal(called,1);
+  const failure=await measure({}, {}, {token:'pass'},1000,()=>({async request(){throw Error('CONNECT rejected');},stop(){closed++;}}));
+  assert.equal(failure.ms,null);assert.equal(closed,2);
+  const timeout=await measure({}, {}, {token:'pass'},5,()=>({request(){return new Promise(()=>{});},stop(){closed++;}}));
+  assert.equal(timeout.ms,null);assert.equal(closed,3);
 });
 test('all endpoints are measured once with bounded concurrency and incremental results',async()=>{
   let active=0,peak=0;const seen=[];

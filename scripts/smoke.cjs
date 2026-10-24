@@ -68,6 +68,10 @@ app.whenReady().then(async()=>{
         await win.webContents.executeJavaScript(`document.querySelector('#app-picker input[type=search]').value='Chrome';document.querySelector('#app-picker input[type=search]').dispatchEvent(new Event('input'))`);
         assert.equal(await win.webContents.executeJavaScript(`document.querySelectorAll('.app-picker-row').length`),1);
         await win.webContents.executeJavaScript(`document.querySelector('#app-picker .primary').click()`);
+        await win.webContents.executeJavaScript(`document.getElementById('excludedApps').value=(currentState.platform==='darwin'?'Safari':'custom.exe');document.getElementById('excludedApps').dispatchEvent(new Event('change',{bubbles:true}));document.getElementById('choose-apps').click();new Promise(r=>setTimeout(r,200))`);
+        assert(await win.webContents.executeJavaScript(`document.getElementById('excludedApps').closest('label').hidden===false&&[...document.querySelectorAll('.app-picker-row')].some(row=>row.textContent.includes(currentState.platform==='darwin'?'Safari':'custom')&&row.querySelector('input').checked)`));
+        await win.webContents.executeJavaScript(`document.querySelector('#app-picker .primary').click()`);
+
         assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('select')].every(e=>e.hidden)&&document.querySelectorAll('[role=combobox]').length===document.querySelectorAll('select').length`));
         await win.webContents.executeJavaScript(`document.getElementById('theme-trigger').click()`);
         fs.writeFileSync('test-results/settings-dropdown.png',(await win.webContents.capturePage()).toPNG());
@@ -88,6 +92,7 @@ app.whenReady().then(async()=>{
     assert(await win.webContents.executeJavaScript(`document.getElementById('selected-detail').textContent.startsWith('Recommended · Connected to ')`));
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('exit-ipv4').textContent`),'203.0.113.1');
     assert.equal(await win.webContents.executeJavaScript(`getComputedStyle(document.getElementById('verify-exit')).cursor`),'pointer');
+    assert.equal(await win.webContents.executeJavaScript(`getComputedStyle(document.getElementById('choose-apps')).cursor`),'default');
     await win.webContents.executeJavaScript(`document.getElementById('ping-selected').click();new Promise(r=>setTimeout(r,100))`);
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('selected-latency').textContent`),'7 ms');
     assert.equal(await win.webContents.executeJavaScript(`locationLabel({country:'Germany',city:'Germany'})`),'Germany');

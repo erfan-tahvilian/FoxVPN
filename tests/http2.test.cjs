@@ -8,6 +8,7 @@ const http2=require('node:http2');
 const https=require('node:https');
 const {once}=require('node:events');
 const {Tunnel}=require('../src/lib/tunnel.cjs');
+const {measure}=require('../src/lib/latency.cjs');
 const {DEFAULTS}=require('../src/lib/settings.cjs');
 const cert=fs.readFileSync('tests/fixtures/localhost-cert.pem'),key=fs.readFileSync('tests/fixtures/localhost-test-key.pem');
 test('real TLS + HTTP/2 CONNECT carries authenticated streams and nested HTTPS with certificate verification',async()=>{
@@ -31,6 +32,8 @@ test('real TLS + HTTP/2 CONNECT carries authenticated streams and nested HTTPS w
     await tunnel.start({host:'localhost',port:edge.address().port,city:'Fixture',country:'Test'},{token:'fixture-pass'});
     const response=await tunnel.request(`https://localhost:${target.address().port}/private`);
     assert.equal(response.toString(),'private-response');assert.equal(authenticated,1);assert(tunnel.up>0);assert(tunnel.down>0);
+    const delay=await measure({host:'localhost',port:edge.address().port},DEFAULTS,{token:'fixture-pass'},2000,(...args)=>{const probe=new Tunnel(...args);const request=probe.request.bind(probe);probe.request=()=>request(`https://localhost:${target.address().port}/private`);return probe;});
+    assert(delay.ms>=1);assert.equal(authenticated,2);assert.equal(delay.kind,'real-delay');
   } finally{tunnel.stop();for(const session of sessions)session.destroy();edge.close();target.closeAllConnections();target.close();}
 });
 test('exit verification refuses a mismatching selected country',async()=>{

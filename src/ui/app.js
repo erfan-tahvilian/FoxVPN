@@ -32,7 +32,7 @@ function renderLatency(element,server,s) {
   const pending=server&&(s.pinging||(s.pingingIds||[]).includes(server.id));
   element.className='latency';element.textContent=pending?'Checking…':result?(result.ms==null?'Unreachable':`${result.ms} ms`):'- ms';
   if(!pending&&result?.ms!=null)element.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
-  element.title='TCP connection time to the VPN endpoint through your current network path';
+  element.title='Real delay: HTTPS response through the authenticated VPN tunnel';
 }
 function automaticServer(server) {return /recom+end|anycast/i.test(server.country+' '+server.city)||server.code==='REC';}
 function fillSettings(s) {
@@ -85,7 +85,7 @@ function render(s) {
   $('ping-servers').disabled=s.pinging||(s.pingingIds||[]).length>0;
   $('ping-servers').textContent=s.pinging?'Checking latency…':'Ping all locations';
   const measured=Object.keys(s.latencies||{}).length;
-  $('ping-status').textContent=s.pinging?`Checking endpoints · ${measured} / ${s.servers.length}`:measured?'TCP latency · current network path · Refresh the check after changing networks.':'TCP latency from your current network path. Run a check to compare locations.';
+  $('ping-status').textContent=s.pinging?`Checking endpoints · ${measured} / ${s.servers.length}`:measured?'TCP latency · current network path · Refresh the check after changing networks.':'Real delay through each VPN location. Sign in, then run a check to compare locations.';
   const serverKey=JSON.stringify([s.servers,s.latencies,s.pinging,s.pingingIds])+s.settings.serverId;if(serverKey!==lastServers){lastServers=serverKey;renderServers();}
   const logKey=JSON.stringify(s.logs);if(logKey!==lastLogs){lastLogs=logKey;renderLogs();}
   window.desktopUI?.state(s);
@@ -169,7 +169,7 @@ document.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click'
 for(const id of ['account-shortcut','home-account'])$(id).addEventListener('click',()=>navigate('account'));
 for(const id of ['choose-location','choose-location-arrow'])$(id).addEventListener('click',()=>navigate('locations'));
 $('ping-selected').addEventListener('click',action(async()=>{const selected=currentState.activeServer||currentState.servers.find(s=>s.id===currentState.settings.serverId);if(selected)await call('ping',selected.id);}));
-$('connect').addEventListener('click',action(async()=>{if(!currentState.signedIn){navigate('account');return;}await call(currentState.connection==='connected'?'disconnect':currentState.connection==='connecting'?'cancel':'connect');}));
+$('connect').addEventListener('click',action(async()=>{if(currentState.connection==='disconnected')await window.flushSettings?.();if(!currentState.signedIn){navigate('account');return;}if(currentState.connection==='disconnected'&&!currentState.settings.proxyOnly&&currentState.settings.splitMode==='include'&&!currentState.settings.excludedApps.length){toast('No apps selected. Choose at least one app in Settings > Split tunneling before connecting.');navigate('settings');return;}await call(currentState.connection==='connected'?'disconnect':currentState.connection==='connecting'?'cancel':'connect');}));
 $('theme-toggle').addEventListener('click',action(async()=>{const theme=document.body.classList.contains('light')?'dark':'light';await call('theme',theme);$('theme').value=theme;syncSelects();}));
 $('ping-servers').addEventListener('click',action(async()=>{await call('ping');toast('Location latency check complete.');}));
 $('source').addEventListener('click',action(()=>call('openLink','source')));
@@ -193,7 +193,7 @@ function readSettings(){
   const settings={...currentState.settings};
   for(const key of ['theme','bind','doh','customDns','edge'])settings[key]=$(key).value.trim();
   settings.socksPort=Number($('socksPort').value);for(const key of ['proxyOnly','exitCheck'])settings[key]=$(key).checked;
-  settings.excludedApps=$('excludedApps').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  settings.excludedApps=[...new Set($('excludedApps').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];
   settings.upstream={enabled:$('upstreamEnabled').checked,type:$('upstreamType').value,host:$('upstreamHost').value.trim(),port:Number($('upstreamPort').value),username:$('upstreamUsername').value,password:$('upstreamPassword').value};
   settings.clearUpstreamPassword=$('clearUpstreamPassword').checked;
   return settings;

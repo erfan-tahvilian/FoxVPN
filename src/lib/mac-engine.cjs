@@ -43,6 +43,7 @@ class MacEngine {
   async stop(){
     this.stopping=true;if(this.stopFile&&fs.existsSync(this.work))fs.writeFileSync(this.stopFile,'stop',{mode:0o600});
     if(this.closed)await Promise.race([this.closed,new Promise(r=>setTimeout(r,7000))]);
+    if(!this.ended)this.child?.kill();
     // Keep the marker until the root supervisor has exited, including if the
     // user is still deciding at an authorization dialog after cancellation.
     if(this.ended&&this.work)fs.rmSync(this.work,{recursive:true,force:true});

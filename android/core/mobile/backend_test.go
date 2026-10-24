@@ -335,6 +335,10 @@ func TestUnreachableLatencyAndValidation(t *testing.T) {
 	port := listener.Addr().(*net.TCPAddr).Port
 	listener.Close()
 	b.servers = []object{{"id": "unreachable", "host": "127.0.0.1", "port": port}}
+	b.auth = object{"access_token": "fixture", "expiresAt": millis()+3600000}
+    b.client = &http.Client{Transport: exitRoundTripper(func(r *http.Request) (*http.Response,error){
+        return &http.Response{StatusCode:200, Header:http.Header{}, Body:io.NopCloser(strings.NewReader(`{"token":"fixture-pass"}`))},nil
+    })}
 	if err = b.ping(context.Background(), "unreachable"); err != nil {
 		t.Fatal(err)
 	}

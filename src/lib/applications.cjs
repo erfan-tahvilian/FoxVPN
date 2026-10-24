@@ -64,7 +64,14 @@ class ApplicationCatalog {
   async icon(id){
     const entry=this.entries.get(process.platform==='win32'?String(id).toLowerCase():id);
     if(!entry)return null;
-    if(!this.icons.has(entry.id))this.icons.set(entry.id,this.app.getFileIcon(entry.path,{size:'normal'}).then(image=>image.isEmpty()?null:image.toDataURL()).catch(()=>null));
+    if(!this.icons.has(entry.id))this.icons.set(entry.id,(async()=>{
+      if(process.platform==='darwin'){
+        // NSWorkspace resolves each bundle's real icon, including asset catalogs.
+        const script=`function run(args){ObjC.import('AppKit');var image=$.NSWorkspace.sharedWorkspace.iconForFile(args[0]);image.size=$.NSMakeSize(64,64);var bitmap=$.NSBitmapImageRep.imageRepWithData(image.TIFFRepresentation);var data=bitmap.representationUsingTypeProperties($.NSPNGFileType,$());return ObjC.unwrap(data.base64EncodedStringWithOptions(0));}`;
+        try{const {stdout}=await run('/usr/bin/osascript',['-l','JavaScript','-e',script,entry.path],{timeout:8000,maxBuffer:512*1024});const data=stdout.trim();if(/^[A-Za-z0-9+/=]+$/.test(data)&&data.length>100)return 'data:image/png;base64,'+data;}catch{}
+      }
+      const image=await this.app.getFileIcon(entry.path,{size:'normal'});return image.isEmpty()?null:image.toDataURL();
+    })().catch(()=>null));
     return this.icons.get(entry.id);
   }
   async expand(selected){

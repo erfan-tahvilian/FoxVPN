@@ -35,9 +35,9 @@
   }
   window.addEventListener('DOMContentLoaded',()=>{
     const field=document.getElementById('excludedApps');
-    field.closest('label').hidden=true;
+    field.closest('label').hidden=false;field.closest('label').firstChild.textContent='Package names';field.placeholder='com.myirancell\nir.mci.ecareapp\ncom.anydesk.anydeskandroid';field.closest('label').querySelector('small').textContent='One Android package name per line. Kept in sync with Choose apps.';
     const summary=document.createElement('p');summary.id='excluded-summary';summary.className='muted';
-    const choose=document.createElement('button');choose.id='choose-apps';choose.type='button';choose.className='secondary';choose.textContent='Choose apps';choose.addEventListener('click',()=>window.fox.call('chooseApps'));field.closest('label').after(summary,choose);
+    const choose=document.createElement('button');choose.id='choose-apps';choose.type='button';choose.className='secondary';choose.textContent='Choose apps';choose.addEventListener('click',async()=>{await window.flushSettings();await window.fox.call('chooseApps');});field.closest('label').before(summary,choose);
     const form=document.getElementById('settings-form');
     form.querySelector('button[type="submit"]').remove();
     document.querySelector('#settings .page-heading p').textContent='Network changes apply to your next connection.';
@@ -58,6 +58,9 @@
         }catch(error){notice.textContent='Could not save changes.';toast(error.message);}
       });
     });
+    let packageTimer;field.addEventListener('input',()=>{clearTimeout(packageTimer);packageTimer=setTimeout(()=>field.dispatchEvent(new Event('change',{bubbles:true})),500);});
+    choose.addEventListener('pointerdown',()=>{if(packageTimer){clearTimeout(packageTimer);field.dispatchEvent(new Event('change',{bubbles:true}));}},true);
+    window.flushSettings=()=>{if(packageTimer){clearTimeout(packageTimer);packageTimer=null;field.dispatchEvent(new Event('change',{bubbles:true}));}return saving;};
     const about=document.createElement('div');about.className='settings-card';
     const heading=document.createElement('h3');heading.textContent='About Fox VPN';
     const version=document.createElement('p');version.textContent='Version 1.0.0';

@@ -1,21 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2026 Erfan Tahvilian
-const net=require('node:net');
 const {performance}=require('node:perf_hooks');
-
-// TCP connection time, including DNS resolution. No login or VPN pass is sent.
-function measure(server,timeout=4000) {
-  return new Promise(resolve=>{
-    const start=performance.now();
-    const socket=net.connect({host:server.host,port:server.port});
-    let finished=false;
-    const finish=ms=>{if(finished)return;finished=true;clearTimeout(timer);socket.destroy();resolve({ms,measuredAt:Date.now()});};
-    const timer=setTimeout(()=>finish(null),timeout);
-    socket.once('connect',()=>finish(Math.max(1,Math.round(performance.now()-start))));
-    socket.once('error',()=>finish(null));
-  });
+const {Tunnel}=require('./tunnel.cjs');
+// End-to-end HTTPS delay, including edge TLS, authenticated CONNECT and target TLS.
+async function measure(server,settings,pass,timeout=12000,create=(...args)=>new Tunnel(...args)) {
+  const probe=create(settings,()=>{},()=>{});
+  probe.candidate=server;probe.token=pass.token;probe.active=true;
+  const start=performance.now();let timer;
+  try {
+    await Promise.race([probe.request('https://www.cloudflare.com/cdn-cgi/trace'),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Delay check timed out')),timeout);})]);
+    return {ms:Math.max(1,Math.round(performance.now()-start)),measuredAt:Date.now(),kind:'real-delay'};
+  }catch{return {ms:null,measuredAt:Date.now(),kind:'real-delay'};}
+  finally{clearTimeout(timer);probe.stop();}
 }
-async function measureAll(servers,onResult,concurrency=6,probe=measure) {
+async function measureAll(servers,onResult,concurrency=3,probe) {
   let index=0;
   await Promise.all(Array.from({length:Math.min(concurrency,servers.length)},async()=>{
     while(index<servers.length){const server=servers[index++];const result=await probe(server);onResult(server.id,result);}

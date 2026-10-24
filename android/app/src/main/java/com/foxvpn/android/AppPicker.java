@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import org.json.JSONArray;
 
-/** Local app selection; package identifiers never need to be entered manually. */
+/** App selection shares the saved package list with the manual editor. */
 final class AppPicker {
     private record App(String name,String packageName,ResolveInfo info) {}
     private final Context context;
@@ -28,7 +28,7 @@ final class AppPicker {
         @Override public View getView(int index,View recycled,ViewGroup parent){
             App app=filtered.get(index);
             LinearLayout row=new LinearLayout(context);row.setGravity(android.view.Gravity.CENTER_VERTICAL);row.setPadding(dp(16),dp(8),dp(16),dp(8));row.setMinimumHeight(dp(64));
-            ImageView icon=new ImageView(context);icon.setImageDrawable(app.info.loadIcon(context.getPackageManager()));icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            ImageView icon=new ImageView(context);try{icon.setImageDrawable(context.getPackageManager().getApplicationIcon(app.packageName));}catch(android.content.pm.PackageManager.NameNotFoundException error){icon.setImageResource(android.R.drawable.sym_def_app_icon);}icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             row.addView(icon,new LinearLayout.LayoutParams(dp(36),dp(36)));
             LinearLayout text=new LinearLayout(context);text.setOrientation(LinearLayout.VERTICAL);text.setPadding(dp(12),0,dp(8),0);
             TextView title=new TextView(context);title.setText(app.name);title.setTextSize(15);text.addView(title);
@@ -48,6 +48,7 @@ final class AppPicker {
             String name=info.activityInfo.packageName;
             if(!name.equals(ownPackage)&&seen.add(name))apps.add(new App(info.loadLabel(context.getPackageManager()).toString(),name,info));
         }
+        for(String name:selected)if(!seen.contains(name)&&!name.equals(ownPackage))apps.add(new App(name,name,null));
         apps.sort(Comparator.comparing((App app)->!selected.contains(app.packageName)).thenComparing(App::name,String.CASE_INSENSITIVE_ORDER));filtered.addAll(apps);
     }
     private int dp(int value){return Math.round(value*context.getResources().getDisplayMetrics().density);}
