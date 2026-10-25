@@ -209,7 +209,7 @@ Fox VPN is an independent client built on Mozilla's Firefox VPN infrastructure, 
 | Supported | Boundaries to know |
 | :--- | :--- |
 | TCP traffic and DNS through the tunnel | General application UDP, including browser QUIC and games, is unsupported. |
-| HTTP/2 over TLS or HTTP/3 over QUIC between Fox VPN and the edge | HTTP/3 requires working outbound UDP. Automatic uses HTTP/2 when HTTP/3 cannot be established. |
+| HTTP/2 over TLS or HTTP/3 over QUIC between Fox VPN and the edge | HTTP/3 requires working outbound UDP. On Windows, Automatic races a small HTTPS check through both protocols and keeps the first working path. Other platforms fall back to HTTP/2 when HTTP/3 cannot be established. |
 | Configurable tunneled DNS and upstream proxies | Local network traffic and apps routed directly bypass the tunnel. |
 | App-based routing and proxy-only connections | A persistent kill switch is not available. |
 

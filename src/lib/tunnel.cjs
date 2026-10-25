@@ -71,14 +71,18 @@ class Tunnel {
     const c=this.candidate;
     const raw=await rawSocket(this.settings.edge || c.host,c.port,this.settings.upstream);
     if(!this.active){raw.destroy();throw Error('Connection cancelled');}
+    if(process.platform==='win32'){raw.setNoDelay(true);raw.setKeepAlive(true,30000);if(!this.settings.upstream.enabled)this.edgeIP=raw.remoteAddress?.replace(/^::ffff:/,'');}
     const socket=tls.connect({socket:raw,servername:net.isIP(c.host)?undefined:c.host,ALPNProtocols:['h2'],rejectUnauthorized:true,checkServerIdentity:(_host,cert)=>tls.checkServerIdentity(c.host,cert)});
     await new Promise((resolve,reject)=>{socket.setTimeout(15000,()=>socket.destroy(Error('TLS handshake timed out')));socket.once('error',reject);socket.once('secureConnect',()=>{socket.setTimeout(0);if(socket.alpnProtocol!=='h2'){socket.destroy();reject(Error('The edge did not negotiate HTTP/2'));}else resolve();});});
-    const s=http2.connect(`https://${c.host}:${c.port}`,{createConnection:()=>socket,settings:{initialWindowSize:1024*1024}});
+    const s=http2.connect(`https://${c.host}:${c.port}`,{createConnection:()=>socket,settings:{initialWindowSize:(process.platform==='win32'?4:1)*1024*1024}});
     this.sessions.add(s);this.current=s;
     s.on('error',e=>this.log('warn',`Edge session: ${e.code || 'connection interrupted'}`));
     s.on('goaway',()=>{if(this.current===s)this.current=null;s.close();});
     s.on('close',()=>{this.sessions.delete(s);if(this.current===s)this.current=null;});
     await new Promise((resolve,reject)=>{s.once('connect',resolve);s.once('error',reject);});
+    // Ensure enough aggregate receive credit on high-RTT paths without reducing
+    // a larger window supplied by a newer runtime.
+    if(process.platform==='win32')s.setLocalWindowSize(Math.max(s.state.effectiveLocalWindowSize,8*1024*1024));
     if(!this.active){s.destroy();throw Error('Connection cancelled');}
     return s;
   }

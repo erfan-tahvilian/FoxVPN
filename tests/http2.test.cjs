@@ -12,7 +12,8 @@ const {measure}=require('../src/lib/latency.cjs');
 const {DEFAULTS}=require('../src/lib/settings.cjs');
 const cert=fs.readFileSync('tests/fixtures/localhost-cert.pem'),key=fs.readFileSync('tests/fixtures/localhost-test-key.pem');
 test('real TLS + HTTP/2 CONNECT carries authenticated streams and nested HTTPS with certificate verification',async()=>{
-  const target=https.createServer({cert,key},(req,res)=>{if(req.url==='/delay'){res.writeHead(204);res.end();}else res.end('private-response');});
+  const bulk=Buffer.alloc(512*1024,67);
+  const target=https.createServer({cert,key},(req,res)=>{if(req.url==='/delay'){res.writeHead(204);res.end();}else res.end(req.url==='/bulk'?bulk:'private-response');});
   target.listen(0,'127.0.0.1');await once(target,'listening');
   const edge=http2.createSecureServer({cert,key});let authenticated=0;
   const sessions=new Set();edge.on('session',s=>{sessions.add(s);s.on('error',()=>{});s.once('close',()=>sessions.delete(s));});
@@ -30,10 +31,13 @@ test('real TLS + HTTP/2 CONNECT carries authenticated streams and nested HTTPS w
   const tunnel=new Tunnel({...DEFAULTS,socksPort:0},()=>{},()=>{});
   try {
     await tunnel.start({host:'localhost',port:edge.address().port,city:'Fixture',country:'Test'},{token:'fixture-pass'});
+    if(process.platform==='win32'){assert(tunnel.current.state.localWindowSize>=8*1024*1024);assert.equal(tunnel.edgeIP,'127.0.0.1');}
     const response=await tunnel.request(`https://localhost:${target.address().port}/private`);
     assert.equal(response.toString(),'private-response');assert.equal(authenticated,1);assert(tunnel.up>0);assert(tunnel.down>0);
+    const batches=await Promise.all(Array.from({length:4},()=>tunnel.request(`https://localhost:${target.address().port}/bulk`)));
+    for(const result of batches)assert.deepEqual(result,bulk);
     const delay=await measure({host:'localhost',port:edge.address().port},DEFAULTS,{token:'fixture-pass'},2000,(...args)=>{const probe=new Tunnel(...args);const request=probe.request.bind(probe),agent=probe.createProbeAgent.bind(probe);const url=`https://localhost:${target.address().port}/delay`;probe.createProbeAgent=()=>agent(url);probe.request=(_url,...args)=>request(url,...args);return probe;});
-    assert(delay.ms>=1);assert.equal(authenticated,2);assert.equal(delay.kind,'real-delay');
+    assert(delay.ms>=1);assert.equal(authenticated,6);assert.equal(delay.kind,'real-delay');
   } finally{tunnel.stop();for(const session of sessions)session.destroy();edge.close();target.closeAllConnections();target.close();}
 });
 test('exit verification refuses a mismatching selected country',async()=>{

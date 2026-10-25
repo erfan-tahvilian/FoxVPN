@@ -19,6 +19,14 @@ app.whenReady().then(async()=>{
     status('Renderer loaded');
     await win.webContents.executeJavaScript(`new Promise(r=>setTimeout(r,250))`);
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('status-label').textContent`),'Disconnected');
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('protocol-name').textContent`),'-');
+    assert(await win.webContents.executeJavaScript(`document.getElementById('protocol-secure').hidden`));
+    await win.webContents.executeJavaScript(`window.protocolBefore=currentState;render({...currentState,connection:'connected',protocol:'h3'})`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('protocol-name').textContent`),'HTTP/3 over QUIC');
+    assert(await win.webContents.executeJavaScript(`!document.getElementById('protocol-secure').hidden`));
+    await win.webContents.executeJavaScript(`render({...currentState,protocol:'h2'})`);
+    assert.equal(await win.webContents.executeJavaScript(`document.getElementById('protocol-name').textContent`),'HTTP/2 over TLS');
+    await win.webContents.executeJavaScript(`render(window.protocolBefore)`);
     assert.equal(await win.webContents.executeJavaScript(`getComputedStyle(document.getElementById('verify-exit')).cursor`),'default');
     assert.equal(await win.webContents.executeJavaScript(`document.getElementById('server-sort').value`),'ping-asc');
     assert.deepEqual(await win.webContents.executeJavaScript(`[...document.querySelector('#server-sort').options].map(o=>o.value)`),['ping-asc','ping-desc','name-asc','name-desc']);
