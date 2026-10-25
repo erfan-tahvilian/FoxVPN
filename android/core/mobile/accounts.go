@@ -35,7 +35,7 @@ func (b *Backend) addAccount(auth object)error{
  b.mu.Lock();oldID:=b.activeAccountID;oldAuth:=b.auth;old:=append([]object{},b.accounts...);var a object
  for _,entry:=range b.accounts{if strings.EqualFold(str(entry,"email"),str(auth,"email")){a=entry;break}}
  if a==nil{if len(b.accounts)>=20{b.mu.Unlock();return errors.New("Up to 20 accounts can be saved")};var id [16]byte;rand.Read(id[:]);a=object{"id":hex.EncodeToString(id[:]),"email":str(auth,"email")};b.accounts=append(b.accounts,a)}else{a=copyObject(a);for i,v:=range b.accounts{if str(v,"id")==str(a,"id"){b.accounts[i]=a}}}
- a["auth"]=auth;a["status"]="ready";if b.auth==nil{b.activeAccountID=str(a,"id");b.auth=auth};b.mu.Unlock()
+ a["auth"]=auth;a["status"]="ready";if b.auth==nil{b.activeAccountID=str(a,"id");b.auth=auth};if str(a,"id")==b.activeAccountID{b.auth=auth};b.mu.Unlock()
  if err:=b.save();err!=nil{b.mu.Lock();b.accounts=old;b.activeAccountID=oldID;b.auth=oldAuth;b.mu.Unlock();return err};b.emit();return nil
 }
 func(b *Backend) removeAccount(id string)error{
@@ -64,20 +64,20 @@ func(b *Backend) selectAccount(ctx context.Context,id string)error{
  if !connected{return b.useAccount(id)}
  token,h,err:=b.pass(context.WithValue(ctx,accountContextKey{},id));if err!=nil{return err};q:=quotaHeaders(h);b.recordQuota(id,q);if quotaEmpty(q){return errors.New("This account has no data remaining")}
  if ctx.Err()!=nil{return ctx.Err()};b.mu.Lock();active:=b.epoch==epoch&&b.tunnel==t;b.mu.Unlock();if !active{return errors.New("Connection cancelled")}
- if err=b.useAccount(id);err!=nil{return err};t.replaceAccount(token)
+ if err=b.useAccount(id);err!=nil{return err};t.replaceAccount(id,token)
  expected:="";if str(t.settings,"serverId")!="REC"{expected=str(t.server,"code")};exit,err:=t.exit(t.ctx,expected);if err!=nil{b.failTunnel(t,"Account switched but the new connection could not be verified. Reconnect to continue.");return err};b.mu.Lock();if b.tunnel==t{b.exit=exit};b.mu.Unlock();b.log("info","Connected with the selected Firefox account");return nil
 }
-func(b *Backend) rejectedAccount(t *proxyTunnel,status int,h http.Header){
- b.action.Lock();defer b.action.Unlock();b.mu.Lock();active:=b.tunnel==t&&b.connection=="connected";id:=b.activeAccountID;auto:=yes(b.accountPreferences,"autoSwitch");epoch:=b.epoch;b.mu.Unlock();if !active{return}
+func(b *Backend) rejectedAccount(t *proxyTunnel,status int,h http.Header,eventID string){
+ b.action.Lock();defer b.action.Unlock();b.mu.Lock();active:=b.tunnel==t&&b.connection=="connected";id:=b.activeAccountID;auto:=yes(b.accountPreferences,"autoSwitch");epoch:=b.epoch;b.mu.Unlock();if !active||id!=eventID{return}
  q:=quotaHeaders(h)
  if !quotaEmpty(q){_,headers,err:=b.pass(context.WithValue(t.ctx,accountContextKey{},id));q=quotaHeaders(headers);if err!=nil&&!quotaEmpty(q){b.failTunnel(t,"The proxy pass was rejected. Check your account and reconnect.");return}}
  if !quotaEmpty(q)||!auto{b.failTunnel(t,"The proxy pass was rejected or the account allowance was exhausted.");return}
  b.recordQuota(id,q);b.mu.Lock();active=b.tunnel==t&&b.epoch==epoch;b.mu.Unlock();if !active{return}
- token,_,err:=b.prepareAccount(t.ctx,id);if err!=nil{b.failTunnel(t,err.Error());return};if t.ctx.Err()!=nil{return};t.replaceAccount(token)
+ token,_,err:=b.prepareAccount(t.ctx,id);if err!=nil{b.failTunnel(t,err.Error());return};if t.ctx.Err()!=nil{return};b.mu.Lock();nextID:=b.activeAccountID;b.mu.Unlock();t.replaceAccount(nextID,token)
  expected:="";if str(t.settings,"serverId")!="REC"{expected=str(t.server,"code")};exit,err:=t.exit(t.ctx,expected);if err!=nil{b.failTunnel(t,"The backup account connection could not be verified");return};b.mu.Lock();if b.tunnel==t{b.exit=exit};b.mu.Unlock();b.log("info","Data allowance exhausted. Switched to another saved account.")
 }
-func(t *proxyTunnel)replaceAccount(token string){
- t.sessionMu.Lock();t.mu.Lock();sockets:=make([]interface{Close()error},0,len(t.sockets));for s:=range t.sockets{sockets=append(sockets,s)};h3:=t.h3;t.h3=nil;t.current=nil;t.currentSocket=nil;t.mu.Unlock();if h3!=nil{h3.close()};for _,s:=range sockets{s.Close()};t.setToken(token);t.sessionMu.Unlock()
+func(t *proxyTunnel)replaceAccount(id,token string){
+ t.sessionMu.Lock();t.mu.Lock();sockets:=make([]interface{Close()error},0,len(t.sockets));for s:=range t.sockets{sockets=append(sockets,s)};h3:=t.h3;t.h3=nil;t.current=nil;t.currentSocket=nil;t.mu.Unlock();if h3!=nil{h3.close()};for _,s:=range sockets{s.Close()};t.setToken(token);t.mu.Lock();t.accountID=id;t.mu.Unlock();t.sessionMu.Unlock()
 }
 func(b *Backend)observeTrafficLocked(){if b.tunnel==nil||b.started==0{return};up,down:=b.tunnel.up.Load(),b.tunnel.down.Load();du,dd:=up-b.lastUp,down-b.lastDown;if du<0{du=0};if dd<0{dd=0};b.totalTraffic["totalUp"]=int64(num(b.totalTraffic,"totalUp"))+du;b.totalTraffic["totalDown"]=int64(num(b.totalTraffic,"totalDown"))+dd;b.sessionTraffic["up"]=up;b.sessionTraffic["down"]=down;b.sessionTraffic["duration"]=millis()-b.started;b.lastUp=up;b.lastDown=down}
 func(b *Backend)checkpointTraffic(t *proxyTunnel){ticker:=time.NewTicker(5*time.Second);defer ticker.Stop();for{select{case<-t.ctx.Done():return;case<-ticker.C:b.mu.Lock();b.observeTrafficLocked();b.mu.Unlock();if err:=b.save();err!=nil{b.log("error","Could not save traffic totals");return}}}}

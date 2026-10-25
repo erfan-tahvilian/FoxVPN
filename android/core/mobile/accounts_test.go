@@ -21,3 +21,10 @@ func TestTrafficRetainedAfterDisconnectAndRestart(t *testing.T){
  host:=&testHost{};b:=NewBackend(host,"{}");tunnel:=newTunnel(b,defaults(),object{},"fixture",context.Background());b.tunnel=tunnel;b.connection="connected";b.started=millis()-1000;tunnel.up.Store(20);tunnel.down.Store(70);b.Snapshot();b.Snapshot();b.Disconnect()
  restored:=NewBackend(&testHost{},host.saved);if num(restored.totalTraffic,"totalUp")!=20||num(restored.totalTraffic,"totalDown")!=70||num(restored.sessionTraffic,"down")!=70||num(restored.sessionTraffic,"duration")<1000{t.Fatal("traffic lost or counted more than once")}
 }
+
+func TestStaleAccountRejectionDoesNotAffectReplacement(t *testing.T){
+ b:=NewBackend(&testHost{},"{}");b.addAccount(fixtureAuth("one@example.com","one"));old:=b.activeAccountID;b.addAccount(fixtureAuth("two@example.com","two"));next:=str(b.accounts[1],"id");b.useAccount(next)
+ tunnel:=newTunnel(b,defaults(),object{},"fixture",context.Background());defer tunnel.close();b.tunnel=tunnel;b.connection="connected"
+ b.rejectedAccount(tunnel,429,http.Header{"X-Quota-Remaining":[]string{"0"}},old)
+ if b.connection!="connected"||b.activeAccountID!=next{t.Fatal("stale rejection interrupted replacement account")}
+}

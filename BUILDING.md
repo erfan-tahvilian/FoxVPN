@@ -4,8 +4,8 @@
 
 - Node.js 22 or later.
 - Git and network access.
-- A compatible native Windows or macOS build host.
-- Go 1.26 or later for the Windows HTTP/3 transport.
+- A compatible native Windows, macOS or Linux build host.
+- Go 1.26 or later for the desktop HTTP/3 transport.
 
 Release builds use the npm lockfile. Build output is written to `dist/`.
 
@@ -44,6 +44,7 @@ Build on the matching native Intel or Apple Silicon host:
 ```sh
 npm ci
 npm run engine:mac
+(cd desktop/h3 && go build -trimpath -ldflags "-s -w" -o ../../engine/mac/$(node -p "process.arch")/fox-h3 .)
 npm test
 npm run check
 node scripts/validate-engine.cjs
@@ -56,13 +57,30 @@ CI uses `macos-15-intel` for x64 and `macos-15` for ARM64. Packages include the 
 
 The app remains unprivileged. A separate engine requests administrator authorization to manage utun routing. Its supervisor stops the engine when the app exits. Split tunneling uses process names.
 
+## Linux
+
+Build on native x64 or ARM64 Linux with Node 22+, Go 1.26+, Ruby/fpm, rpm tooling and the desktop libraries required by Electron. See `.github/workflows/linux.yml` for the reproducible Ubuntu dependency set.
+
+```sh
+npm ci
+npm run engine:linux
+(cd desktop/h3 && go build -trimpath -ldflags "-s -w" -o ../../engine/linux/$(node -p "process.arch")/fox-h3 .)
+npm test
+npm run check
+npm run smoke
+npm run dist:linux
+node scripts/validate-linux-package.cjs
+```
+
+Packages are AppImage, DEB and RPM. A Secret Service keyring is required; the application rejects Electron's insecure `basic_text` storage backend. `pkexec` authorizes the separate sing-box supervisor, while Electron remains unprivileged. Linux integration CI opens and closes a real TUN adapter without changing the runner's default route, and exercises encrypted account storage with a real session keyring. Desktop launchers supply application names and icons; wrapper-launched Flatpak/Snap apps may need manual process names.
+
 ## Architecture
 
 The Electron main process owns authentication, encrypted storage, network streams and engine lifecycle. The sandboxed renderer has no Node.js access. A restricted preload interface exposes validated actions.
 
-Electron `safeStorage` protects session credentials and proxy passwords using Windows DPAPI or macOS Keychain. The Firefox password is never persisted.
+Electron `safeStorage` protects session credentials and proxy passwords using Windows DPAPI, macOS Keychain or a Linux Secret Service keyring. The Firefox password is never persisted.
 
-The local SOCKS5 bridge carries authenticated CONNECT streams over HTTP/2, or HTTP/3 on Windows. The HTTP/3 helper receives credentials through its private stdin pipe and accepts only authenticated loopback connections. DNS uses the configured tunneled resolver; general UDP is rejected. Local/private traffic, excluded applications and control-plane requests use the direct network. Binding the local proxy to all interfaces exposes an unauthenticated proxy; the default binding is loopback only.
+The local SOCKS5 bridge carries authenticated CONNECT streams over HTTP/2, or HTTP/3 on Windows, macOS and Linux. The HTTP/3 helper receives credentials through its private stdin pipe and accepts only authenticated loopback connections. DNS uses the configured tunneled resolver; general application UDP is rejected. HTTP/3 is the outer edge transport and does not add general UDP relay support. Local/private traffic, excluded applications and control-plane requests use the direct network. Binding the local proxy to all interfaces exposes an unauthenticated proxy; the default binding is loopback only.
 
 ## Verification
 

@@ -46,4 +46,4 @@ func(t *proxyTunnel)roundTrip(ctx context.Context,req *http.Request)(*http.Respo
  session,err:=t.session(ctx);if err!=nil{return nil,err};t.authorizeConnect(req);return session.RoundTrip(req)
 }
 
-func(t *proxyTunnel)authorizeConnect(req *http.Request){t.mu.Lock();token:=t.token;t.mu.Unlock();req.Header.Set("Proxy-Authorization","Bearer "+token)}
+func(t *proxyTunnel)authorizeConnect(req *http.Request){t.mu.Lock();token,id:=t.token,t.accountID;t.mu.Unlock();*req=*req.WithContext(context.WithValue(req.Context(),accountContextKey{},id));req.Header.Set("Proxy-Authorization","Bearer "+token)}

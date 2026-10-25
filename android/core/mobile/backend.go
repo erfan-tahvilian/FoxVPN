@@ -295,7 +295,7 @@ func (b *Backend) Call(channel, argsJSON string) string {
  case "cancelAccountLogin":b.pending=nil
  case "accountPreferences":
   auto,ok:=arg(0).(bool);if !ok{err=errors.New("Invalid account preference");break};b.mu.Lock();old:=b.accountPreferences["autoSwitch"];b.accountPreferences["autoSwitch"]=auto;b.mu.Unlock();err=b.save();if err!=nil{b.mu.Lock();b.accountPreferences["autoSwitch"]=old;b.mu.Unlock()}
- case "selectAccount":err=b.selectAccount(ctx,text(0))
+ case "selectAccount":b.mu.Lock();b.busy=true;b.mu.Unlock();b.emit();err=b.selectAccount(ctx,text(0));b.mu.Lock();b.busy=false;b.mu.Unlock()
  case "removeAccount":err=b.removeAccount(text(0))
 	case "account":
 		result, _, err = b.guardian(ctx, "status", "GET", true)
@@ -553,12 +553,13 @@ func (b *Backend) renew(t *proxyTunnel) {
 			continue
 		}
 		b.action.Lock()
-		token, headers, err := b.pass(t.ctx)
+		renewID:=b.accountID(t.ctx)
+		token, headers, err := b.pass(context.WithValue(t.ctx,accountContextKey{},renewID))
 		if err == nil {
 			t.setToken(token)
 		}
 		b.action.Unlock()
-		if quotaEmpty(quotaHeaders(headers)){go b.rejectedAccount(t,429,headers);return}
+		if quotaEmpty(quotaHeaders(headers)){go b.rejectedAccount(t,429,headers,renewID);return}
 		if err != nil {
 			b.failTunnel(t, "Proxy pass renewal failed. Reconnect after checking your account.")
 			return

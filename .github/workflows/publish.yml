@@ -12,6 +12,10 @@ on:
         description: Successful macOS build run with matching desktop source
         required: true
         type: string
+      linux_run_id:
+        description: Successful Linux build run with matching desktop source
+        required: true
+        type: string
 permissions:
   contents: write
   actions: read
@@ -28,6 +32,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           FOX_RUN_ID: ${{ inputs.run_id }}
           FOX_MAC_RUN_ID: ${{ inputs.mac_run_id }}
+          FOX_LINUX_RUN_ID: ${{ inputs.linux_run_id }}
         run: |
           [[ "$FOX_RUN_ID" =~ ^[0-9]+$ ]]
           test "$(node -p 'require("./package.json").version')" = '1.0.0'
@@ -42,6 +47,13 @@ jobs:
           fox_mac_sha="$(jq -r '.head_sha' /tmp/fox-mac-run.json)"
           git cat-file -e "$fox_mac_sha^{commit}"
           git diff --exit-code "$fox_mac_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts ':(exclude)scripts/*android*' .github/workflows/windows.yml .github/workflows/macos.yml
+          [[ "$FOX_LINUX_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_LINUX_RUN_ID" > /tmp/fox-linux-run.json
+          test "$(jq -r '.conclusion' /tmp/fox-linux-run.json)" = 'success'
+          test "$(jq -r '.path' /tmp/fox-linux-run.json)" = '.github/workflows/linux.yml'
+          fox_linux_sha="$(jq -r '.head_sha' /tmp/fox-linux-run.json)"
+          git cat-file -e "$fox_linux_sha^{commit}"
+          git diff --exit-code "$fox_linux_sha" HEAD -- src assets licenses LICENSE package.json package-lock.json scripts ':(exclude)scripts/*android*' .github/workflows/linux.yml
       - uses: actions/download-artifact@v4
         with:
           pattern: FoxVPN-Windows-*
@@ -55,6 +67,13 @@ jobs:
           merge-multiple: true
           path: verified-build
           run-id: ${{ inputs.mac_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: FoxVPN-Linux-*
+          merge-multiple: true
+          path: verified-build
+          run-id: ${{ inputs.linux_run_id }}
           github-token: ${{ github.token }}
       - name: Prepare release assets
         run: |
@@ -72,6 +91,12 @@ jobs:
               cp "verified-build/dist/FoxVPN-1.0.0-macOS-$arch.$ext" release-assets/
             done
           done
+          for arch in x64 arm64; do
+            for ext in AppImage deb rpm; do
+              test -s "verified-build/dist/FoxVPN-1.0.0-Linux-$arch.$ext"
+              cp "verified-build/dist/FoxVPN-1.0.0-Linux-$arch.$ext" release-assets/
+            done
+          done
           curl --fail --location --retry 3 'https://codeload.github.com/SagerNet/sing-box/tar.gz/refs/tags/v1.12.0' -o release-assets/sing-box-1.12.0-source.tar.gz
       - name: Publish fixed v1.0.0 release
         env:
@@ -82,4 +107,4 @@ jobs:
           jq -e '[.assets[] | select(.name != "SHA256SUMS.txt") | .digest | test("^sha256:[a-f0-9]{64}$")] | all' /tmp/fox-release.json
           jq -r '.assets[] | select(.name != "SHA256SUMS.txt") | "\(.digest | sub("^sha256:";""))  \(.name)"' /tmp/fox-release.json | sort -k2 > SHA256SUMS.txt
           gh release upload v1.0.0 SHA256SUMS.txt --clobber
-          gh release edit v1.0.0 --draft=false --title 'Fox VPN v1.0.0 - Windows, macOS & Android' --notes-file RELEASE_NOTES.md
+          gh release edit v1.0.0 --draft=false --title 'Fox VPN v1.0.0 - Windows, macOS, Linux & Android' --notes-file RELEASE_NOTES.md

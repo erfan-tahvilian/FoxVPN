@@ -36,6 +36,7 @@ type proxyTunnel struct {
  h3fallback bool
 	currentSocket    net.Conn
 	token            string
+ accountID string
 	expiry, up, down atomic.Int64
 	listener         net.Listener
 	transport        *http2.Transport
@@ -47,7 +48,7 @@ type proxyTunnel struct {
 
 func newTunnel(b *Backend, settings, server object, token string, ctx context.Context) *proxyTunnel {
 	child, cancel := context.WithCancel(ctx)
-	t := &proxyTunnel{b: b, settings: settings, server: server, ctx: child, cancel: cancel, sockets: map[io.Closer]struct{}{}}
+	t := &proxyTunnel{b: b, settings: settings, server: server, ctx: child, cancel: cancel, sockets: map[io.Closer]struct{}{},accountID:b.accountID(ctx)}
 	t.setToken(token)
 	t.transport = &http2.Transport{DialTLSContext: func(ctx context.Context, network, _ string, _ *tls.Config) (net.Conn, error) {
 		host := str(server, "host")
@@ -355,7 +356,7 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 		reader.Close()
 		writer.Close()
 		if response.StatusCode == 401 || response.StatusCode == 403 || response.StatusCode == 429 {
-			go t.b.rejectedAccount(t,response.StatusCode,response.Header.Clone())
+			id,_:=req.Context().Value(accountContextKey{}).(string);go t.b.rejectedAccount(t,response.StatusCode,response.Header.Clone(),id)
 		}
 		return nil, fmt.Errorf("VPN edge rejected connection (%d)", response.StatusCode)
 	}
