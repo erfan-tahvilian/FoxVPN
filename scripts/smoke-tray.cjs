@@ -13,6 +13,8 @@ app.whenReady().then(async()=>{
     await popup.show();
     await new Promise(r=>setTimeout(r,100));const rect=popup.window.getBounds();const visibleBottom=popup.window.getContentBounds().y+await popup.window.webContents.executeJavaScript("document.querySelector('main').getBoundingClientRect().bottom");assert(Math.abs(anchor.y-visibleBottom-9)<=3,'Visible tray menu must sit within a small gap of its anchor');
     assert(rect.height<272,'Tray should fit its visible menu without an empty lower area');
+    const intermediate=[];popup.window.on('resize',()=>{if(popup.window.isVisible())intermediate.push(popup.window.getBounds());});
+    await popup.show();assert.equal(intermediate.length,0,'Repeated opening must size the popup while hidden');
     const js=code=>popup.window.webContents.executeJavaScript(code);
     assert.equal(await js(`document.getElementById('toggle-label').textContent`),'Connect');
     assert.equal(await js(`typeof require`),'undefined');

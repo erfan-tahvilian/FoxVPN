@@ -20,7 +20,7 @@ const {engineConfig}=require('./lib/settings.cjs');
 const {MacEngine,networkDns:macNetworkDns}=require('./lib/mac-engine.cjs');
 const {LinuxEngine,networkDns:linuxNetworkDns}=require('./lib/linux-engine.cjs');
 const {ApplicationCatalog}=require('./lib/applications.cjs');
-const {TrayPopup}=require('./tray.cjs');
+const {TrayPopup,bindTrayActions}=require('./tray.cjs');
 const applications=new ApplicationCatalog(app);
 const mac=process.platform==='darwin',linux=process.platform==='linux';
 const osName=mac?'macOS':linux?'Linux':'Windows';
@@ -203,8 +203,7 @@ else {
     const control=new Control();guardian=new Guardian(control,new Auth(control,store));
     syncGuardian();createWindow();tray=new Tray(mac||linux?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');
     trayPopup=new TrayPopup({state:trayState,command:trayCommand,bounds:()=>{const bounds=tray.getBounds();if(mac)return bounds;const point=screen.getCursorScreenPoint();return point.x>=bounds.x-8&&point.x<=bounds.x+bounds.width+8&&point.y>=bounds.y-8&&point.y<=bounds.y+bounds.height+8?bounds:{...point,width:0,height:0};}});
-    const showTray=()=>trayPopup.show().catch(error=>log('warn',error.message));
-    tray.on('right-click',showTray);tray.on('click',showTray);tray.on('double-click',()=>{trayPopup.hide();showWindow();});emit();
+    bindTrayActions(tray,trayPopup,showWindow,error=>log('warn',error.message));emit();
     handle('state',()=>state());
     handle('login',async({email,password})=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{return multiAccount?completeLogin(await beginLogin().login(email,password)):await guardian.auth.login(email,password);}finally{busy=false;emit();}});
     handle('verify',async code=>{if(busy)throw Error('An operation is already running.');busy=true;emit();try{if(multiAccount&&!loginGuardian)throw Error('Start account sign-in again.');return multiAccount?completeLogin(await loginGuardian.auth.verify(code)):await guardian.auth.verify(code);}finally{busy=false;emit();}});
@@ -213,17 +212,18 @@ else {
     handle('ping',async id=>{
       if(!store.auth)throw Error('Sign in before checking real delay.');
       const pass=await guardian.pass();
-      const probe=server=>measure(server,structuredClone(store.settings),pass,5000,makeTunnel);
+      const pingSettings=structuredClone(store.settings);
+      const probe=server=>measure(server,structuredClone(pingSettings),pass,5000,makeTunnel);
       if(id!==undefined){
         const server=servers.find(s=>s.id===id);if(!server)throw Error('Unknown location.');
         if(pinging||pingingIds.has(id))throw Error('A latency check is already running for this location.');
         pingingIds.add(id);delete latencies[id];emit();
-        try{const result=await probe(server);latencies[id]=result;return result;}
+        try{const result=await probe(server);if(store.settings.transport===pingSettings.transport)latencies[id]=result;return result;}
         finally{pingingIds.delete(id);emit();}
       }
       if(pinging||pingingIds.size)throw Error('Wait for the current location latency checks.');
       pinging=true;latencies={};emit();
-      try{if(!servers.length)await refreshServers();await measureAll([...servers],(id,result)=>{latencies[id]=result;emit();},3,probe);return latencies;}
+      try{if(!servers.length)await refreshServers();await measureAll([...servers],(id,result)=>{if(store.settings.transport===pingSettings.transport)latencies[id]=result;emit();},3,probe);return latencies;}
       finally{pinging=false;emit();}
     });
     handle('account',()=>multiAccount?refreshAccount(store.activeAccountId):guardian.account());
@@ -234,7 +234,7 @@ else {
       handle('removeAccount',async id=>{if(busy)throw Error('Wait for the current operation.');if(id===store.activeAccountId&&connection!=='disconnected')throw Error('Disconnect before removing the active account.');store.removeAccount(id);accountGuardians.delete(id);syncGuardian();quota=store.activeAccount?.quota||null;emit();});
     }
     handle('activate',async()=>{const data=await guardian.request('activate','POST');return data.data;});
-    handle('settings',async settings=>{if(connection!=='disconnected')throw Error('Disconnect before changing connection settings.');if(settings.clearUpstreamPassword&&settings.upstream)settings.upstream.password='';else if(settings.upstream?.password==='')settings.upstream.password=store.settings.upstream.password;delete settings.clearUpstreamPassword;store.setSettings({...settings,locationSort:store.settings.locationSort});emit();});
+    handle('settings',async settings=>{if(connection!=='disconnected')throw Error('Disconnect before changing connection settings.');if(settings.clearUpstreamPassword&&settings.upstream)settings.upstream.password='';else if(settings.upstream?.password==='')settings.upstream.password=store.settings.upstream.password;delete settings.clearUpstreamPassword;const changedProtocol=settings.transport!==store.settings.transport;store.setSettings({...settings,locationSort:store.settings.locationSort});if(changedProtocol)latencies={};emit();});
     handle('locationSort',locationSort=>{store.setSettings({...store.settings,locationSort});emit();});
     handle('apps',()=>applications.list());
     handle('appIcon',id=>applications.icon(id));

@@ -145,3 +145,5 @@ require('./accounts.test.cjs');
 require('./h3.test.cjs');
 
 require('./linux.test.cjs');
+
+require('./tray.test.cjs');

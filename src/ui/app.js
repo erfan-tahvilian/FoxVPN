@@ -30,9 +30,9 @@ function locationLabel(server) {return [server?.country,locationCity(server)].fi
 function renderLatency(element,server,s) {
   const result=server?s.latencies?.[server.id]:null;
   const pending=server&&!result&&(s.pinging||(s.pingingIds||[]).includes(server.id));
-  element.className='latency';element.textContent=pending?'Checking…':result?(result.ms==null?'Unreachable':`${result.ms} ms`):'- ms';
+  element.className='latency';element.textContent=pending?'Checking…':result?(result.ms==null?(result.reason==='timeout'?'Timed out':'Unreachable'):`${result.ms} ms`):'- ms';
   if(!pending&&result?.ms!=null)element.classList.add(result.ms<150?'fast':result.ms<350?'moderate':'slow');
-  element.title='Real delay: HTTPS response through the authenticated VPN tunnel';
+  element.title=result?.ms==null&&result?.reason==='timeout'?(result.phase==='setup'?'The VPN transport did not connect before the timeout.':'The HTTPS delay check timed out through this location.'):'Real delay: HTTPS response through the authenticated VPN tunnel';
 }
 function automaticServer(server) {return /recom+end|anycast/i.test(server.country+' '+server.city)||server.code==='REC';}
 function fillSettings(s) {
@@ -88,7 +88,7 @@ function render(s) {
   $('selected-symbol').replaceChildren(exitCountry?flag(s.exit.country,exitCountry):selected?flag(selected.code,selected.country):icon('globe'));
   const shown=exitCountry&&selected?.code!==s.exit.country?{country:exitCountry,city:''}:selected;
   $('selected-location').textContent=shown?locationLabel(shown):'Recommended location';
-  $('selected-detail').textContent=connected&&selected?`${s.settings.serverId==='REC'?'Recommended · ':''}Connected to ${locationLabel(shown)}`:selected?'HTTP/2 endpoint':'Automatically choose an available server';
+  $('selected-detail').textContent=connected&&selected?`${s.settings.serverId==='REC'?'Recommended · ':''}Connected to ${locationLabel(shown)}`:selected?(s.settings.transport==='h3'?'HTTP/3 endpoint':s.settings.transport==='h2'?'HTTP/2 endpoint':'Automatic protocol'):'Automatically choose an available server';
   renderLatency($('selected-latency'),selected,s);
   $('ping-selected').disabled=!selected||s.pinging||(s.pingingIds||[]).includes(selected.id);
   $('ping-selected').title=selected?`Ping ${locationLabel(selected)}`:'Connect to identify the recommended endpoint, or choose a location';
@@ -112,7 +112,7 @@ function render(s) {
   $('ping-servers').disabled=s.pinging||(s.pingingIds||[]).length>0;
   $('ping-servers').textContent=s.pinging?'Checking latency…':'Ping all locations';
   const measured=Object.keys(s.latencies||{}).length;
-  $('ping-status').textContent=s.pinging?`Checking endpoints · ${measured} / ${s.servers.length}`:measured?'TCP latency · current network path · Refresh the check after changing networks.':'Real delay through each VPN location. Sign in, then run a check to compare locations.';
+  $('ping-status').textContent=s.pinging?`Checking endpoints · ${measured} / ${s.servers.length}`:measured?'Real delay · current network path · Refresh after changing networks or protocols.':'Real delay through each VPN location. Sign in, then run a check to compare locations.';
   const serverKey=JSON.stringify([s.servers,s.latencies,s.pinging,s.pingingIds])+s.settings.serverId;if(serverKey!==lastServers){lastServers=serverKey;renderServers();}
   const logKey=JSON.stringify(s.logs);if(logKey!==lastLogs){lastLogs=logKey;renderLogs();}
   window.desktopUI?.state(s);

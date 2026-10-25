@@ -22,3 +22,17 @@ test('all endpoints are measured once with bounded concurrency and incremental r
   });
   assert.equal(peak,3);assert.deepEqual(seen.sort((a,b)=>a-b),servers.map(s=>s.id));
 });
+
+test('QUIC setup has its own budget and does not inflate real delay or cause a false timeout',async()=>{
+ let closed=false,ready=false;
+ const result=await measure({}, {transport:'h3'}, {token:'pass'},20,()=>({protocol:'h3',async session(){await new Promise(r=>setTimeout(r,40));ready=true;},async request(){assert(ready);await new Promise(r=>setTimeout(r,3));},stop(){closed=true;}}),{setupTimeout:1000});
+ assert(result.ms!==null&&result.ms<30);assert.equal(result.protocol,'h3');assert(closed);
+ const timeout=await measure({}, {transport:'h3'}, {},20,()=>({session(){return new Promise(()=>{});},stop(){}}),{setupTimeout:5});
+ assert.equal(timeout.ms,null);assert.equal(timeout.reason,'timeout');
+});
+
+test('a second probe failure preserves a completed valid HTTPS sample',async()=>{
+ let attempts=0,closed=false;
+ const result=await measure({}, {}, {},100,()=>({async request(){if(++attempts===2)throw Error('Transient network failure');},stop(){closed=true;}}));
+ assert(result.ms!==null);assert.equal(attempts,2);assert(closed);
+});
