@@ -151,3 +151,13 @@ The owner confirmed the installed update on Windows and Redmi Note 9 Pro: the tr
 
 
 The owner confirmed the Windows account-management and persistent-traffic preview. Forced HTTP/3 failed on the current network. A diagnostic acquired a fresh proxy pass but could not complete QUIC handshakes to the selected Fastly edge on UDP 2499 or UDP 443, or to an independent public HTTP/3 endpoint on UDP 443. The active default route used Wi-Fi, and Windows Firewall profiles reported outbound traffic allowed. These results suggest a path-specific UDP/QUIC restriction; they do not prove where packets are dropped. Automatic HTTP/2 fallback remains available. No account credentials were written to diagnostic output.
+
+
+## HTTP/3 reference alignment
+
+HTTP/3 connection setup now follows the MIT-licensed `armanlife/firefox-vpn-client` implementation at revision `13845fafb2a67e2c1ba1e1145537a0a5db16a8d3`: 1200-byte initial QUIC datagrams, explicit per-address UDP sockets, address fallback, Firefox CONNECT headers and complete socket cleanup. The working peer IP is returned to the desktop tunnel controller and pinned across reconnections so the TUN route exclusion remains accurate.
+
+- Forty Node tests pass. [Transport CI](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40156381169) passed Go race checks, vet and Windows cross-compilation. A local HTTP/3 fixture discards client datagrams larger than 1200 bytes and verifies authenticated bidirectional forwarding and quota rejection. A second fixture verifies fallback from an unreachable address and UDP socket closure.
+- The GitHub runner completed an HTTP/3 exchange with a public Fastly endpoint on UDP 2499. Its unauthenticated CONNECT was rejected; this does not establish production account forwarding.
+- On the owner's Wi-Fi network, the rebuilt Windows x64 helper still timed out during QUIC handshakes to Google UDP 443 and the selected Fastly edge on UDP 2499 and 443, after acquiring a fresh proxy pass. The 1200-byte change did not resolve that network-specific failure. No authenticated production HTTP/3 traffic was therefore verified locally. Automatic HTTP/2 fallback remains supported.
+- macOS and Windows builds at revision `82acf9b` passed. Linux runtime checks passed but initial package generation required a maintainer email in package metadata; a public GitHub noreply address is used for that packaging field.
