@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Erfan Tahvilian
-name: Refresh release checksums
+name: Refresh release source and checksums
 on:
   workflow_dispatch:
 permissions:
@@ -9,6 +9,14 @@ jobs:
   checksums:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Refresh corresponding project source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > FoxVPN-1.0.0-source.tar.gz
+          gh release upload v1.0.0 FoxVPN-1.0.0-source.tar.gz --clobber
       - name: Verify asset digests and refresh checksum filenames
         env:
           GH_TOKEN: ${{ github.token }}
