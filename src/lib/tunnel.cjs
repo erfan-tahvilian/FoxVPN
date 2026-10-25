@@ -69,7 +69,7 @@ class Tunnel {
   }
   async openSession() {
     const c=this.candidate;
-    const raw=await rawSocket(this.settings.edge || c.host,c.port,this.settings.upstream);
+    const raw=await rawSocket((process.platform==='win32'&&this.edgeIP)||this.settings.edge||c.host,c.port,this.settings.upstream);
     if(!this.active){raw.destroy();throw Error('Connection cancelled');}
     if(process.platform==='win32'){raw.setNoDelay(true);raw.setKeepAlive(true,30000);if(!this.settings.upstream.enabled)this.edgeIP=raw.remoteAddress?.replace(/^::ffff:/,'');}
     const socket=tls.connect({socket:raw,servername:net.isIP(c.host)?undefined:c.host,ALPNProtocols:['h2'],rejectUnauthorized:true,checkServerIdentity:(_host,cert)=>tls.checkServerIdentity(c.host,cert)});
