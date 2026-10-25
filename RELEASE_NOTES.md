@@ -1,16 +1,15 @@
 # Fox VPN v1.0.0
 
-Independent VPN client for Windows, macOS, Linux and Android, built on Mozilla Firefox VPN infrastructure and Fastly edge servers.
+An independent VPN client for Windows, macOS, Linux and Android, built on Mozilla Firefox VPN infrastructure and Fastly edge servers.
+
+- **Multiple Firefox accounts:** Choose the active account or switch automatically after confirmed data-allowance exhaustion. Accounts retain separate allowances.
+- **Persistent traffic statistics:** View monthly allowance, last-session transfers and cumulative traffic on this device.
+- **Flexible app routing:** Choose which apps use the VPN with selected-app and exclusion modes, a searchable app picker and synchronized manual identifiers.
+- **Connection controls:** Check real HTTPS delay, browse saved locations and view IPv4 and IPv6 addresses when available.
+- **Adaptive transport:** Use HTTP/2 over TLS or HTTP/3 over QUIC. Automatic falls back to HTTP/2 when HTTP/3 cannot be established.
+- **Android Quick Settings:** Connect from the tile and follow live download, upload and session information in the persistent notification.
 
 Licensed under the GNU General Public License, version 3 or later. Independent dependencies retain their original licenses and notices.
-
-Application-based split tunneling supports both selected-app and exclusion modes, with a searchable app list and synchronized manual identifier entry on Windows, macOS, Linux and Android. Private DNS, real-delay HTTPS checks and saved connection preferences are available across the supported platforms. Downloaded locations remain available between sessions. Android includes a Quick Settings tile and background connection controls.
-
-Connection details include separate IPv4 and IPv6 addresses when available, with latency checks directly from Overview. Overview also shows monthly data usage, remaining allowance and the renewal date when reported by the service. Location delay checks display each result as it completes. Connections verify their exit location before becoming active. Desktop tray controls reflect the current connection state. Android improves installation compatibility and provides direct access to the app by holding its Quick Settings tile.
-
-Authenticator-based two-step sign-in is supported alongside email verification. macOS supports closing the window with Command+W and quitting with Command+Q.
-
-Saved Firefox accounts support manual selection and automatic handover after confirmed allowance exhaustion. Last-session usage and cumulative device traffic remain available after restart. HTTP/3 is available as an edge transport, with HTTP/2 fallback in Automatic mode; it requires working outbound UDP. Linux packages are available as AppImage, DEB and RPM for x64 and ARM64.
 
 ## Downloads
 
@@ -41,13 +40,15 @@ Saved Firefox accounts support manual selection and automatic handover after con
 
 **macOS:** Requires macOS 13 or later. Open the DMG and drag **Fox VPN** into **Applications**, or extract the complete app bundle from the ZIP. Packages are ad-hoc signed and are not notarized. If Gatekeeper blocks first launch, verify the download and approve it in **System Settings → Privacy & Security → Open Anyway**.
 
-## Connection support
+**Linux:** Native x64 and ARM64 packages are available as AppImage, DEB and RPM. Use a current desktop with a Secret Service keyring, polkit and an authorization agent. System VPN requests polkit authorization; the interface runs without root access. AppImage may require a FUSE compatibility package.
 
 **Android:** Requires Android 8.0 or later and a current Android System WebView. Install the APK, sign in and approve the system VPN request. Add Fox VPN to Quick Settings to connect or disconnect from the panel. The persistent notification provides connection status and a disconnect control.
 
-Sign in with a Firefox account, select a location and connect. Account eligibility, regional availability and data allowances depend on the service.
+## Connection support
 
-TCP and DNS are supported. General UDP/QUIC and a persistent kill switch are not supported. Desktop apps remain in the tray when their window is closed; Android connections remain active in the background.
+Sign in with a Firefox account, complete email or authenticator verification when requested, select a location and connect. Account eligibility, regional availability and data allowances depend on the service.
+
+TCP and DNS are supported. General application UDP, including browser QUIC and games, and a persistent kill switch are not supported. HTTP/3 is the transport to the VPN edge and requires working outbound UDP; it does not enable general UDP forwarding. Desktop apps remain in the tray when their window is closed; Android connections remain active in the background.
 
 See the [verification record](https://github.com/erfan-tahvilian/FoxVPN/blob/main/VALIDATION.md) for device test coverage and remaining validation limits.
 
