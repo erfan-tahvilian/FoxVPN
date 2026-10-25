@@ -180,3 +180,10 @@ The final Android build at revision `d5e63bd` passed [core, package, lint and em
 A physical-phone report on a second network showed IPv6 `network is unreachable` failures, along with a handshake timeout. This does not establish whether IPv4 was available or UDP was blocked. Android now recovers a missing IPv4 answer through TLS-verified, socket-protected DNS-over-HTTPS when the physical resolver returns only IPv6 or fails. Native IPv6/DNS64 addresses are retained. Literal addresses, custom edge names and explicit DNS overrides do not trigger public bootstrap recovery. A later IPv6 route error no longer hides an earlier handshake timeout.
 
 [Android CI](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40183519570) includes fixtures for IPv4 recovery, NAT64-address preservation, avoiding unnecessary DNS queries, rejecting mismatched/unrelated DNS responses and retaining the original timeout classification. Physical HTTP/3 forwarding with this correction still requires phone testing.
+
+
+## Windows encrypted HTTP/3 bootstrap
+
+Windows preview `6012900` adds reference-aligned encrypted bootstrap, IPv4-first address selection, a 20-second forced HTTP/3 budget and official REC anycast selection. Explicit overrides remain respected. [Transport CI](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40189395885) passed DNS validation/cancellation tests, QUIC CONNECT/low-MTU fixtures, Go race checks, vet and cross-compilation. The repository Node runner passed 42 tests.
+
+A fresh account pass on the owner's Windows machine successfully established HTTP/3 CONNECT to both Germany and REC on UDP 2499. Nested, certificate-verified HTTPS requests through each tunnel returned HTTP 200. This is authenticated production forwarding, beyond an unauthenticated capability probe. Long-term stability and full system-VPN acceptance remain for the owner; other-platform rollout is held until Windows acceptance. The independent Google QUIC probe timed out, so prior failures cannot be attributed to a universally blocked UDP path or to a single change with certainty.
