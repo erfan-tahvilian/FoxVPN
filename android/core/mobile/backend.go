@@ -275,10 +275,16 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		b.Disconnect()
 		return envelope(nil, nil)
 	}
- // Public catalog refresh does not mutate authentication and must not block
- // local account selection behind a slow network request.
- if channel=="servers"{result,err:=b.refreshServers(context.Background());return envelope(result,err)}
- if channel=="account"{result,err:=b.refreshProfile(context.Background());return envelope(result,err)}
+	// Public catalog refresh does not mutate authentication and must not block
+	// local account selection behind a slow network request.
+	if channel == "servers" {
+		result, err := b.refreshServers(context.Background())
+		return envelope(result, err)
+	}
+	if channel == "account" {
+		result, err := b.refreshProfile(context.Background())
+		return envelope(result, err)
+	}
 	b.action.Lock()
 	defer b.action.Unlock()
 	arg := func(i int) any {
@@ -812,27 +818,32 @@ func cachedServers(values []any) []object {
 	return result
 }
 
-func(b *Backend)refreshProfile(ctx context.Context)(any,error){
- b.mu.Lock();id:=b.activeAccountID;b.mu.Unlock();ctx=context.WithValue(ctx,accountContextKey{},id)
- var result any;var err error
-		result, _, err = b.guardian(ctx, "status", "GET", true)
-		if err == nil {
-			d, _ := result.(map[string]any)
-			if yes(d, "limited_bandwidth") {
-				_, headers, e := b.pass(ctx)
-				if e == nil {
-					d["quotaRemaining"] = headers.Get("x-quota-remaining")
-					d["quotaLimit"] = headers.Get("x-quota-limit")
-					d["quotaReset"] = headers.Get("x-quota-reset")
-				}
+func (b *Backend) refreshProfile(ctx context.Context) (any, error) {
+	b.mu.Lock()
+	id := b.activeAccountID
+	b.mu.Unlock()
+	ctx = context.WithValue(ctx, accountContextKey{}, id)
+	var result any
+	var err error
+	result, _, err = b.guardian(ctx, "status", "GET", true)
+	if err == nil {
+		d, _ := result.(map[string]any)
+		if yes(d, "limited_bandwidth") {
+			_, headers, e := b.pass(ctx)
+			if e == nil {
+				d["quotaRemaining"] = headers.Get("x-quota-remaining")
+				d["quotaLimit"] = headers.Get("x-quota-limit")
+				d["quotaReset"] = headers.Get("x-quota-reset")
 			}
 		}
-		if err == nil {
-			d, _ := result.(map[string]any)
-			q := object{"limit": d["quotaLimit"], "remaining": d["quotaRemaining"], "reset": d["quotaReset"], "unlimited": d["limited_bandwidth"] == false}
-			b.recordQuota(id, q)
-			err = b.save()
-		}
+	}
+	if err == nil {
+		d, _ := result.(map[string]any)
+		q := object{"limit": d["quotaLimit"], "remaining": d["quotaRemaining"], "reset": d["quotaReset"], "unlimited": d["limited_bandwidth"] == false}
+		b.recordQuota(id, q)
+		err = b.save()
+	}
 
- b.emit();return result,err
+	b.emit()
+	return result, err
 }
