@@ -59,6 +59,13 @@ func TestMobileHTTP3AuthenticatedForwarding(t *testing.T) {
 	if tunnel.protocolName() != "http/3" || tunnel.up.Load() == 0 || tunnel.down.Load() == 0 {
 		t.Fatal("HTTP3 traffic not recorded")
 	}
+ settingsAuto:=copyObject(settings);settingsAuto["transport"]="auto"
+ automatic:=newTunnel(b,settingsAuto,object{"host":host,"port":n},"fixture-pass",context.Background());automatic.probeAddress=origin.URL;defer automatic.close()
+ body,err=automatic.request(context.Background(),origin.URL,nil,"")
+ if err!=nil||string(body)!="real-h3-response"||automatic.protocolName()!="http/3"{t.Fatalf("Automatic did not keep the working HTTP3 path: %v",err)}
+ automatic.setToken("renewed-pass")
+ automatic.mu.Lock();chosen:=automatic.selected;automatic.mu.Unlock();chosen.mu.Lock();renewed:=chosen.token;chosen.mu.Unlock()
+ if renewed!="renewed-pass"{t.Fatal("Selected transport missed token renewal")}
 }
 func TestMobileAutomaticFallsBackToHTTP2(t *testing.T) {
 	tunnel, origin := protocolTunnel(t)
