@@ -133,7 +133,7 @@ func NewBackend(host Host, vault string) *Backend {
 		}
 		return (&net.Dialer{Timeout: 10 * time.Second, Control: control}).DialContext(ctx, network, net.JoinHostPort(ip, "53"))
 	}}
-	b.dialer = &net.Dialer{Timeout: 15 * time.Second, Control: control, Resolver: resolver}
+	b.dialer = &net.Dialer{Timeout: 15 * time.Second, KeepAlive:30*time.Second, Control: control, Resolver: resolver}
 	jar, _ := cookiejar.New(nil)
 	b.client = &http.Client{Timeout: 30 * time.Second, Jar: jar, Transport: &http.Transport{DialContext: b.dialer.DialContext, TLSClientConfig: &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}, ForceAttemptHTTP2: true}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return b

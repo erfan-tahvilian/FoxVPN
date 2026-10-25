@@ -86,7 +86,7 @@ func newTunnel(b *Backend, settings, server object, token string, ctx context.Co
 		if err = conn.HandshakeContext(ctx); err != nil { stream.Close(); return nil, err }
 		return conn, nil
 	}, MaxIdleConns: 32, MaxIdleConnsPerHost: 8, MaxConnsPerHost: 8, IdleConnTimeout: time.Minute}
-	t.requestClient = &http.Client{Transport: t.requestTransport, Timeout: 15*time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	t.requestClient = &http.Client{Transport: t.requestTransport, Timeout: 30*time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return t
 }
 func (t *proxyTunnel) setToken(token string) {
