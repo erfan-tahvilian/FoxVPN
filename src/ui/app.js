@@ -71,7 +71,7 @@ async function refreshAllowance(announce){
 $('refresh-allowance').addEventListener('click',()=>refreshAllowance(true));
 $('allowance-account').addEventListener('click',()=>navigate('account'));
 function render(s) {
-  currentState=s;applyTheme(s);renderAllowance(s);$('transport-field').hidden=!['win32','darwin','linux'].includes(s.platform);$('protocol-name').textContent=s.protocol==='h3'?'HTTP/3 over QUIC':'HTTP/2 over TLS';
+  currentState=s;applyTheme(s);renderAllowance(s);$('transport-field').hidden=!['win32','darwin','linux','android'].includes(s.platform);$('protocol-name').textContent=s.protocol==='h3'?'HTTP/3 over QUIC':'HTTP/2 over TLS';
   if(!initialized){fillSettings(s.settings);initialized=true;}
   syncSelects();
   const connected=s.connection==='connected', transitional=['connecting','disconnecting'].includes(s.connection);
@@ -219,7 +219,7 @@ function accountInfo(data) {
 }
 $('refresh-account').addEventListener('click',action(async()=>accountInfo(await call('account'))));
 function readSettings(){
-  const settings={...currentState.settings};if(['win32','darwin','linux'].includes(currentState.platform))settings.transport=$('transport').value;
+  const settings={...currentState.settings};if(['win32','darwin','linux','android'].includes(currentState.platform))settings.transport=$('transport').value;
   for(const key of ['theme','bind','doh','customDns','edge'])settings[key]=$(key).value.trim();
   settings.socksPort=Number($('socksPort').value);for(const key of ['proxyOnly'])settings[key]=$(key).checked;
   settings.excludedApps=[...new Set($('excludedApps').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];

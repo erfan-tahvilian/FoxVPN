@@ -63,11 +63,16 @@ func copyObject(m object) object {
 }
 func millis() int64 { return time.Now().UnixMilli() }
 func defaults() object {
-	return object{"theme": "system", "proxyOnly": false, "bind": "127.0.0.1", "socksPort": 1080, "doh": "automatic", "customDns": "", "edge": "", "exitCheck": true, "excludedApps": []any{}, "upstream": object{"enabled": false, "type": "socks5", "host": "", "port": 1080, "username": "", "password": ""}, "serverId": "REC"}
+	return object{"transport":"auto", "theme": "system", "proxyOnly": false, "bind": "127.0.0.1", "socksPort": 1080, "doh": "automatic", "customDns": "", "edge": "", "exitCheck": true, "excludedApps": []any{}, "upstream": object{"enabled": false, "type": "socks5", "host": "", "port": 1080, "username": "", "password": ""}, "serverId": "REC"}
 }
 
 type Backend struct {
 	mu                        sync.Mutex
+ saveMu sync.Mutex
+ accounts []object
+ activeAccountID string
+ accountPreferences,totalTraffic,sessionTraffic object
+ lastUp,lastDown int64
 	action                    sync.Mutex
 	host                      Host
 	settings, auth, pending   object
@@ -102,6 +107,7 @@ func NewBackend(host Host, vault string) *Backend {
 			b.auth = nil
 		}
 	}
+	b.restoreAccounts(saved)
 	roots, _ := x509.SystemCertPool()
 	if roots == nil {
 		roots = x509.NewCertPool()
@@ -139,19 +145,19 @@ func (b *Backend) snapshotLocked() object {
 	u["hasPassword"] = str(u, "password") != ""
 	u["password"] = ""
 	var active any
-	var up, down int64
+	b.observeTrafficLocked()
+ up,down:=int64(num(b.sessionTraffic,"up")),int64(num(b.sessionTraffic,"down"))
 	if b.tunnel != nil {
 		if b.connection == "connected" {
 			active = b.tunnel.server
 		}
-		up = b.tunnel.up.Load()
-		down = b.tunnel.down.Load()
+
 	}
 	var email string
 	if b.auth != nil {
 		email = str(b.auth, "email")
 	}
-	return object{"version": "1.0.0", "platform": b.platform, "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
+	return object{"accounts":b.publicAccountsLocked(),"activeAccountId":b.activeAccountID,"accountPreferences":copyObject(b.accountPreferences),"totalTraffic":copyObject(b.totalTraffic),"sessionDuration":num(b.sessionTraffic,"duration"),"protocol":b.protocolLocked(),"version": "1.0.0", "platform": b.platform, "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
 }
 func (b *Backend) Snapshot() string {
 	b.mu.Lock()
@@ -175,27 +181,16 @@ func (b *Backend) log(level, message string) {
 	b.emit()
 }
 func (b *Backend) save() error {
+ b.saveMu.Lock();defer b.saveMu.Unlock()
 	b.mu.Lock()
-	v, _ := json.Marshal(object{"settings": b.settings, "auth": b.auth, "servers": b.servers})
+	v, _ := json.Marshal(object{"schema":2,"settings": b.settings, "accounts":b.accounts,"activeAccountId":b.activeAccountID,"accountPreferences":b.accountPreferences,"totalTraffic":b.totalTraffic,"sessionTraffic":b.sessionTraffic,"servers": b.servers})
 	b.mu.Unlock()
 	return b.host.Save(string(v))
 }
-func (b *Backend) setAuth(auth object) error {
-	b.mu.Lock()
-	old := b.auth
-	b.auth = auth
-	b.mu.Unlock()
-	if err := b.save(); err != nil {
-		b.mu.Lock()
-		b.auth = old
-		b.mu.Unlock()
-		return err
-	}
-	b.emit()
-	return nil
-}
+func(b *Backend)setAuth(auth object)error{return b.addAccount(auth)}
 func validate(s object) error {
-	s["exitCheck"] = true // Exit verification cannot be disabled by saved preferences.
+	if str(s,"transport")==""{s["transport"]="auto"};switch str(s,"transport"){case "auto","h2","h3":default:return errors.New("Invalid connection protocol")}
+ s["exitCheck"] = true // Exit verification cannot be disabled by saved preferences.
 	switch str(s, "theme") {
 	case "dark", "light", "system":
 	default:
@@ -297,6 +292,11 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		b.Disconnect()
 		b.pending = nil
 		err = b.setAuth(nil)
+ case "cancelAccountLogin":b.pending=nil
+ case "accountPreferences":
+  auto,ok:=arg(0).(bool);if !ok{err=errors.New("Invalid account preference");break};b.mu.Lock();old:=b.accountPreferences["autoSwitch"];b.accountPreferences["autoSwitch"]=auto;b.mu.Unlock();err=b.save();if err!=nil{b.mu.Lock();b.accountPreferences["autoSwitch"]=old;b.mu.Unlock()}
+ case "selectAccount":err=b.selectAccount(ctx,text(0))
+ case "removeAccount":err=b.removeAccount(text(0))
 	case "account":
 		result, _, err = b.guardian(ctx, "status", "GET", true)
 		if err == nil {
@@ -310,6 +310,7 @@ func (b *Backend) Call(channel, argsJSON string) string {
 				}
 			}
 		}
+  if err==nil{d,_:=result.(map[string]any);q:=object{"limit":d["quotaLimit"],"remaining":d["quotaRemaining"],"reset":d["quotaReset"],"unlimited":d["limited_bandwidth"]==false};b.recordQuota(b.activeAccountID,q);err=b.save()}
 	case "settings":
 		s, _ := arg(0).(map[string]any)
 		b.mu.Lock()
@@ -451,7 +452,7 @@ func (b *Backend) connect() error {
 			return err
 		}
 	}
-	token, headers, err := b.pass(ctx)
+	token, headers, err := b.prepareAccount(ctx,"")
 	if err != nil {
 		return err
 	}
@@ -503,7 +504,7 @@ func (b *Backend) connect() error {
 		b.exit = exit
 		b.mu.Unlock()
 		complete = true
-		b.log("info", "HTTP/2 tunnel ready · "+locationLabel(server))
+		b.log("info", strings.ToUpper(t.protocolName())+" tunnel ready · "+locationLabel(server))
 		if yes(s, "proxyOnly") {
 			b.Ready()
 		}
@@ -525,9 +526,11 @@ func (b *Backend) Ready() {
 	t := b.tunnel
 	b.connection = "connected"
 	b.started = millis()
+ b.sessionTraffic=object{"up":0,"down":0,"duration":0};b.lastUp=0;b.lastDown=0
 	b.mu.Unlock()
 	b.log("info", "Connected · Fox VPN is active")
-	go b.renew(t)
+	go b.checkpointTraffic(t)
+ go b.renew(t)
 	go t.monitor()
 	go b.refreshAddresses(t)
 }
@@ -580,6 +583,7 @@ func (b *Backend) stop(expected *proxyTunnel, message string) {
 	if message != "" {
 		b.lastError = message
 	}
+	b.observeTrafficLocked()
 	b.epoch++
 	cancel := b.cancel
 	b.cancel = nil
@@ -597,6 +601,7 @@ func (b *Backend) stop(expected *proxyTunnel, message string) {
 		t.close()
 		b.log("info", "Disconnected · Device routes restored")
 	}
+	if err:=b.save();err!=nil{b.log("error","Could not save session traffic")}
 	if message != "" {
 		b.log("error", message)
 	}

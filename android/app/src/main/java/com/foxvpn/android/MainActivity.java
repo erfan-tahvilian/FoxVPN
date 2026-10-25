@@ -24,7 +24,7 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final int VPN_PERMISSION = 1, NOTIFICATION_PERMISSION = 2, EXPORT = 3;
     private static final String ORIGIN = "https://appassets.androidplatform.net";
-    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","locationSort");
+    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","locationSort","selectAccount","removeAccount","accountPreferences","cancelAccountLogin");
     private static final Set<String> LOCATION_SORTS = Set.of("ping-asc","ping-desc","name-asc","name-desc");
     WebView web;
     private boolean loaded, pendingConnect;

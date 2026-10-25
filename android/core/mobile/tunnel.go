@@ -32,6 +32,8 @@ type proxyTunnel struct {
 	mu               sync.Mutex
 	sessionMu        sync.Mutex
 	current          *http2.ClientConn
+ h3 *mobileH3
+ h3fallback bool
 	currentSocket    net.Conn
 	token            string
 	expiry, up, down atomic.Int64
@@ -144,6 +146,7 @@ func (t *proxyTunnel) session(ctx context.Context) (*http2.ClientConn, error) {
 	return session, nil
 }
 func (t *proxyTunnel) health(ctx context.Context) error {
+ if str(t.settings,"transport")!="h2" {stream,err:=t.open(ctx,"www.cloudflare.com:443");if err!=nil{return err};return stream.Close()}
 	var checked *http2.ClientConn
 	down := t.down.Load()
 	return checkTunnelHealth(ctx, func(pingCtx context.Context) error {
@@ -329,16 +332,10 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 	}
 	req.Host = address
 	req.ContentLength = -1
-	t.mu.Lock()
-	token := t.token
-	t.mu.Unlock()
-	req.Header.Set("Proxy-Authorization", "Bearer "+token)
-	timer := time.AfterFunc(15*time.Second, cancel)
-	session, err := t.session(child)
-	var response *http.Response
-	if err == nil {
-		response, err = session.RoundTrip(req)
-	}
+ req.Header.Set("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0")
+ t.mu.Lock();token:=t.token;t.mu.Unlock();req.Header.Set("Proxy-Authorization","Bearer "+token)
+ timer:=time.AfterFunc(15*time.Second,cancel)
+ response,err:=t.roundTrip(child,req)
 	timer.Stop()
 	if err != nil {
 		cancel()
@@ -359,7 +356,7 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 		reader.Close()
 		writer.Close()
 		if response.StatusCode == 401 || response.StatusCode == 403 || response.StatusCode == 429 {
-			go t.b.failTunnel(t, "The proxy pass was rejected or the account allowance was exhausted.")
+			go t.b.rejectedAccount(t,response.StatusCode,response.Header.Clone())
 		}
 		return nil, fmt.Errorf("VPN edge rejected connection (%d)", response.StatusCode)
 	}
@@ -711,12 +708,14 @@ func (t *proxyTunnel) close() {
 	}
 	t.closed = true
 	listener := t.listener
+ h3:=t.h3;t.h3=nil
 	sockets := make([]io.Closer, 0, len(t.sockets))
 	for s := range t.sockets {
 		sockets = append(sockets, s)
 	}
 	t.sockets = map[io.Closer]struct{}{}
 	t.mu.Unlock()
+ if h3!=nil{h3.close()}
 	if listener != nil {
 		listener.Close()
 	}
