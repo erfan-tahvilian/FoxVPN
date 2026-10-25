@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+ "syscall"
 	"time"
 
 	"github.com/sagernet/quic-go"
@@ -74,7 +75,7 @@ func (t *proxyTunnel) h3Session(ctx context.Context) (*http3.ClientConn, error) 
 	if host == "" {
 		host = str(t.server, "host")
 	}
-	addresses, err := t.b.dialer.Resolver.LookupIPAddr(ctx, host)
+	addresses, err := t.h3Addresses(ctx, host)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +97,7 @@ func (t *proxyTunnel) h3Session(ctx context.Context) (*http3.ClientConn, error) 
 	if perAttempt < 3*time.Second {
 		perAttempt = 3 * time.Second
 	}
-	var last error
+	var failures h3Failures
 	for _, ip := range ips {
 		if ctx.Err() != nil {
 			break
@@ -108,7 +109,7 @@ func (t *proxyTunnel) h3Session(ctx context.Context) (*http3.ClientConn, error) 
 		lc := net.ListenConfig{Control: t.b.dialer.Control}
 		udp, err := lc.ListenPacket(ctx, network, bind)
 		if err != nil {
-			last = err
+			failures.add(err)
 			continue
 		}
 		attempt, stop := context.WithTimeout(ctx, perAttempt)
@@ -116,7 +117,7 @@ func (t *proxyTunnel) h3Session(ctx context.Context) (*http3.ClientConn, error) 
 		stop()
 		if err != nil {
 			udp.Close()
-			last = err
+			failures.add(err)
 			continue
 		}
 		transport := &http3.Transport{MaxResponseHeaderBytes: 64 * 1024}
@@ -131,13 +132,9 @@ func (t *proxyTunnel) h3Session(ctx context.Context) (*http3.ClientConn, error) 
 		t.mu.Unlock()
 		return h.client, nil
 	}
-	if ctx.Err() != nil {
-		return nil, errors.New("HTTP/3 handshake timed out. Choose Automatic or HTTP/2 on this network")
-	}
-	if last == nil {
-		last = errors.New("No HTTP/3 edge is available")
-	}
-	return nil, last
+ if ctx.Err()!=nil{failures.add(ctx.Err())}
+ return nil,failures.err()
+
 }
 func (t *proxyTunnel) roundTrip(ctx context.Context, req *http.Request) (*http.Response, error) {
 	mode := str(t.settings, "transport")
@@ -179,3 +176,8 @@ func (t *proxyTunnel) authorizeConnect(req *http.Request) {
 	*req = *req.WithContext(context.WithValue(req.Context(), accountContextKey{}, id))
 	req.Header.Set("Proxy-Authorization", "Bearer "+token)
 }
+
+// Do not let a later IPv6 no-route error conceal an earlier IPv4 timeout.
+type h3Failures struct{timeout,noRoute bool;last error}
+func(f *h3Failures)add(err error){if err==nil{return};f.last=err;var network net.Error;if errors.Is(err,context.DeadlineExceeded)||(errors.As(err,&network)&&network.Timeout()){f.timeout=true};if errors.Is(err,syscall.ENETUNREACH)||errors.Is(err,syscall.EHOSTUNREACH)||errors.Is(err,syscall.EAFNOSUPPORT){f.noRoute=true}}
+func(f h3Failures)err()error{if f.timeout{return errors.New("HTTP/3 handshake timed out after trying the available server addresses. Choose Automatic or HTTP/2 on this network")};if f.noRoute{return errors.New("HTTP/3 could not find a usable network route to this server. Choose Automatic or HTTP/2")};if f.last!=nil{return f.last};return errors.New("No HTTP/3 edge is available")}
