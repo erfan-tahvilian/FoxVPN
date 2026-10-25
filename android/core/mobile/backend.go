@@ -275,6 +275,9 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		b.Disconnect()
 		return envelope(nil, nil)
 	}
+ // Public catalog refresh does not mutate authentication and must not block
+ // local account selection behind a slow network request.
+ if channel=="servers"{result,err:=b.refreshServers(context.Background());return envelope(result,err)}
 	b.action.Lock()
 	defer b.action.Unlock()
 	arg := func(i int) any {

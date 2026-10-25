@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
         }
         @JavascriptInterface public void request(String id,String channel,String arguments) {
             if (id==null||id.length()>64||arguments==null||arguments.length()>131072||!ACTIONS.contains(channel))return;
-            app().actions.execute(() -> {
+            (channel.equals("servers")?app().catalog:app().actions).execute(() -> {
                 try {
                     JSONArray args=new JSONArray(arguments);
                     switch(channel){

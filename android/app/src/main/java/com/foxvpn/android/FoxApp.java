@@ -31,6 +31,7 @@ import org.json.JSONObject;
 public final class FoxApp extends Application implements Host {
     final Handler main = new Handler(Looper.getMainLooper());
     final ExecutorService actions = Executors.newSingleThreadExecutor();
+    final ExecutorService catalog = Executors.newSingleThreadExecutor();
     Backend backend;
     volatile FoxVpnService vpn;
     volatile Network network;
@@ -77,7 +78,7 @@ public final class FoxApp extends Application implements Host {
             Libbox.setup(options); Libbox.setLocale("en");
             backend = Mobile.newBackend(this, vault.read()); backend.setDark(isDark());
             state = new JSONObject(backend.snapshot());
-            actions.execute(() -> backend.call("servers", "[]"));
+            catalog.execute(() -> backend.call("servers", "[]"));
         } catch (Exception e) { initializationError = "Secure storage could not be initialized. Restart Fox VPN or reinstall if the problem persists."; }
     }
     boolean isDark() { return (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES; }

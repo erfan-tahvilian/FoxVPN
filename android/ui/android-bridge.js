@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Erfan Tahvilian
 (() => {
-  let sequence=0;const pending=new Map(),listeners=new Set();
+  let sequence=0,switchingAccount=null;const pending=new Map(),listeners=new Set();
+  function showAccountProgress(){
+    if(!switchingAccount||typeof currentState==='undefined')return;
+    const index=(currentState.accounts||[]).findIndex(account=>account.id===switchingAccount);
+    const cards=[...document.querySelectorAll('.saved-account')];
+    for(const button of document.querySelectorAll('.saved-account-actions button'))button.disabled=true;
+    const card=cards[index],button=card?.querySelector('.saved-account-actions button');
+    if(button){button.textContent='Switching…';card.setAttribute('aria-busy','true');}
+  }
+  function finishAccountProgress(){switchingAccount=null;if(typeof accountListKey!=='undefined')accountListKey='';if(typeof currentState!=='undefined'&&typeof render==='function')render(currentState);}
   window.fox={
-    call(channel,...args){return new Promise((resolve,reject)=>{const id=String(++sequence);pending.set(id,{resolve,reject});window.FoxAndroid.request(id,channel,JSON.stringify(args));});},
+    call(channel,...args){if(channel==='selectAccount'&&switchingAccount)return Promise.resolve({ok:false,error:'An account switch is already in progress.'});if(channel==='selectAccount'){switchingAccount=args[0];showAccountProgress();}return new Promise((resolve,reject)=>{const id=String(++sequence);pending.set(id,{resolve,reject,channel});try{window.FoxAndroid.request(id,channel,JSON.stringify(args));}catch(error){pending.delete(id);if(channel==='selectAccount')finishAccountProgress();reject(error);}});},
     onState(callback){listeners.add(callback);return()=>listeners.delete(callback);},
-    resolve(id,response){const task=pending.get(id);if(!task)return;pending.delete(id);task.resolve(response);},
-    receive(state){for(const callback of listeners)callback(state);updateSettingsState(state);}
+    resolve(id,response){const task=pending.get(id);if(!task)return;pending.delete(id);if(task.channel==='selectAccount')finishAccountProgress();task.resolve(response);},
+    receive(state){for(const callback of listeners)callback(state);updateSettingsState(state);showAccountProgress();}
   };
   const sort=document.getElementById('server-sort');
   for(const mode of ['ping-asc','ping-desc','name-asc','name-desc'])sort.append(sort.querySelector(`option[value="${mode}"]`));
