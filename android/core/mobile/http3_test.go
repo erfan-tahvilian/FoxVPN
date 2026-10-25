@@ -63,6 +63,7 @@ func TestMobileHTTP3AuthenticatedForwarding(t *testing.T) {
 func TestMobileAutomaticFallsBackToHTTP2(t *testing.T) {
 	tunnel, origin := protocolTunnel(t)
 	tunnel.settings["transport"] = "auto"
+ tunnel.probeAddress=origin.URL
 	body, err := tunnel.request(context.Background(), origin.URL, nil, "")
 	if err != nil || string(body) != "tunneled-response" || !tunnel.h3fallback {
 		t.Fatalf("HTTP2 fallback failed: %v", err)

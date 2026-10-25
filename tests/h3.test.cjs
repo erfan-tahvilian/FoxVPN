@@ -5,7 +5,7 @@ test('automatic requires a working HTTPS probe before using HTTP2 and forced HTT
  const session=new (require('node:events').EventEmitter)();session.destroy=()=>{};
  Tunnel.prototype.session=async function(){fallback++;this.current=session;this.sessions.add(session);return session;};
  Tunnel.prototype.request=async()=>{probes++;return Buffer.alloc(0);};
- try{for(const mode of ['auto','h3']){const t=new AdaptiveTunnel({...DEFAULTS,transport:mode},()=>{},()=>{},'missing-helper');t.active=true;t.candidate={host:'localhost',port:443};t.token='fixture';if(mode==='auto'){assert.equal(await t.session(),session);assert.equal(t.protocol,'h2');}else await assert.rejects(t.session(),/missing/);t.stop();}assert.equal(fallback,1);assert.equal(probes,process.platform==='win32'?1:0);}finally{Tunnel.prototype.session=originalSession;Tunnel.prototype.request=originalRequest;}
+ try{for(const mode of ['auto','h3']){const t=new AdaptiveTunnel({...DEFAULTS,transport:mode},()=>{},()=>{},'missing-helper');t.active=true;t.candidate={host:'localhost',port:443};t.token='fixture';if(mode==='auto'){assert.equal(await t.session(),session);assert.equal(t.protocol,'h2');}else await assert.rejects(t.session(),/missing/);t.stop();}assert.equal(fallback,1);assert.equal(probes,1);}finally{Tunnel.prototype.session=originalSession;Tunnel.prototype.request=originalRequest;}
 });
 test('forced HTTP3 refuses an incompatible TCP upstream proxy',async()=>{const t=new AdaptiveTunnel({...DEFAULTS,transport:'h3',upstream:{...DEFAULTS.upstream,enabled:true}},()=>{},()=>{},'missing-helper');t.active=true;await assert.rejects(t.session(),/UDP/);t.stop();});
 
@@ -21,7 +21,7 @@ test('Windows Recommended uses official anycast and manual locations remain expl
  const {connectionCandidates}=require('../src/lib/h3-tunnel.cjs');const servers=[{id:'de',code:'DE'},{id:'rec',code:'REC'},{id:'uk',code:'GB'}];
  assert.deepEqual(connectionCandidates(servers,'REC','win32'),[servers[1]]);
  assert.deepEqual(connectionCandidates(servers,'de','win32'),[servers[0]]);
- assert.equal(connectionCandidates(servers,'REC','darwin').length,3);
+ assert.deepEqual(connectionCandidates(servers,'REC','darwin'),[servers[1]]);
 });
 
 test('Automatic chooses the first healthy HTTPS path and releases its competitor',async()=>{

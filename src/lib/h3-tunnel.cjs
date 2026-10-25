@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 const {spawn}=require('node:child_process'),net=require('node:net'),crypto=require('node:crypto'),dns=require('node:dns').promises,fs=require('node:fs');
 const {Tunnel,Reader}=require('./tunnel.cjs');
-// Windows validation precedes rollout of the new bootstrap to other platforms.
+// Desktop transports share encrypted bootstrap and verified automatic selection.
 async function workerConfig(settings,candidate,platform=process.platform){
   const hostname=settings.edge||candidate.host;
-  const encrypted=platform==='win32'&&!settings.edge&&!settings.customDns&&settings.doh!=='off';
+  const encrypted=!settings.edge&&!settings.customDns&&settings.doh!=='off';
   const addresses=encrypted?[]:await dns.lookup(hostname,{all:true});
-  return {host:candidate.host,edge:hostname,edges:addresses.map(a=>a.address),bootstrapDNS:encrypted?(settings.doh||'automatic'):'',port:candidate.port,timeout:settings.transport==='h3'?(platform==='win32'?20000:10000):3500};
+  return {host:candidate.host,edge:hostname,edges:addresses.map(a=>a.address),bootstrapDNS:encrypted?(settings.doh||'automatic'):'',port:candidate.port,timeout:settings.transport==='h3'?20000:3500};
 }
 function connectionCandidates(servers,id,platform=process.platform){
   if(id!=='REC')return servers.filter(s=>s.id===id);
-  if(platform==='win32'){const recommended=servers.filter(s=>s.code==='REC');if(recommended.length)return recommended;}
+  const recommended=servers.filter(s=>s.code==='REC');if(recommended.length)return recommended;
   return [...servers].sort(()=>Math.random()-.5);
 }
 // Race completed HTTPS probes, rather than treating a TCP/QUIC handshake as
@@ -87,7 +87,7 @@ class AdaptiveTunnel extends Tunnel {
     if(!this.active)throw Error('Tunnel is disconnected.');
     if(this.settings.transport==='h3'&&this.settings.upstream?.enabled)throw Error('HTTP/3 requires a direct UDP connection. Disable the upstream proxy or choose Automatic.');
     if(this.h3Opening)return this.h3Opening;
-    const pending=process.platform==='win32'&&this.settings.transport==='auto'&&!this.protocol?this.automaticSession():(async()=>{try{if(!this.worker||this.worker.dead){this.worker?.stop();const config=await workerConfig(this.settings,this.candidate);this.worker=new H3Worker(this.helper,{...config,token:this.token});await this.worker.start();if(!net.isIP(this.worker.edgeIP))throw Error('Invalid HTTP/3 edge address.');this.edgeIP=this.worker.edgeIP;}if(!this.active){this.worker.stop();throw Error('Tunnel is disconnected.');}this.protocol='h3';return {http3:true};}catch(error){this.worker?.stop();this.worker=null;if(this.settings.transport==='h3'||!this.active)throw error;this.protocol='h2';if(this.edgeIP)this.settings.edge=this.edgeIP;this.log('info','HTTP/3 unavailable on this network. Using HTTP/2 over TLS.');return super.session();}})();this.h3Opening=pending;
+    const pending=this.settings.transport==='auto'&&!this.protocol?this.automaticSession():(async()=>{try{if(!this.worker||this.worker.dead){this.worker?.stop();const config=await workerConfig(this.settings,this.candidate);this.worker=new H3Worker(this.helper,{...config,token:this.token});await this.worker.start();if(!net.isIP(this.worker.edgeIP))throw Error('Invalid HTTP/3 edge address.');this.edgeIP=this.worker.edgeIP;}if(!this.active){this.worker.stop();throw Error('Tunnel is disconnected.');}this.protocol='h3';return {http3:true};}catch(error){this.worker?.stop();this.worker=null;if(this.settings.transport==='h3'||!this.active)throw error;this.protocol='h2';if(this.edgeIP)this.settings.edge=this.edgeIP;this.log('info','HTTP/3 unavailable on this network. Using HTTP/2 over TLS.');return super.session();}})();this.h3Opening=pending;
     try{return await pending;}finally{if(this.h3Opening===pending)this.h3Opening=null;}
   }
   async open(host,port){await this.session();if(this.protocol==='h2')return super.open(host,port);try{const socket=await this.worker.open(host,port);const push=socket.push,write=socket.write;socket.push=(chunk,...args)=>{if(chunk)this.down+=Buffer.byteLength(chunk);return push.call(socket,chunk,...args);};socket.write=(chunk,...args)=>{this.up+=Buffer.byteLength(chunk);return write.call(socket,chunk,...args);};return socket;}catch(error){if([401,403,429].includes(error.status)){this.onFatal(error);throw error;}if(this.settings.transport==='h3'||!this.active)throw error;this.worker?.stop();this.worker=null;this.protocol='h2';if(this.edgeIP)this.settings.edge=this.edgeIP;this.log('info','HTTP/3 interrupted. New connections will use HTTP/2 over TLS.');return super.open(host,port);}}

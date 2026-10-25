@@ -400,18 +400,21 @@ func (b *Backend) rejectedAccount(t *proxyTunnel, status int, h http.Header, eve
 	b.log("info", "Data allowance exhausted. Switched to another saved account.")
 }
 func (t *proxyTunnel) replaceAccount(id, token string) {
-	t.sessionMu.Lock()
+	t.automaticMu.Lock()
+ t.sessionMu.Lock()
 	t.mu.Lock()
 	sockets := make([]interface{ Close() error }, 0, len(t.sockets))
 	for s := range t.sockets {
 		sockets = append(sockets, s)
 	}
-	h3 := t.h3
+	selected:=t.selected;t.selected=nil;t.h3fallback=false
+ h3 := t.h3
 	t.h3 = nil
 	t.current = nil
 	t.currentSocket = nil
 	t.mu.Unlock()
-	if h3 != nil {
+	if selected!=nil{selected.close()}
+ if h3 != nil {
 		h3.close()
 	}
 	for _, s := range sockets {
@@ -422,6 +425,7 @@ func (t *proxyTunnel) replaceAccount(id, token string) {
 	t.accountID = id
 	t.mu.Unlock()
 	t.sessionMu.Unlock()
+ t.automaticMu.Unlock()
 }
 func (b *Backend) observeTrafficLocked() {
 	if b.tunnel == nil || b.started == 0 {

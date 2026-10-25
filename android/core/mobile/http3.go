@@ -31,12 +31,14 @@ func (h *mobileH3) close() {
 func (t *proxyTunnel) protocolName() string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if t.h3 != nil && !t.h3fallback {
+	if t.selected!=nil{return t.selected.protocolName()}
+ if t.h3 != nil && !t.h3fallback {
 		return "http/3"
 	}
 	return "http/2"
 }
 func (b *Backend) protocolLocked() string {
+ if b.connection!="connected"{return ""}
 	if b.tunnel != nil && b.tunnel.protocolName() == "http/3" {
 		return "h3"
 	}
@@ -65,7 +67,7 @@ func (t *proxyTunnel) h3Session(ctx context.Context) (*http3.ClientConn, error) 
 			return h.client, nil
 		}
 	}
-	timeout := 10 * time.Second
+	timeout := 20 * time.Second
 	if str(t.settings, "transport") != "h3" {
 		timeout = 3500 * time.Millisecond
 	}
@@ -138,6 +140,7 @@ func (t *proxyTunnel) h3Session(ctx context.Context) (*http3.ClientConn, error) 
 }
 func (t *proxyTunnel) roundTrip(ctx context.Context, req *http.Request) (*http.Response, error) {
 	mode := str(t.settings, "transport")
+ if mode=="auto"&&!yes(obj(t.settings,"upstream"),"enabled"){selected,err:=t.automatic(ctx);if err!=nil{return nil,err};response,err:=selected.roundTrip(ctx,req);if err!=nil&&ctx.Err()==nil&&t.ctx.Err()==nil{t.fallbackAfter(selected)};return response,err}
 	t.mu.Lock()
 	fallback := t.h3fallback
 	t.mu.Unlock()

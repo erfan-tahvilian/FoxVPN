@@ -31,6 +31,9 @@ type proxyTunnel struct {
 	cancel           context.CancelFunc
 	mu               sync.Mutex
 	sessionMu        sync.Mutex
+ automaticMu sync.Mutex
+ selected *proxyTunnel
+ probeAddress string
 	current          *http2.ClientConn
  h3 *mobileH3
  h3fallback bool
@@ -98,7 +101,9 @@ func (t *proxyTunnel) setToken(token string) {
 	}
 	t.mu.Lock()
 	t.token = token
+ selected:=t.selected
 	t.mu.Unlock()
+ if selected!=nil{selected.setToken(token)}
 	t.expiry.Store(expiry)
 }
 func (t *proxyTunnel) track(c io.Closer) bool {
@@ -212,7 +217,7 @@ func (t *proxyTunnel) monitor() {
 		case <-t.ctx.Done():
 			return
 		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(t.ctx, 15*time.Second)
+			ctx, cancel := context.WithTimeout(t.ctx, 30*time.Second)
 			err := t.health(ctx)
 			cancel()
 			if err != nil && t.ctx.Err() == nil {
@@ -334,7 +339,7 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 	req.Host = address
 	req.ContentLength = -1
  req.Header.Set("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0")
- timer:=time.AfterFunc(15*time.Second,cancel)
+ timer:=time.AfterFunc(30*time.Second,cancel)
  response,err:=t.roundTrip(child,req)
 	timer.Stop()
 	if err != nil {
@@ -367,7 +372,7 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 	return stream, nil
 }
 func (t *proxyTunnel) start() error {
-	ctx, cancel := context.WithTimeout(t.ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(t.ctx, 30*time.Second)
 	err := t.health(ctx)
 	cancel()
 	if err != nil {
@@ -516,16 +521,19 @@ func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, 
 }
 // realDelay mirrors the two-request, keep-alive minimum used by v2rayN.
 func (t *proxyTunnel) realDelay(ctx context.Context, address string) (int64,error) {
-    var best int64
-    for i:=0;i<2;i++ {
-        start:=time.Now()
-        if _,err:=t.request(ctx,address,nil,"",200,204);err!=nil{return 0,err}
-        elapsed:=time.Since(start).Milliseconds();if elapsed<1 {elapsed=1}
-        if best==0||elapsed<best {best=elapsed}
-        timer:=time.NewTimer(100*time.Millisecond)
-        select {case <-ctx.Done():timer.Stop();return 0,ctx.Err();case <-timer.C:}
-    }
-    return best,nil
+ setup,cancelSetup:=context.WithTimeout(ctx,22*time.Second)
+ mode:=str(t.settings,"transport");var setupErr error
+ if mode=="auto"&&!yes(obj(t.settings,"upstream"),"enabled"){_,setupErr=t.automatic(setup)}else if mode=="h3"{_,setupErr=t.h3Session(setup)}else{_,setupErr=t.session(setup)}
+ cancelSetup();if setupErr!=nil{return 0,setupErr}
+ var best int64
+ for i:=0;i<2;i++{
+  if i>0{timer:=time.NewTimer(100*time.Millisecond);select{case <-ctx.Done():timer.Stop();return best,ctx.Err();case <-timer.C:}}
+  sample,cancel:=context.WithTimeout(ctx,5*time.Second);start:=time.Now()
+  _,err:=t.request(sample,address,nil,"",200,204);cancel()
+  if err!=nil{if best>0{return best,nil};return 0,err}
+  elapsed:=time.Since(start).Milliseconds();if elapsed<1{elapsed=1};if best==0||elapsed<best{best=elapsed}
+ }
+ return best,nil
 }
 func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byte, error) {
 	providers := map[string][]string{"automatic": {"cloudflare-dns.com", "dns.google", "dns.quad9.net"}, "cloudflare": {"cloudflare-dns.com"}, "google": {"dns.google"}, "quad9": {"dns.quad9.net"}}
@@ -662,7 +670,7 @@ func (t *proxyTunnel) udp(conn net.Conn) error {
 		}
 		go func(packet []byte, remote *net.UDPAddr, host string, offset int) {
 			defer func() { <-limit }()
-			ctx, cancel := context.WithTimeout(t.ctx, 15*time.Second)
+			ctx, cancel := context.WithTimeout(t.ctx, 30*time.Second)
 			defer cancel()
 			answer, err := t.dns(ctx, packet[offset:], host)
 			if err == nil {
@@ -709,13 +717,14 @@ func (t *proxyTunnel) close() {
 	t.closed = true
 	listener := t.listener
  h3:=t.h3;t.h3=nil
+ selected:=t.selected;t.selected=nil
 	sockets := make([]io.Closer, 0, len(t.sockets))
 	for s := range t.sockets {
 		sockets = append(sockets, s)
 	}
 	t.sockets = map[io.Closer]struct{}{}
 	t.mu.Unlock()
- if h3!=nil{h3.close()}
+ if h3!=nil{h3.close()};if selected!=nil{selected.close()}
 	if listener != nil {
 		listener.Close()
 	}

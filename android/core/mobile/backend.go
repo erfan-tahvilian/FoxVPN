@@ -3,7 +3,6 @@ package mobile
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -329,6 +328,7 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		if err = validate(s); err == nil {
 			b.mu.Lock()
 			b.settings = s
+ if str(old,"transport")!=str(s,"transport"){b.latencies=object{}}
 			b.mu.Unlock()
 			err = b.save()
 			if err != nil {
@@ -459,14 +459,8 @@ func (b *Backend) connect() error {
 	b.mu.Lock()
 	b.quota = object{"limit": headers.Get("x-quota-limit"), "remaining": headers.Get("x-quota-remaining"), "reset": headers.Get("x-quota-reset")}
 	b.mu.Unlock()
-	if str(s, "serverId") == "REC" {
-		for i := range servers {
-			var buf [1]byte
-			rand.Read(buf[:])
-			j := int(buf[0]) % len(servers)
-			servers[i], servers[j] = servers[j], servers[i]
-		}
-	}
+ if str(s,"serverId")=="REC"{recommended:=[]object{};for _,server:=range servers{if str(server,"code")=="REC"{recommended=append(recommended,server)}};if len(recommended)>0{servers=recommended}}
+
 	attempts := 0
 	for _, server := range servers {
 		if str(s, "serverId") != "REC" && str(s, "serverId") != str(server, "id") {
@@ -663,7 +657,7 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 			defer wg.Done()
 			limit <- struct{}{}
 			defer func() { <-limit }()
-			pctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			pctx, cancel := context.WithTimeout(ctx, 35*time.Second)
 			defer cancel()
 			probe := newTunnel(b, settings, server, token, pctx)
             defer probe.close()
@@ -676,7 +670,7 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 				}
 			}
 			b.mu.Lock()
-			b.latencies[str(server, "id")] = object{"ms": latency, "measuredAt": millis(), "kind": "real-delay"}
+			if str(b.settings,"transport")==str(settings,"transport"){result:=object{"ms":latency,"measuredAt":millis(),"kind":"real-delay","protocol":strings.ReplaceAll(probe.protocolName(),"http/","h")};if err!=nil{reason:="unavailable";if errors.Is(err,context.DeadlineExceeded)||strings.Contains(strings.ToLower(err.Error()),"timed out"){reason="timeout"};result["reason"]=reason};b.latencies[str(server,"id")]=result}
 			b.mu.Unlock()
 			b.emit()
 		}(s)

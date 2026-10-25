@@ -6,8 +6,8 @@ An independent VPN client for Windows, macOS, Linux and Android, built on Mozill
 - **Persistent traffic statistics:** View monthly allowance, last-session transfers and cumulative traffic on this device.
 - **Flexible app routing:** Choose which apps use the VPN with selected-app and exclusion modes, a searchable app picker and synchronized manual identifiers.
 - **Connection controls:** Check real HTTPS delay, browse saved locations and view IPv4 and IPv6 addresses when available.
-- **Mobile network compatibility:** IPv4 address recovery and clearer HTTP/3 diagnostics when a mobile network has no usable IPv6 route.
-- **Adaptive transport:** Use HTTP/2 over TLS or HTTP/3 over QUIC. Automatic falls back to HTTP/2 when HTTP/3 cannot be established.
+- **Network compatibility:** Encrypted endpoint bootstrap, IPv4-first connection attempts and clearer timeout diagnostics.
+- **Adaptive transport:** Use HTTP/2 over TLS or HTTP/3 over QUIC. Automatic compares verified HTTPS responses through both protocols and keeps the first healthy path.
 - **Android Quick Settings:** Connect from the tile and follow live download, upload and session information in the persistent notification.
 
 Licensed under the GNU General Public License, version 3 or later. Independent dependencies retain their original licenses and notices.

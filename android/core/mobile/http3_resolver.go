@@ -21,10 +21,12 @@ import (
 // Custom edge names and explicit DNS overrides never go to public resolvers.
 func (t *proxyTunnel) h3Addresses(ctx context.Context, host string) ([]net.IPAddr,error) {
  allow:=str(t.settings,"edge")==""&&str(t.settings,"customDns")==""&&str(t.settings,"doh")!="off"
- return resolveH3Addresses(ctx,host,t.b.dialer.Resolver.LookupIPAddr,func(ctx context.Context,host string)([]net.IPAddr,error){
-  if !allow{return nil,errors.New("Encrypted bootstrap disabled")}
-  return t.b.h3IPv4(ctx,host,str(t.settings,"doh"))
- })
+ if allow&&net.ParseIP(host)==nil{
+  bootstrap,cancel:=context.WithTimeout(ctx,2*time.Second)
+  ips,err:=encryptedEdges(bootstrap,host,str(t.settings,"doh"),t.b.client);cancel()
+  if err==nil&&len(ips)>0{addresses:=make([]net.IPAddr,0,len(ips));for _,ip:=range ips{addresses=append(addresses,net.IPAddr{IP:net.IP(ip.AsSlice())})};return addresses,nil}
+ }
+ return resolveH3Addresses(ctx,host,t.b.dialer.Resolver.LookupIPAddr,func(context.Context,string)([]net.IPAddr,error){return nil,errors.New("Encrypted bootstrap unavailable")})
 }
 func resolveH3Addresses(ctx context.Context,host string,native,ipv4 func(context.Context,string)([]net.IPAddr,error))([]net.IPAddr,error){
  if ip:=net.ParseIP(host);ip!=nil{return []net.IPAddr{{IP:ip}},nil}
