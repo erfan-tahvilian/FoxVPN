@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/sagernet/gomobile v0.1.7
+	github.com/sagernet/quic-go v0.52.0-beta.1
 	github.com/sagernet/sing-box v1.12.0
 	golang.org/x/crypto v0.40.0
 	golang.org/x/net v0.42.0
@@ -73,7 +74,6 @@ require (
 	github.com/sagernet/gvisor v0.0.0-20250325023245-7a9c0f5725fb // indirect
 	github.com/sagernet/netlink v0.0.0-20240612041022-b9a21c07ac6a // indirect
 	github.com/sagernet/nftables v0.3.0-beta.4 // indirect
-	github.com/sagernet/quic-go v0.52.0-beta.1 // indirect
 	github.com/sagernet/sing v0.7.0-beta.2 // indirect
 	github.com/sagernet/sing-mux v0.3.2 // indirect
 	github.com/sagernet/sing-quic v0.5.0-beta.3 // indirect
