@@ -33,6 +33,18 @@ public class AndroidIntegrationTest {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> activity.getActivity().web.evaluateJavascript(script,text->{value.set(text);result.countDown();}));
         assertTrue(result.await(15,TimeUnit.SECONDS));return value.get();
     }
+    private void dismissLauncherAnr(UiDevice device){
+        if(device.hasObject(By.res("android:id/alertTitle").text("Pixel Launcher isn't responding"))){
+            UiObject2 close=device.findObject(By.res("android:id/aerr_close"));
+            if(close!=null){android.util.Log.w("FoxVPNTest","Dismissing unrelated emulator Pixel Launcher ANR");close.click();}
+        }
+    }
+    private UiObject2 awaitNative(androidx.test.uiautomator.BySelector selector,long timeout)throws Exception{
+        UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        long deadline=System.currentTimeMillis()+timeout;
+        do{dismissLauncherAnr(device);UiObject2 found=device.findObject(selector);if(found!=null)return found;Thread.sleep(100);}while(System.currentTimeMillis()<deadline);
+        return null;
+    }
     private void ready()throws Exception{
         long deadline=System.currentTimeMillis()+20000;
         while(System.currentTimeMillis()<deadline){if("true".equals(js("!!window.fox && !!document.getElementById('connect') && typeof currentState!=='undefined' && currentState!==null")))return;Thread.sleep(250);}
@@ -122,7 +134,7 @@ public class AndroidIntegrationTest {
             assertTrue(app.state.getJSONObject("settings").getJSONArray("excludedApps").toString().contains("com.myirancell"));
             js("navigate('settings');document.getElementById('choose-apps').click()");
             UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-            assertNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText").text("Search apps")),5000));
+            assertNotNull(awaitNative(By.clazz("android.widget.EditText").text("Search apps"),5000));
             UiObject2 manual=device.wait(Until.findObject(By.text("com.myirancell")),5000);assertNotNull(manual);manual.click();
             Thread.sleep(500);assertEquals("false",js("document.getElementById('excludedApps').value.includes('com.myirancell')"));
             UiObject2 search=device.findObject(By.clazz("android.widget.EditText"));search.setText("no-such-foxvpn-app-123");
@@ -165,6 +177,7 @@ public class AndroidIntegrationTest {
             // System consent is asynchronous and may briefly suppress clicks after the dialog opens.
             long deadline=System.currentTimeMillis()+30000;
             while(VpnService.prepare(context)!=null&&System.currentTimeMillis()<deadline){
+                dismissLauncherAnr(device);
                 UiObject2 okay=device.findObject(By.res("android:id/button1"));
                 if(okay==null)okay=device.findObject(By.pkg("com.android.vpndialogs").text(java.util.regex.Pattern.compile("(?i)(OK|Connect|Allow)")));
                 if(okay!=null&&okay.isEnabled())okay.click();
