@@ -173,3 +173,10 @@ HTTP/3 connection setup now follows the MIT-licensed `armanlife/firefox-vpn-clie
 
 
 The final Android build at revision `d5e63bd` passed [core, package, lint and emulator checks](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40162015943), including stale-account rejection isolation. All five APK architectures were [signed and published on GitHub Actions](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40162645882) with the persistent project signing identity. The encrypted identity transfer was removed after receipt; private signing material was deleted from the runner. The Windows, macOS and Linux packages were [published from verified native build artifacts](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40161863718). The owner confirmed the Android update: adding and manually selecting saved accounts, a stable Automatic connection, and retained traffic after disconnection and restart. Live handover after exhausting an actual allowance and production HTTP/3 on another network remain unverified. The final Windows x64 installation completed at the configured destination and its packaged source and version were verified.
+
+
+## Android HTTP/3 address-family recovery
+
+A physical-phone report on a second network showed IPv6 `network is unreachable` failures, along with a handshake timeout. This does not establish whether IPv4 was available or UDP was blocked. Android now recovers a missing IPv4 answer through TLS-verified, socket-protected DNS-over-HTTPS when the physical resolver returns only IPv6 or fails. Native IPv6/DNS64 addresses are retained. Literal addresses, custom edge names and explicit DNS overrides do not trigger public bootstrap recovery. A later IPv6 route error no longer hides an earlier handshake timeout.
+
+[Android CI](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40183519570) includes fixtures for IPv4 recovery, NAT64-address preservation, avoiding unnecessary DNS queries, rejecting mismatched/unrelated DNS responses and retaining the original timeout classification. Physical HTTP/3 forwarding with this correction still requires phone testing.
