@@ -7,3 +7,7 @@ x/sys v0.47.0 and x/text v0.40.0 - BSD-3-Clause - https://go.dev/
 
 Full license texts are supplied in quic-go-MIT.txt, qpack-MIT.txt
 and Go-BSD.txt. Fox VPN's original HTTP/3 integration is GPL-3.0-or-later.
+
+HTTP/3 UDP dialing and initial packet configuration are adapted from
+armanlife/firefox-vpn-client (MIT, Copyright (c) 2026 Arman).
+The pinned revision and full license are in firefox-vpn-client-MIT.txt.
