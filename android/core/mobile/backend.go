@@ -278,6 +278,7 @@ func (b *Backend) Call(channel, argsJSON string) string {
  // Public catalog refresh does not mutate authentication and must not block
  // local account selection behind a slow network request.
  if channel=="servers"{result,err:=b.refreshServers(context.Background());return envelope(result,err)}
+ if channel=="account"{result,err:=b.refreshProfile(context.Background());return envelope(result,err)}
 	b.action.Lock()
 	defer b.action.Unlock()
 	arg := func(i int) any {
@@ -331,25 +332,6 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		b.mu.Unlock()
 	case "removeAccount":
 		err = b.removeAccount(text(0))
-	case "account":
-		result, _, err = b.guardian(ctx, "status", "GET", true)
-		if err == nil {
-			d, _ := result.(map[string]any)
-			if yes(d, "limited_bandwidth") {
-				_, headers, e := b.pass(ctx)
-				if e == nil {
-					d["quotaRemaining"] = headers.Get("x-quota-remaining")
-					d["quotaLimit"] = headers.Get("x-quota-limit")
-					d["quotaReset"] = headers.Get("x-quota-reset")
-				}
-			}
-		}
-		if err == nil {
-			d, _ := result.(map[string]any)
-			q := object{"limit": d["quotaLimit"], "remaining": d["quotaRemaining"], "reset": d["quotaReset"], "unlimited": d["limited_bandwidth"] == false}
-			b.recordQuota(b.activeAccountID, q)
-			err = b.save()
-		}
 	case "settings":
 		s, _ := arg(0).(map[string]any)
 		b.mu.Lock()
@@ -828,4 +810,29 @@ func cachedServers(values []any) []object {
 		result = append(result, object{"id": str(server, "id"), "country": str(server, "country"), "code": str(server, "code"), "city": displayCity(str(server, "country"), str(server, "city")), "cityCode": str(server, "cityCode"), "host": host, "port": port})
 	}
 	return result
+}
+
+func(b *Backend)refreshProfile(ctx context.Context)(any,error){
+ b.mu.Lock();id:=b.activeAccountID;b.mu.Unlock();ctx=context.WithValue(ctx,accountContextKey{},id)
+ var result any;var err error
+		result, _, err = b.guardian(ctx, "status", "GET", true)
+		if err == nil {
+			d, _ := result.(map[string]any)
+			if yes(d, "limited_bandwidth") {
+				_, headers, e := b.pass(ctx)
+				if e == nil {
+					d["quotaRemaining"] = headers.Get("x-quota-remaining")
+					d["quotaLimit"] = headers.Get("x-quota-limit")
+					d["quotaReset"] = headers.Get("x-quota-reset")
+				}
+			}
+		}
+		if err == nil {
+			d, _ := result.(map[string]any)
+			q := object{"limit": d["quotaLimit"], "remaining": d["quotaRemaining"], "reset": d["quotaReset"], "unlimited": d["limited_bandwidth"] == false}
+			b.recordQuota(id, q)
+			err = b.save()
+		}
+
+ b.emit();return result,err
 }
