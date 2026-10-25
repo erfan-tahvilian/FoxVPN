@@ -53,3 +53,7 @@ On the owner's Windows machine, the rebuilt helper obtained a fresh account prox
 - [Defaults](https://github.com/armanlife/firefox-vpn-client/blob/13845fafb2a67e2c1ba1e1145537a0a5db16a8d3/core/internal/config/config.go)
 
 Reference-derived code retains its MIT attribution in `licenses/firefox-vpn-client-MIT.txt`.
+
+## Approved rollout
+
+After Windows acceptance, the desktop bootstrap, REC selection and first-healthy HTTPS transport decision were enabled for macOS and Linux. Android implements the equivalent decision with independent, socket-protected candidate tunnels, a twenty-second forced QUIC budget and separate real-delay setup/sample deadlines. Account changes discard previous-account streams and propagate token renewal to the selected transport. Core, package and native-device CI passed. A universally successful physical HTTP/3 path is not claimed: the owner's current network remains intermittent, and testing another network is still pending.
