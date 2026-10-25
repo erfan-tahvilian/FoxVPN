@@ -26,7 +26,7 @@ import (
  "github.com/quic-go/quic-go"
  "github.com/quic-go/quic-go/http3"
 )
-type config struct { Host string `json:"host"`; Edge string `json:"edge"`; Edges []string `json:"edges"`; Port int `json:"port"`; Token string `json:"token"`; Secret string `json:"secret"`; Timeout int `json:"timeout"`; Type string `json:"type"` }
+type config struct { BootstrapDNS string `json:"bootstrapDNS"`; Host string `json:"host"`; Edge string `json:"edge"`; Edges []string `json:"edges"`; Port int `json:"port"`; Token string `json:"token"`; Secret string `json:"secret"`; Timeout int `json:"timeout"`; Type string `json:"type"` }
 type destination struct { Host string `json:"host"`; Port int `json:"port"`; Secret string `json:"secret"` }
 type connectError struct { Status int; Quota map[string]string }
 func(e *connectError)Error()string{return fmt.Sprintf("HTTP/3 CONNECT rejected (%d)",e.Status)}
@@ -44,13 +44,13 @@ func(w *worker) connection(ctx context.Context)(*http3.ClientConn,error){
  w.mu.Lock();defer w.mu.Unlock()
  if w.conn!=nil {select{case <-w.conn.Context().Done():default:return w.client,nil}}
  w.closeLocked()
- timeout:=time.Duration(w.cfg.Timeout)*time.Millisecond;if timeout<=0{timeout=10*time.Second}
+ timeout:=time.Duration(w.cfg.Timeout)*time.Millisecond;if timeout<=0{timeout=20*time.Second}
  ctx,cancel:=context.WithTimeout(ctx,timeout);defer cancel()
  hosts:=w.cfg.Edges
  if w.edgeIP!=""{hosts=[]string{w.edgeIP}}else if len(hosts)==0{host:=w.cfg.Edge;if host==""{host=w.cfg.Host};hosts=[]string{host}}
  var ips []netip.Addr;seen:=make(map[netip.Addr]bool)
  for _,host:=range hosts{
-  addresses,err:=net.DefaultResolver.LookupNetIP(ctx,"ip",host);if err!=nil{return nil,handshakeError(err)}
+  addresses,err:=resolveEdge(ctx,host,w.cfg.BootstrapDNS);if err!=nil{return nil,handshakeError(err)}
   for _,ip:=range addresses{ip=ip.Unmap();if !seen[ip]{seen[ip]=true;ips=append(ips,ip)}}
  }
  if len(ips)==0{return nil,errors.New("HTTP/3 server name could not be resolved. Check your DNS connection")}

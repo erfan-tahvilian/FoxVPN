@@ -154,10 +154,9 @@ async function connect({resumeTraffic=false,prepared=null}={}) {
     if(!servers.length)await refreshServers();
     check();
     const id=store.settings.serverId;
-    const list=id==='REC'?[...servers]:servers.filter(s=>s.id===id);
+    const list=require('./lib/h3-tunnel.cjs').connectionCandidates(servers,id);
     if(!list.length)throw Error('This server is no longer available. Choose another location.');
-    // Spread automatic selection across available edges; verify each attempted exit.
-    if(id==='REC')list.sort(()=>Math.random()-.5);
+    // The official REC edge provides anycast selection on Windows.
     const pass=multiAccount?(prepared||await accountCoordinator.prepare()).pass:await guardian.pass();syncGuardian();quota={limit:pass.quotaLimit,remaining:pass.quotaRemaining,reset:pass.quotaReset};
     check();
     let selected;

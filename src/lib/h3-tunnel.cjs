@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 const {spawn}=require('node:child_process'),net=require('node:net'),crypto=require('node:crypto'),dns=require('node:dns').promises,fs=require('node:fs');
 const {Tunnel,Reader}=require('./tunnel.cjs');
+// Windows validation precedes rollout of the new bootstrap to other platforms.
+async function workerConfig(settings,candidate,platform=process.platform){
+  const hostname=settings.edge||candidate.host;
+  const encrypted=platform==='win32'&&!settings.edge&&!settings.customDns&&settings.doh!=='off';
+  const addresses=encrypted?[]:await dns.lookup(hostname,{all:true});
+  return {host:candidate.host,edge:hostname,edges:addresses.map(a=>a.address),bootstrapDNS:encrypted?(settings.doh||'automatic'):'',port:candidate.port,timeout:settings.transport==='h3'?(platform==='win32'?20000:10000):3500};
+}
+function connectionCandidates(servers,id,platform=process.platform){
+  if(id!=='REC')return servers.filter(s=>s.id===id);
+  if(platform==='win32'){const recommended=servers.filter(s=>s.code==='REC');if(recommended.length)return recommended;}
+  return [...servers].sort(()=>Math.random()-.5);
+}
 class H3Worker {
   constructor(executable,config){this.executable=executable;this.config=config;this.secret=crypto.randomBytes(32).toString('hex');this.sockets=new Set();this.stopped=false;}
   start(){if(this.ready)return this.ready;this.ready=new Promise((resolve,reject)=>{if(!fs.existsSync(this.executable)){reject(Error('HTTP/3 transport is missing. Reinstall Fox VPN.'));return;}const child=this.child=spawn(this.executable,[],{windowsHide:true,stdio:['pipe','pipe','ignore']});let buffer='',settled=false;const finish=(error,data)=>{if(settled)return;settled=true;clearTimeout(timer);if(error){this.stop();reject(error);}else{this.port=data.port;this.edgeIP=data.edgeIP;resolve();}};const timer=setTimeout(()=>finish(Error('HTTP/3 connection timed out.')),this.config.timeout+2500);child.once('error',()=>finish(Error('HTTP/3 transport could not start.')));child.once('exit',()=>{this.dead=true;finish(Error('HTTP/3 connection could not be established.'));});child.stdin.on('error',()=>{});child.stdout.on('data',chunk=>{buffer+=chunk.toString();if(buffer.length>8192){finish(Error('Invalid HTTP/3 transport response.'));return;}const end=buffer.indexOf('\n');if(end>=0&&!settled){try{const data=JSON.parse(buffer.slice(0,end));finish(data.error?Error(data.error):!Number.isInteger(data.port)||data.port<1?Error('Invalid HTTP/3 port.'):null,data);}catch{finish(Error('Invalid HTTP/3 response.'));}}});child.stdin.write(JSON.stringify({...this.config,secret:this.secret})+'\n');});return this.ready;}
@@ -15,10 +27,10 @@ class AdaptiveTunnel extends Tunnel {
     if(this.protocol==='h2')return super.session();
     if(!this.active)throw Error('Tunnel is disconnected.');
     if(this.settings.transport==='h3'&&this.settings.upstream?.enabled)throw Error('HTTP/3 requires a direct UDP connection. Disable the upstream proxy or choose Automatic.');
-    if(this.h3Opening)return this.h3Opening;const pending=(async()=>{try{if(!this.worker||this.worker.dead){this.worker?.stop();const addresses=await dns.lookup(this.settings.edge||this.candidate.host,{all:true});this.worker=new H3Worker(this.helper,{host:this.candidate.host,edges:addresses.map(a=>a.address),port:this.candidate.port,token:this.token,timeout:this.settings.transport==='h3'?10000:3500});await this.worker.start();if(!net.isIP(this.worker.edgeIP))throw Error('Invalid HTTP/3 edge address.');this.edgeIP=this.worker.edgeIP;}if(!this.active){this.worker.stop();throw Error('Tunnel is disconnected.');}this.protocol='h3';return {http3:true};}catch(error){this.worker?.stop();this.worker=null;if(this.settings.transport==='h3'||!this.active)throw error;this.protocol='h2';if(this.edgeIP)this.settings.edge=this.edgeIP;this.log('info','HTTP/3 unavailable on this network. Using HTTP/2 over TLS.');return super.session();}})();this.h3Opening=pending;
+    if(this.h3Opening)return this.h3Opening;const pending=(async()=>{try{if(!this.worker||this.worker.dead){this.worker?.stop();const config=await workerConfig(this.settings,this.candidate);this.worker=new H3Worker(this.helper,{...config,token:this.token});await this.worker.start();if(!net.isIP(this.worker.edgeIP))throw Error('Invalid HTTP/3 edge address.');this.edgeIP=this.worker.edgeIP;}if(!this.active){this.worker.stop();throw Error('Tunnel is disconnected.');}this.protocol='h3';return {http3:true};}catch(error){this.worker?.stop();this.worker=null;if(this.settings.transport==='h3'||!this.active)throw error;this.protocol='h2';if(this.edgeIP)this.settings.edge=this.edgeIP;this.log('info','HTTP/3 unavailable on this network. Using HTTP/2 over TLS.');return super.session();}})();this.h3Opening=pending;
     try{return await pending;}finally{if(this.h3Opening===pending)this.h3Opening=null;}
   }
   async open(host,port){await this.session();if(this.protocol==='h2')return super.open(host,port);try{const socket=await this.worker.open(host,port);const push=socket.push,write=socket.write;socket.push=(chunk,...args)=>{if(chunk)this.down+=Buffer.byteLength(chunk);return push.call(socket,chunk,...args);};socket.write=(chunk,...args)=>{this.up+=Buffer.byteLength(chunk);return write.call(socket,chunk,...args);};return socket;}catch(error){if([401,403,429].includes(error.status)){this.onFatal(error);throw error;}if(this.settings.transport==='h3'||!this.active)throw error;this.worker?.stop();this.worker=null;this.protocol='h2';if(this.edgeIP)this.settings.edge=this.edgeIP;this.log('info','HTTP/3 interrupted. New connections will use HTTP/2 over TLS.');return super.open(host,port);}}
   stop(){super.stop();this.worker?.stop();this.worker=null;}
 }
-module.exports={H3Worker,AdaptiveTunnel};
+module.exports={H3Worker,AdaptiveTunnel,workerConfig,connectionCandidates};
