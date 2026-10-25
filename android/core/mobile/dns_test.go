@@ -35,7 +35,9 @@ func TestEncryptedDNSFallsBackAfterProviderTimeout(t *testing.T) {
 	if err != nil || calls.Load() != 2 || !bytes.Equal(result, want) {
 		t.Fatalf("fallback result=%v calls=%d err=%v", result, calls.Load(), err)
 	}
-	if first.Err() == nil { t.Fatal("Unused DNS attempts were not canceled") }
+	if first.Err() == nil {
+		t.Fatal("Unused DNS attempts were not canceled")
+	}
 }
 
 func TestEncryptedDNSRejectsInvalidResponsesAndHonorsCancellation(t *testing.T) {

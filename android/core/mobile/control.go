@@ -207,8 +207,14 @@ func (b *Backend) complete(ctx context.Context) (object, error) {
 	return object{"needsCode": false}, nil
 }
 func (b *Backend) token(ctx context.Context, force bool) (string, error) {
-	id:=b.accountID(ctx)
- b.mu.Lock();profile:=b.profileLocked(id);auth:=copyObject(obj(profile,"auth"));if id==""{auth=copyObject(b.auth)};b.mu.Unlock()
+	id := b.accountID(ctx)
+	b.mu.Lock()
+	profile := b.profileLocked(id)
+	auth := copyObject(obj(profile, "auth"))
+	if id == "" {
+		auth = copyObject(b.auth)
+	}
+	b.mu.Unlock()
 	if len(auth) == 0 {
 		return "", errors.New("Sign in to your Firefox account first")
 	}
@@ -216,14 +222,14 @@ func (b *Backend) token(ctx context.Context, force bool) (string, error) {
 		return str(auth, "access_token"), nil
 	}
 	if str(auth, "refresh_token") == "" {
-		b.commitProfileAuth(id,nil)
+		b.commitProfileAuth(id, nil)
 		return "", errors.New("Your session expired. Please sign in again")
 	}
 	renewed, err := b.authRequest(ctx, "/oauth/token", object{"client_id": clientID, "grant_type": "refresh_token", "refresh_token": str(auth, "refresh_token"), "scope": scope}, "")
 	var se *serviceError
 	if err != nil {
 		if errors.As(err, &se) && (se.status == 400 || se.status == 401 || se.status == 403) {
-			b.commitProfileAuth(id,nil)
+			b.commitProfileAuth(id, nil)
 		}
 		return "", err
 	}
@@ -238,7 +244,7 @@ func (b *Backend) token(ctx context.Context, force bool) (string, error) {
 		expiry = 86400
 	}
 	auth["expiresAt"] = millis() + int64(expiry*1000)
-	if err = b.commitProfileAuth(id,auth); err != nil {
+	if err = b.commitProfileAuth(id, auth); err != nil {
 		return "", err
 	}
 	return str(auth, "access_token"), nil
@@ -328,12 +334,19 @@ func (b *Backend) refreshServers(ctx context.Context) ([]object, error) {
 			}
 		}
 	}
-	if len(servers)==0 { return nil, errors.New("No usable locations were received") }
+	if len(servers) == 0 {
+		return nil, errors.New("No usable locations were received")
+	}
 	b.mu.Lock()
-	previous:=b.servers
+	previous := b.servers
 	b.servers = servers
 	b.mu.Unlock()
-	if err:=b.save();err!=nil { b.mu.Lock();b.servers=previous;b.mu.Unlock();return nil,err }
+	if err := b.save(); err != nil {
+		b.mu.Lock()
+		b.servers = previous
+		b.mu.Unlock()
+		return nil, err
+	}
 	b.emit()
 	return servers, nil
 }

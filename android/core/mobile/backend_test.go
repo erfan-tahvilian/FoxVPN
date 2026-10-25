@@ -122,7 +122,7 @@ func protocolTunnel(t *testing.T) (*proxyTunnel, *httptest.Server) {
 	host, port, _ := net.SplitHostPort(strings.TrimPrefix(proxyServer.URL, "https://"))
 	n, _ := strconv.Atoi(port)
 	settings := defaults()
- settings["transport"]="h2"
+	settings["transport"] = "h2"
 	settings["socksPort"] = 0
 	tunnel := newTunnel(b, settings, object{"host": host, "port": n}, "fixture-pass", context.Background())
 	t.Cleanup(tunnel.close)
@@ -218,7 +218,8 @@ func TestHealthConfirmsDataPathAfterFailedPing(t *testing.T) {
 	if err := checkTunnelHealth(context.Background(), func(context.Context) error { return io.EOF }, func(context.Context) error { return failure }, nil); !errors.Is(err, failure) {
 		t.Fatal("A failed data path must still be reported")
 	}
-	ctx, cancel := context.WithCancel(context.Background()); cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 	if err := checkTunnelHealth(ctx, func(context.Context) error { return context.Canceled }, probe, nil); !errors.Is(err, context.Canceled) || probeCalls != 1 {
 		t.Fatal("A cancelled tunnel must not start a fallback probe")
 	}
@@ -247,52 +248,82 @@ func TestConnectionLifecycleWithRealEdge(t *testing.T) {
 }
 func TestHealthReplacesUnresponsiveHTTP2Session(t *testing.T) {
 	tunnel, origin := protocolTunnel(t)
-	if err := tunnel.start(); err != nil { t.Fatal(err) }
+	if err := tunnel.start(); err != nil {
+		t.Fatal(err)
+	}
 	previous := tunnel.current
 	checks := 0
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err := checkTunnelHealth(ctx, func(context.Context) error { return io.EOF }, func(ctx context.Context) error {
 		checks++
-		if checks == 1 { return context.DeadlineExceeded }
+		if checks == 1 {
+			return context.DeadlineExceeded
+		}
 		stream, err := tunnel.open(ctx, strings.TrimPrefix(origin.URL, "https://"))
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 		return stream.Close()
 	}, func() { tunnel.discardSession(previous) })
-	if err != nil || checks != 2 || tunnel.current == previous { t.Fatalf("Transport recovery failed: %v", err) }
+	if err != nil || checks != 2 || tunnel.current == previous {
+		t.Fatalf("Transport recovery failed: %v", err)
+	}
 	deadline := time.Now().Add(time.Second)
-	for !previous.State().Closed && time.Now().Before(deadline) { time.Sleep(time.Millisecond) }
-	if !previous.State().Closed { t.Fatal("Idle retired session remained open") }
+	for !previous.State().Closed && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if !previous.State().Closed {
+		t.Fatal("Idle retired session remained open")
+	}
 	replacement := tunnel.current
 	tunnel.discardSession(previous)
-	if tunnel.current != replacement { t.Fatal("A stale failure discarded the replacement session") }
+	if tunnel.current != replacement {
+		t.Fatal("A stale failure discarded the replacement session")
+	}
 	body, err := tunnel.request(ctx, origin.URL, nil, "")
-	if err != nil || string(body) != "tunneled-response" { t.Fatalf("Recovered transport did not carry HTTPS: %s %v", body, err) }
+	if err != nil || string(body) != "tunneled-response" {
+		t.Fatalf("Recovered transport did not carry HTTPS: %s %v", body, err)
+	}
 }
 func TestEstablishedStreamSurvivesDialCancellationAndSessionRecovery(t *testing.T) {
 	tunnel, origin := protocolTunnel(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	stream, err := tunnel.open(ctx, strings.TrimPrefix(origin.URL, "https://"))
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer stream.Close()
 	previous := tunnel.current
 	cancel()
 	tunnel.discardSession(previous)
 	body, err := tunnel.request(context.Background(), origin.URL, nil, "")
-	if err != nil || string(body) != "tunneled-response" { t.Fatalf("Replacement stream failed: %s %v", body, err) }
-	if previous.State().Closed { t.Fatal("Recovery killed an established stream") }
+	if err != nil || string(body) != "tunneled-response" {
+		t.Fatalf("Replacement stream failed: %s %v", body, err)
+	}
+	if previous.State().Closed {
+		t.Fatal("Recovery killed an established stream")
+	}
 	host, _, _ := net.SplitHostPort(strings.TrimPrefix(origin.URL, "https://"))
 	secure := tls.Client(stream, &tls.Config{RootCAs: tunnel.b.roots, ServerName: host, MinVersion: tls.VersionTLS12})
 	handshakeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 	defer stop()
-	if err = secure.HandshakeContext(handshakeCtx); err != nil { t.Fatal(err) }
-	if _, err = io.WriteString(secure, "GET / HTTP/1.1\r\nHost: "+host+"\r\nConnection: close\r\n\r\n"); err != nil { t.Fatal(err) }
+	if err = secure.HandshakeContext(handshakeCtx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = io.WriteString(secure, "GET / HTTP/1.1\r\nHost: "+host+"\r\nConnection: close\r\n\r\n"); err != nil {
+		t.Fatal(err)
+	}
 	response, err := http.ReadResponse(bufio.NewReader(secure), nil)
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer response.Body.Close()
 	body, err = io.ReadAll(response.Body)
-	if err != nil || string(body) != "tunneled-response" { t.Fatalf("Original stream was interrupted: %s %v", body, err) }
+	if err != nil || string(body) != "tunneled-response" {
+		t.Fatalf("Original stream was interrupted: %s %v", body, err)
+	}
 }
 
 func TestTunneledRequestsReuseTLSAfterCallerCancellation(t *testing.T) {
@@ -300,11 +331,15 @@ func TestTunneledRequestsReuseTLSAfterCallerCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	_, err := tunnel.request(ctx, origin.URL, nil, "")
 	cancel()
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	reused := false
 	ctx = httptrace.WithClientTrace(context.Background(), &httptrace.ClientTrace{GotConn: func(info httptrace.GotConnInfo) { reused = info.Reused }})
 	body, err := tunnel.request(ctx, origin.URL, nil, "")
-	if err != nil || string(body) != "tunneled-response" || !reused { t.Fatalf("TLS reuse failed: reused=%t body=%s err=%v", reused, body, err) }
+	if err != nil || string(body) != "tunneled-response" || !reused {
+		t.Fatalf("TLS reuse failed: reused=%t body=%s err=%v", reused, body, err)
+	}
 }
 
 func TestStaleTunnelFailureCannotDisconnectNewSession(t *testing.T) {
@@ -336,10 +371,10 @@ func TestUnreachableLatencyAndValidation(t *testing.T) {
 	port := listener.Addr().(*net.TCPAddr).Port
 	listener.Close()
 	b.servers = []object{{"id": "unreachable", "host": "127.0.0.1", "port": port}}
-	b.auth = object{"access_token": "fixture", "expiresAt": millis()+3600000}
-    b.client = &http.Client{Transport: exitRoundTripper(func(r *http.Request) (*http.Response,error){
-        return &http.Response{StatusCode:200, Header:http.Header{}, Body:io.NopCloser(strings.NewReader(`{"token":"fixture-pass"}`))},nil
-    })}
+	b.auth = object{"access_token": "fixture", "expiresAt": millis() + 3600000}
+	b.client = &http.Client{Transport: exitRoundTripper(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"token":"fixture-pass"}`))}, nil
+	})}
 	if err = b.ping(context.Background(), "unreachable"); err != nil {
 		t.Fatal(err)
 	}
@@ -354,46 +389,77 @@ func TestUnreachableLatencyAndValidation(t *testing.T) {
 	}
 }
 
-type exitRoundTripper func(*http.Request) (*http.Response,error)
-func (f exitRoundTripper) RoundTrip(r *http.Request) (*http.Response,error) { return f(r) }
+type exitRoundTripper func(*http.Request) (*http.Response, error)
+
+func (f exitRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 func TestExitAddressFamiliesAndLocationLabels(t *testing.T) {
- tunnel:=&proxyTunnel{requestClient:&http.Client{Transport:exitRoundTripper(func(r *http.Request)(*http.Response,error){
-  body:="ip=2001:db8::1\nloc=DE\n"
-  if r.URL.Hostname()=="1.1.1.1" { body="ip=203.0.113.3\nloc=DE\n" }
-  return &http.Response{StatusCode:200,Body:io.NopCloser(strings.NewReader(body)),Header:make(http.Header)},nil
- })}}
- base,err:=tunnel.exit(context.Background(),"DE")
- if err!=nil || str(base,"ipv6")!="2001:db8::1" || str(base,"ipv4")!="" { t.Fatalf("Unexpected primary identity: %v %v",base,err) }
- combined:=tunnel.addresses(context.Background(),base)
- if str(combined,"ipv4")!="203.0.113.3" || str(base,"ipv4")!="" { t.Fatal("Address discovery failed or mutated the published state") }
- if _,err=tunnel.exit(context.Background(),"US");err==nil { t.Fatal("Country mismatch was accepted") }
- if locationLabel(object{"country":"Germany","city":" germany "})!="Germany" || locationLabel(object{"country":"Germany","city":"Frankfurt"})!="Germany, Frankfurt" { t.Fatal("Invalid country and city formatting") }
+	tunnel := &proxyTunnel{requestClient: &http.Client{Transport: exitRoundTripper(func(r *http.Request) (*http.Response, error) {
+		body := "ip=2001:db8::1\nloc=DE\n"
+		if r.URL.Hostname() == "1.1.1.1" {
+			body = "ip=203.0.113.3\nloc=DE\n"
+		}
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
+	})}}
+	base, err := tunnel.exit(context.Background(), "DE")
+	if err != nil || str(base, "ipv6") != "2001:db8::1" || str(base, "ipv4") != "" {
+		t.Fatalf("Unexpected primary identity: %v %v", base, err)
+	}
+	combined := tunnel.addresses(context.Background(), base)
+	if str(combined, "ipv4") != "203.0.113.3" || str(base, "ipv4") != "" {
+		t.Fatal("Address discovery failed or mutated the published state")
+	}
+	if _, err = tunnel.exit(context.Background(), "US"); err == nil {
+		t.Fatal("Country mismatch was accepted")
+	}
+	if locationLabel(object{"country": "Germany", "city": " germany "}) != "Germany" || locationLabel(object{"country": "Germany", "city": "Frankfurt"}) != "Germany, Frankfurt" {
+		t.Fatal("Invalid country and city formatting")
+	}
 }
 
 func TestLocationCacheSurvivesRestart(t *testing.T) {
- host:=&testHost{}
- b:=NewBackend(host,"{}")
- b.servers=[]object{{"id":"DE/de/edge.example:443","country":"Germany","code":"DE","city":"Germany","host":"edge.example","port":443}}
- if err:=b.save();err!=nil { t.Fatal(err) }
- restored:=NewBackend(host,host.saved)
- if len(restored.servers)!=1 || str(restored.servers[0],"host")!="edge.example" || str(restored.servers[0],"city")!="" { t.Fatal("Saved locations were not restored") }
- restored.settings["theme"]="light"
- if err:=restored.save();err!=nil { t.Fatal(err) }
- if len(NewBackend(host,host.saved).servers)!=1 { t.Fatal("Preference save lost locations") }
- if len(cachedServers([]any{object{"host":"bad/host","port":443}}))!=0 { t.Fatal("Invalid cached endpoint accepted") }
+	host := &testHost{}
+	b := NewBackend(host, "{}")
+	b.servers = []object{{"id": "DE/de/edge.example:443", "country": "Germany", "code": "DE", "city": "Germany", "host": "edge.example", "port": 443}}
+	if err := b.save(); err != nil {
+		t.Fatal(err)
+	}
+	restored := NewBackend(host, host.saved)
+	if len(restored.servers) != 1 || str(restored.servers[0], "host") != "edge.example" || str(restored.servers[0], "city") != "" {
+		t.Fatal("Saved locations were not restored")
+	}
+	restored.settings["theme"] = "light"
+	if err := restored.save(); err != nil {
+		t.Fatal(err)
+	}
+	if len(NewBackend(host, host.saved).servers) != 1 {
+		t.Fatal("Preference save lost locations")
+	}
+	if len(cachedServers([]any{object{"host": "bad/host", "port": 443}})) != 0 {
+		t.Fatal("Invalid cached endpoint accepted")
+	}
 }
 
 func TestRealDelayUsesTwoReusableHTTPSRequests(t *testing.T) {
-    tunnel,origin:=protocolTunnel(t)
-    reused:=false
-    ctx:=httptrace.WithClientTrace(context.Background(),&httptrace.ClientTrace{GotConn:func(info httptrace.GotConnInfo){if info.Reused{reused=true}}})
-    delay,err:=tunnel.realDelay(ctx,origin.URL)
-    if err!=nil||delay<1||!reused { t.Fatalf("Invalid real delay: ms=%d reused=%t err=%v",delay,reused,err) }
+	tunnel, origin := protocolTunnel(t)
+	reused := false
+	ctx := httptrace.WithClientTrace(context.Background(), &httptrace.ClientTrace{GotConn: func(info httptrace.GotConnInfo) {
+		if info.Reused {
+			reused = true
+		}
+	}})
+	delay, err := tunnel.realDelay(ctx, origin.URL)
+	if err != nil || delay < 1 || !reused {
+		t.Fatalf("Invalid real delay: ms=%d reused=%t err=%v", delay, reused, err)
+	}
 }
 
 func TestExitVerificationCannotBeDisabled(t *testing.T) {
 	s := defaults()
 	s["exitCheck"] = false
-	if err := validate(s); err != nil { t.Fatal(err) }
-	if !yes(s, "exitCheck") { t.Fatal("exit verification must remain enabled") }
+	if err := validate(s); err != nil {
+		t.Fatal(err)
+	}
+	if !yes(s, "exitCheck") {
+		t.Fatal("exit verification must remain enabled")
+	}
 }

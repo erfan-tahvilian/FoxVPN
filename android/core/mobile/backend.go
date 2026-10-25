@@ -62,35 +62,35 @@ func copyObject(m object) object {
 }
 func millis() int64 { return time.Now().UnixMilli() }
 func defaults() object {
-	return object{"transport":"auto", "theme": "system", "proxyOnly": false, "bind": "127.0.0.1", "socksPort": 1080, "doh": "automatic", "customDns": "", "edge": "", "exitCheck": true, "excludedApps": []any{}, "upstream": object{"enabled": false, "type": "socks5", "host": "", "port": 1080, "username": "", "password": ""}, "serverId": "REC"}
+	return object{"transport": "auto", "theme": "system", "proxyOnly": false, "bind": "127.0.0.1", "socksPort": 1080, "doh": "automatic", "customDns": "", "edge": "", "exitCheck": true, "excludedApps": []any{}, "upstream": object{"enabled": false, "type": "socks5", "host": "", "port": 1080, "username": "", "password": ""}, "serverId": "REC"}
 }
 
 type Backend struct {
-	mu                        sync.Mutex
- saveMu sync.Mutex
- accounts []object
- activeAccountID string
- accountPreferences,totalTraffic,sessionTraffic object
- lastUp,lastDown int64
-	action                    sync.Mutex
-	host                      Host
-	settings, auth, pending   object
-	client                    *http.Client
-	dialer                    *net.Dialer
-	roots                     *x509.CertPool
-	servers                   []object
-	logs                      []object
-	latencies                 object
-	connection                string
-	platform                  string
-	started                   int64
-	exit, quota               object
-	lastError                 string
-	busy, pinging, systemDark bool
-	pingingIDs                []string
-	tunnel                    *proxyTunnel
-	cancel                    context.CancelFunc
-	epoch                     uint64
+	mu                                               sync.Mutex
+	saveMu                                           sync.Mutex
+	accounts                                         []object
+	activeAccountID                                  string
+	accountPreferences, totalTraffic, sessionTraffic object
+	lastUp, lastDown                                 int64
+	action                                           sync.Mutex
+	host                                             Host
+	settings, auth, pending                          object
+	client                                           *http.Client
+	dialer                                           *net.Dialer
+	roots                                            *x509.CertPool
+	servers                                          []object
+	logs                                             []object
+	latencies                                        object
+	connection                                       string
+	platform                                         string
+	started                                          int64
+	exit, quota                                      object
+	lastError                                        string
+	busy, pinging, systemDark                        bool
+	pingingIDs                                       []string
+	tunnel                                           *proxyTunnel
+	cancel                                           context.CancelFunc
+	epoch                                            uint64
 }
 
 func NewBackend(host Host, vault string) *Backend {
@@ -133,7 +133,7 @@ func NewBackend(host Host, vault string) *Backend {
 		}
 		return (&net.Dialer{Timeout: 10 * time.Second, Control: control}).DialContext(ctx, network, net.JoinHostPort(ip, "53"))
 	}}
-	b.dialer = &net.Dialer{Timeout: 15 * time.Second, KeepAlive:30*time.Second, Control: control, Resolver: resolver}
+	b.dialer = &net.Dialer{Timeout: 15 * time.Second, KeepAlive: 30 * time.Second, Control: control, Resolver: resolver}
 	jar, _ := cookiejar.New(nil)
 	b.client = &http.Client{Timeout: 30 * time.Second, Jar: jar, Transport: &http.Transport{DialContext: b.dialer.DialContext, TLSClientConfig: &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}, ForceAttemptHTTP2: true}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return b
@@ -145,7 +145,7 @@ func (b *Backend) snapshotLocked() object {
 	u["password"] = ""
 	var active any
 	b.observeTrafficLocked()
- up,down:=int64(num(b.sessionTraffic,"up")),int64(num(b.sessionTraffic,"down"))
+	up, down := int64(num(b.sessionTraffic, "up")), int64(num(b.sessionTraffic, "down"))
 	if b.tunnel != nil {
 		if b.connection == "connected" {
 			active = b.tunnel.server
@@ -156,7 +156,7 @@ func (b *Backend) snapshotLocked() object {
 	if b.auth != nil {
 		email = str(b.auth, "email")
 	}
-	return object{"accounts":b.publicAccountsLocked(),"activeAccountId":b.activeAccountID,"accountPreferences":copyObject(b.accountPreferences),"totalTraffic":copyObject(b.totalTraffic),"sessionDuration":num(b.sessionTraffic,"duration"),"protocol":b.protocolLocked(),"version": "1.0.0", "platform": b.platform, "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
+	return object{"accounts": b.publicAccountsLocked(), "activeAccountId": b.activeAccountID, "accountPreferences": copyObject(b.accountPreferences), "totalTraffic": copyObject(b.totalTraffic), "sessionDuration": num(b.sessionTraffic, "duration"), "protocol": b.protocolLocked(), "version": "1.0.0", "platform": b.platform, "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
 }
 func (b *Backend) Snapshot() string {
 	b.mu.Lock()
@@ -180,16 +180,24 @@ func (b *Backend) log(level, message string) {
 	b.emit()
 }
 func (b *Backend) save() error {
- b.saveMu.Lock();defer b.saveMu.Unlock()
+	b.saveMu.Lock()
+	defer b.saveMu.Unlock()
 	b.mu.Lock()
-	v, _ := json.Marshal(object{"schema":2,"settings": b.settings, "accounts":b.accounts,"activeAccountId":b.activeAccountID,"accountPreferences":b.accountPreferences,"totalTraffic":b.totalTraffic,"sessionTraffic":b.sessionTraffic,"servers": b.servers})
+	v, _ := json.Marshal(object{"schema": 2, "settings": b.settings, "accounts": b.accounts, "activeAccountId": b.activeAccountID, "accountPreferences": b.accountPreferences, "totalTraffic": b.totalTraffic, "sessionTraffic": b.sessionTraffic, "servers": b.servers})
 	b.mu.Unlock()
 	return b.host.Save(string(v))
 }
-func(b *Backend)setAuth(auth object)error{return b.addAccount(auth)}
+func (b *Backend) setAuth(auth object) error { return b.addAccount(auth) }
 func validate(s object) error {
-	if str(s,"transport")==""{s["transport"]="auto"};switch str(s,"transport"){case "auto","h2","h3":default:return errors.New("Invalid connection protocol")}
- s["exitCheck"] = true // Exit verification cannot be disabled by saved preferences.
+	if str(s, "transport") == "" {
+		s["transport"] = "auto"
+	}
+	switch str(s, "transport") {
+	case "auto", "h2", "h3":
+	default:
+		return errors.New("Invalid connection protocol")
+	}
+	s["exitCheck"] = true // Exit verification cannot be disabled by saved preferences.
 	switch str(s, "theme") {
 	case "dark", "light", "system":
 	default:
@@ -291,11 +299,35 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		b.Disconnect()
 		b.pending = nil
 		err = b.setAuth(nil)
- case "cancelAccountLogin":b.pending=nil
- case "accountPreferences":
-  auto,ok:=arg(0).(bool);if !ok{err=errors.New("Invalid account preference");break};b.mu.Lock();old:=b.accountPreferences["autoSwitch"];b.accountPreferences["autoSwitch"]=auto;b.mu.Unlock();err=b.save();if err!=nil{b.mu.Lock();b.accountPreferences["autoSwitch"]=old;b.mu.Unlock()}
- case "selectAccount":b.mu.Lock();b.busy=true;b.mu.Unlock();b.emit();err=b.selectAccount(ctx,text(0));b.mu.Lock();b.busy=false;b.mu.Unlock()
- case "removeAccount":err=b.removeAccount(text(0))
+	case "cancelAccountLogin":
+		b.pending = nil
+	case "accountPreferences":
+		auto, ok := arg(0).(bool)
+		if !ok {
+			err = errors.New("Invalid account preference")
+			break
+		}
+		b.mu.Lock()
+		old := b.accountPreferences["autoSwitch"]
+		b.accountPreferences["autoSwitch"] = auto
+		b.mu.Unlock()
+		err = b.save()
+		if err != nil {
+			b.mu.Lock()
+			b.accountPreferences["autoSwitch"] = old
+			b.mu.Unlock()
+		}
+	case "selectAccount":
+		b.mu.Lock()
+		b.busy = true
+		b.mu.Unlock()
+		b.emit()
+		err = b.selectAccount(ctx, text(0))
+		b.mu.Lock()
+		b.busy = false
+		b.mu.Unlock()
+	case "removeAccount":
+		err = b.removeAccount(text(0))
 	case "account":
 		result, _, err = b.guardian(ctx, "status", "GET", true)
 		if err == nil {
@@ -309,7 +341,12 @@ func (b *Backend) Call(channel, argsJSON string) string {
 				}
 			}
 		}
-  if err==nil{d,_:=result.(map[string]any);q:=object{"limit":d["quotaLimit"],"remaining":d["quotaRemaining"],"reset":d["quotaReset"],"unlimited":d["limited_bandwidth"]==false};b.recordQuota(b.activeAccountID,q);err=b.save()}
+		if err == nil {
+			d, _ := result.(map[string]any)
+			q := object{"limit": d["quotaLimit"], "remaining": d["quotaRemaining"], "reset": d["quotaReset"], "unlimited": d["limited_bandwidth"] == false}
+			b.recordQuota(b.activeAccountID, q)
+			err = b.save()
+		}
 	case "settings":
 		s, _ := arg(0).(map[string]any)
 		b.mu.Lock()
@@ -328,7 +365,9 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		if err = validate(s); err == nil {
 			b.mu.Lock()
 			b.settings = s
- if str(old,"transport")!=str(s,"transport"){b.latencies=object{}}
+			if str(old, "transport") != str(s, "transport") {
+				b.latencies = object{}
+			}
 			b.mu.Unlock()
 			err = b.save()
 			if err != nil {
@@ -337,12 +376,23 @@ func (b *Backend) Call(channel, argsJSON string) string {
 				b.mu.Unlock()
 			}
 		}
-    case "locationSort":
-        mode:=text(0)
-        if mode!="ping-asc"&&mode!="ping-desc"&&mode!="name-asc"&&mode!="name-desc" { err=errors.New("Invalid location order");break }
-        b.mu.Lock();old:=b.settings["locationSort"];b.settings["locationSort"]=mode;b.mu.Unlock()
-        err=b.save();if err!=nil {b.mu.Lock();b.settings["locationSort"]=old;b.mu.Unlock()}
-    case "theme":
+	case "locationSort":
+		mode := text(0)
+		if mode != "ping-asc" && mode != "ping-desc" && mode != "name-asc" && mode != "name-desc" {
+			err = errors.New("Invalid location order")
+			break
+		}
+		b.mu.Lock()
+		old := b.settings["locationSort"]
+		b.settings["locationSort"] = mode
+		b.mu.Unlock()
+		err = b.save()
+		if err != nil {
+			b.mu.Lock()
+			b.settings["locationSort"] = old
+			b.mu.Unlock()
+		}
+	case "theme":
 		theme := text(0)
 		if theme != "light" && theme != "dark" && theme != "system" {
 			err = errors.New("Invalid theme")
@@ -452,14 +502,24 @@ func (b *Backend) connect() error {
 			return err
 		}
 	}
-	token, headers, err := b.prepareAccount(ctx,"")
+	token, headers, err := b.prepareAccount(ctx, "")
 	if err != nil {
 		return err
 	}
 	b.mu.Lock()
 	b.quota = object{"limit": headers.Get("x-quota-limit"), "remaining": headers.Get("x-quota-remaining"), "reset": headers.Get("x-quota-reset")}
 	b.mu.Unlock()
- if str(s,"serverId")=="REC"{recommended:=[]object{};for _,server:=range servers{if str(server,"code")=="REC"{recommended=append(recommended,server)}};if len(recommended)>0{servers=recommended}}
+	if str(s, "serverId") == "REC" {
+		recommended := []object{}
+		for _, server := range servers {
+			if str(server, "code") == "REC" {
+				recommended = append(recommended, server)
+			}
+		}
+		if len(recommended) > 0 {
+			servers = recommended
+		}
+	}
 
 	attempts := 0
 	for _, server := range servers {
@@ -520,11 +580,13 @@ func (b *Backend) Ready() {
 	t := b.tunnel
 	b.connection = "connected"
 	b.started = millis()
- b.sessionTraffic=object{"up":0,"down":0,"duration":0};b.lastUp=0;b.lastDown=0
+	b.sessionTraffic = object{"up": 0, "down": 0, "duration": 0}
+	b.lastUp = 0
+	b.lastDown = 0
 	b.mu.Unlock()
 	b.log("info", "Connected · Fox VPN is active")
 	go b.checkpointTraffic(t)
- go b.renew(t)
+	go b.renew(t)
 	go t.monitor()
 	go b.refreshAddresses(t)
 }
@@ -547,13 +609,16 @@ func (b *Backend) renew(t *proxyTunnel) {
 			continue
 		}
 		b.action.Lock()
-		renewID:=b.accountID(t.ctx)
-		token, headers, err := b.pass(context.WithValue(t.ctx,accountContextKey{},renewID))
+		renewID := b.accountID(t.ctx)
+		token, headers, err := b.pass(context.WithValue(t.ctx, accountContextKey{}, renewID))
 		if err == nil {
 			t.setToken(token)
 		}
 		b.action.Unlock()
-		if quotaEmpty(quotaHeaders(headers)){go b.rejectedAccount(t,429,headers,renewID);return}
+		if quotaEmpty(quotaHeaders(headers)) {
+			go b.rejectedAccount(t, 429, headers, renewID)
+			return
+		}
 		if err != nil {
 			b.failTunnel(t, "Proxy pass renewal failed. Reconnect after checking your account.")
 			return
@@ -597,7 +662,9 @@ func (b *Backend) stop(expected *proxyTunnel, message string) {
 		t.close()
 		b.log("info", "Disconnected · Device routes restored")
 	}
-	if err:=b.save();err!=nil{b.log("error","Could not save session traffic")}
+	if err := b.save(); err != nil {
+		b.log("error", "Could not save session traffic")
+	}
 	if message != "" {
 		b.log("error", message)
 	}
@@ -623,15 +690,17 @@ func (b *Backend) EngineConfig() string {
 }
 func (b *Backend) ping(ctx context.Context, id string) error {
 	token, _, passErr := b.pass(ctx)
-	if passErr != nil { return passErr }
+	if passErr != nil {
+		return passErr
+	}
 	b.mu.Lock()
 	settings := copyObject(b.settings)
 	servers := append([]object{}, b.servers...)
 	if id == "" {
-        b.latencies = object{}
+		b.latencies = object{}
 		b.pinging = true
 	} else {
-        delete(b.latencies,id)
+		delete(b.latencies, id)
 		b.pingingIDs = []string{id}
 	}
 	b.mu.Unlock()
@@ -660,8 +729,8 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 			pctx, cancel := context.WithTimeout(ctx, 35*time.Second)
 			defer cancel()
 			probe := newTunnel(b, settings, server, token, pctx)
-            defer probe.close()
-            delay, err := probe.realDelay(pctx, "https://www.google.com/generate_204")
+			defer probe.close()
+			delay, err := probe.realDelay(pctx, "https://www.google.com/generate_204")
 			var latency any
 			if err == nil {
 				latency = delay
@@ -670,7 +739,17 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 				}
 			}
 			b.mu.Lock()
-			if str(b.settings,"transport")==str(settings,"transport"){result:=object{"ms":latency,"measuredAt":millis(),"kind":"real-delay","protocol":strings.ReplaceAll(probe.protocolName(),"http/","h")};if err!=nil{reason:="unavailable";if errors.Is(err,context.DeadlineExceeded)||strings.Contains(strings.ToLower(err.Error()),"timed out"){reason="timeout"};result["reason"]=reason};b.latencies[str(server,"id")]=result}
+			if str(b.settings, "transport") == str(settings, "transport") {
+				result := object{"ms": latency, "measuredAt": millis(), "kind": "real-delay", "protocol": strings.ReplaceAll(probe.protocolName(), "http/", "h")}
+				if err != nil {
+					reason := "unavailable"
+					if errors.Is(err, context.DeadlineExceeded) || strings.Contains(strings.ToLower(err.Error()), "timed out") {
+						reason = "timeout"
+					}
+					result["reason"] = reason
+				}
+				b.latencies[str(server, "id")] = result
+			}
 			b.mu.Unlock()
 			b.emit()
 		}(s)
@@ -729,14 +808,21 @@ func (b *Backend) refreshAddresses(t *proxyTunnel) {
 
 // Cached locations contain public endpoint metadata only; credentials remain separate.
 func cachedServers(values []any) []object {
- result := []object{}
- if len(values)>2000 { return result }
- for _,value:=range values {
-  server,ok:=value.(map[string]any)
-  if !ok { continue }
-  host:=str(server,"host");port:=num(server,"port")
-  if str(server,"id")=="" || len(str(server,"id"))>512 || str(server,"country")=="" || len(str(server,"code"))<2 || len(str(server,"code"))>3 || len(host)>253 || (net.ParseIP(host)==nil && !cachedHost.MatchString(host)) || port<1 || port>65535 || port!=float64(int(port)) { continue }
-  result=append(result,object{"id":str(server,"id"),"country":str(server,"country"),"code":str(server,"code"),"city":displayCity(str(server,"country"),str(server,"city")),"cityCode":str(server,"cityCode"),"host":host,"port":port})
- }
- return result
+	result := []object{}
+	if len(values) > 2000 {
+		return result
+	}
+	for _, value := range values {
+		server, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		host := str(server, "host")
+		port := num(server, "port")
+		if str(server, "id") == "" || len(str(server, "id")) > 512 || str(server, "country") == "" || len(str(server, "code")) < 2 || len(str(server, "code")) > 3 || len(host) > 253 || (net.ParseIP(host) == nil && !cachedHost.MatchString(host)) || port < 1 || port > 65535 || port != float64(int(port)) {
+			continue
+		}
+		result = append(result, object{"id": str(server, "id"), "country": str(server, "country"), "code": str(server, "code"), "city": displayCity(str(server, "country"), str(server, "city")), "cityCode": str(server, "cityCode"), "host": host, "port": port})
+	}
+	return result
 }

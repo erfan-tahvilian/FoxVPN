@@ -31,15 +31,15 @@ type proxyTunnel struct {
 	cancel           context.CancelFunc
 	mu               sync.Mutex
 	sessionMu        sync.Mutex
- automaticMu sync.Mutex
- selected *proxyTunnel
- probeAddress string
+	automaticMu      sync.Mutex
+	selected         *proxyTunnel
+	probeAddress     string
 	current          *http2.ClientConn
- h3 *mobileH3
- h3fallback bool
+	h3               *mobileH3
+	h3fallback       bool
 	currentSocket    net.Conn
 	token            string
- accountID string
+	accountID        string
 	expiry, up, down atomic.Int64
 	listener         net.Listener
 	transport        *http2.Transport
@@ -51,7 +51,7 @@ type proxyTunnel struct {
 
 func newTunnel(b *Backend, settings, server object, token string, ctx context.Context) *proxyTunnel {
 	child, cancel := context.WithCancel(ctx)
-	t := &proxyTunnel{b: b, settings: settings, server: server, ctx: child, cancel: cancel, sockets: map[io.Closer]struct{}{},accountID:b.accountID(ctx)}
+	t := &proxyTunnel{b: b, settings: settings, server: server, ctx: child, cancel: cancel, sockets: map[io.Closer]struct{}{}, accountID: b.accountID(ctx)}
 	t.setToken(token)
 	t.transport = &http2.Transport{DialTLSContext: func(ctx context.Context, network, _ string, _ *tls.Config) (net.Conn, error) {
 		host := str(server, "host")
@@ -79,14 +79,22 @@ func newTunnel(b *Backend, settings, server object, token string, ctx context.Co
 	}}
 	t.requestTransport = &http.Transport{DialTLSContext: func(ctx context.Context, _, address string) (net.Conn, error) {
 		stream, err := t.open(ctx, address)
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 		host, _, err := net.SplitHostPort(address)
-		if err != nil { stream.Close(); return nil, err }
+		if err != nil {
+			stream.Close()
+			return nil, err
+		}
 		conn := tls.Client(stream, &tls.Config{RootCAs: b.roots, ServerName: host, MinVersion: tls.VersionTLS12})
-		if err = conn.HandshakeContext(ctx); err != nil { stream.Close(); return nil, err }
+		if err = conn.HandshakeContext(ctx); err != nil {
+			stream.Close()
+			return nil, err
+		}
 		return conn, nil
 	}, MaxIdleConns: 32, MaxIdleConnsPerHost: 8, MaxConnsPerHost: 8, IdleConnTimeout: time.Minute}
-	t.requestClient = &http.Client{Transport: t.requestTransport, Timeout: 30*time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	t.requestClient = &http.Client{Transport: t.requestTransport, Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return t
 }
 func (t *proxyTunnel) setToken(token string) {
@@ -101,9 +109,11 @@ func (t *proxyTunnel) setToken(token string) {
 	}
 	t.mu.Lock()
 	t.token = token
- selected:=t.selected
+	selected := t.selected
 	t.mu.Unlock()
- if selected!=nil{selected.setToken(token)}
+	if selected != nil {
+		selected.setToken(token)
+	}
 	t.expiry.Store(expiry)
 }
 func (t *proxyTunnel) track(c io.Closer) bool {
@@ -152,25 +162,37 @@ func (t *proxyTunnel) session(ctx context.Context) (*http2.ClientConn, error) {
 	return session, nil
 }
 func (t *proxyTunnel) health(ctx context.Context) error {
- if str(t.settings,"transport")!="h2" {stream,err:=t.open(ctx,"www.cloudflare.com:443");if err!=nil{return err};return stream.Close()}
+	if str(t.settings, "transport") != "h2" {
+		stream, err := t.open(ctx, "www.cloudflare.com:443")
+		if err != nil {
+			return err
+		}
+		return stream.Close()
+	}
 	var checked *http2.ClientConn
 	down := t.down.Load()
 	return checkTunnelHealth(ctx, func(pingCtx context.Context) error {
 		session, err := t.session(pingCtx)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 		checked = session
 		return session.Ping(pingCtx)
 	}, func(probeCtx context.Context) error {
 		stream, err := t.open(probeCtx, "www.cloudflare.com:443")
 		if err != nil {
-			if t.down.Load() > down { return nil }
+			if t.down.Load() > down {
+				return nil
+			}
 			return err
 		}
 		return stream.Close()
 	}, func() { t.discardSession(checked) })
 }
 func (t *proxyTunnel) discardSession(expected *http2.ClientConn) {
-	if expected == nil { return }
+	if expected == nil {
+		return
+	}
 	t.sessionMu.Lock()
 	defer t.sessionMu.Unlock()
 	t.mu.Lock()
@@ -188,23 +210,36 @@ func (t *proxyTunnel) discardSession(expected *http2.ClientConn) {
 	go func() {
 		expected.Shutdown(t.ctx)
 		expected.Close()
-		if socket != nil { t.untrack(socket) }
+		if socket != nil {
+			t.untrack(socket)
+		}
 	}()
 }
+
 // An idle HTTP/2 session can close or fail to acknowledge PING while a fresh
 // authenticated CONNECT still works. Check the data path before declaring loss.
 func checkTunnelHealth(ctx context.Context, ping, probe func(context.Context) error, reconnect func()) error {
 	pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	err := ping(pingCtx)
 	cancel()
-	if err == nil { return nil }
-	if ctx.Err() != nil { return ctx.Err() }
+	if err == nil {
+		return nil
+	}
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	err = probe(probeCtx)
 	cancel()
-	if err == nil { return nil }
-	if ctx.Err() != nil { return ctx.Err() }
-	if reconnect == nil { return err }
+	if err == nil {
+		return nil
+	}
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if reconnect == nil {
+		return err
+	}
 	reconnect()
 	return probe(ctx)
 }
@@ -223,7 +258,9 @@ func (t *proxyTunnel) monitor() {
 			if err != nil && t.ctx.Err() == nil {
 				failures++
 				t.b.log("warn", fmt.Sprintf("Connection health check failed (%d/3): %v", failures, err))
-				if failures < 3 { continue }
+				if failures < 3 {
+					continue
+				}
 				t.b.mu.Lock()
 				active := t.b.tunnel == t && t.b.connection == "connected"
 				t.b.mu.Unlock()
@@ -338,9 +375,9 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 	}
 	req.Host = address
 	req.ContentLength = -1
- req.Header.Set("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0")
- timer:=time.AfterFunc(30*time.Second,cancel)
- response,err:=t.roundTrip(child,req)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0")
+	timer := time.AfterFunc(30*time.Second, cancel)
+	response, err := t.roundTrip(child, req)
 	timer.Stop()
 	if err != nil {
 		cancel()
@@ -361,7 +398,8 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 		reader.Close()
 		writer.Close()
 		if response.StatusCode == 401 || response.StatusCode == 403 || response.StatusCode == 429 {
-			id,_:=req.Context().Value(accountContextKey{}).(string);go t.b.rejectedAccount(t,response.StatusCode,response.Header.Clone(),id)
+			id, _ := req.Context().Value(accountContextKey{}).(string)
+			go t.b.rejectedAccount(t, response.StatusCode, response.Header.Clone(), id)
 		}
 		return nil, fmt.Errorf("VPN edge rejected connection (%d)", response.StatusCode)
 	}
@@ -511,29 +549,70 @@ func (t *proxyTunnel) request(ctx context.Context, address string, body []byte, 
 	}
 	defer response.Body.Close()
 	valid := response.StatusCode == 200
-    if len(accepted)>0 { valid=false;for _,status:=range accepted { if response.StatusCode==status { valid=true } } }
-    if !valid { return nil, fmt.Errorf("Tunneled request failed (%d)", response.StatusCode) }
+	if len(accepted) > 0 {
+		valid = false
+		for _, status := range accepted {
+			if response.StatusCode == status {
+				valid = true
+			}
+		}
+	}
+	if !valid {
+		return nil, fmt.Errorf("Tunneled request failed (%d)", response.StatusCode)
+	}
 	data, err := io.ReadAll(io.LimitReader(response.Body, 1024*1024+1))
 	if len(data) > 1024*1024 {
 		return nil, errors.New("Response too large")
 	}
 	return data, err
 }
+
 // realDelay mirrors the two-request, keep-alive minimum used by v2rayN.
-func (t *proxyTunnel) realDelay(ctx context.Context, address string) (int64,error) {
- setup,cancelSetup:=context.WithTimeout(ctx,22*time.Second)
- mode:=str(t.settings,"transport");var setupErr error
- if mode=="auto"&&!yes(obj(t.settings,"upstream"),"enabled"){_,setupErr=t.automatic(setup)}else if mode=="h3"{_,setupErr=t.h3Session(setup)}else{_,setupErr=t.session(setup)}
- cancelSetup();if setupErr!=nil{return 0,setupErr}
- var best int64
- for i:=0;i<2;i++{
-  if i>0{timer:=time.NewTimer(100*time.Millisecond);select{case <-ctx.Done():timer.Stop();return best,ctx.Err();case <-timer.C:}}
-  sample,cancel:=context.WithTimeout(ctx,5*time.Second);start:=time.Now()
-  _,err:=t.request(sample,address,nil,"",200,204);cancel()
-  if err!=nil{if best>0{return best,nil};return 0,err}
-  elapsed:=time.Since(start).Milliseconds();if elapsed<1{elapsed=1};if best==0||elapsed<best{best=elapsed}
- }
- return best,nil
+func (t *proxyTunnel) realDelay(ctx context.Context, address string) (int64, error) {
+	setup, cancelSetup := context.WithTimeout(ctx, 22*time.Second)
+	mode := str(t.settings, "transport")
+	var setupErr error
+	if mode == "auto" && !yes(obj(t.settings, "upstream"), "enabled") {
+		_, setupErr = t.automatic(setup)
+	} else if mode == "h3" {
+		_, setupErr = t.h3Session(setup)
+	} else {
+		_, setupErr = t.session(setup)
+	}
+	cancelSetup()
+	if setupErr != nil {
+		return 0, setupErr
+	}
+	var best int64
+	for i := 0; i < 2; i++ {
+		if i > 0 {
+			timer := time.NewTimer(100 * time.Millisecond)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return best, ctx.Err()
+			case <-timer.C:
+			}
+		}
+		sample, cancel := context.WithTimeout(ctx, 5*time.Second)
+		start := time.Now()
+		_, err := t.request(sample, address, nil, "", 200, 204)
+		cancel()
+		if err != nil {
+			if best > 0 {
+				return best, nil
+			}
+			return 0, err
+		}
+		elapsed := time.Since(start).Milliseconds()
+		if elapsed < 1 {
+			elapsed = 1
+		}
+		if best == 0 || elapsed < best {
+			best = elapsed
+		}
+	}
+	return best, nil
 }
 func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byte, error) {
 	providers := map[string][]string{"automatic": {"cloudflare-dns.com", "dns.google", "dns.quad9.net"}, "cloudflare": {"cloudflare-dns.com"}, "google": {"dns.google"}, "quad9": {"dns.quad9.net"}}
@@ -575,10 +654,15 @@ func (t *proxyTunnel) dns(ctx context.Context, query []byte, host string) ([]byt
 }
 
 func exchangeEncryptedDNS(ctx context.Context, providers []string, timeout time.Duration, exchange func(context.Context, string) ([]byte, error)) ([]byte, error) {
-	if err := ctx.Err(); err != nil { return nil, err }
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	lookup, cancelLookup := context.WithCancel(ctx)
 	defer cancelLookup()
-	type answer struct { data []byte; err error }
+	type answer struct {
+		data []byte
+		err  error
+	}
 	results := make(chan answer, len(providers))
 	start := func(provider string) {
 		go func() {
@@ -592,25 +676,39 @@ func exchangeEncryptedDNS(ctx context.Context, providers []string, timeout time.
 	// next attempt rather than exhausting Android's entire DNS deadline.
 	next, pending := 0, 0
 	delay := timeout / 4
-	if delay <= 0 { delay = time.Nanosecond }
+	if delay <= 0 {
+		delay = time.Nanosecond
+	}
 	timer := time.NewTimer(delay)
 	defer timer.Stop()
 	launch := func() {
-		start(providers[next]); next++; pending++
+		start(providers[next])
+		next++
+		pending++
 		timer.Reset(delay)
 	}
-	if len(providers) > 0 { launch() }
+	if len(providers) > 0 {
+		launch()
+	}
 	for pending > 0 {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case result := <-results:
 			pending--
-			if ctx.Err() != nil { return nil, ctx.Err() }
-			if result.err == nil && len(result.data) >= 12 && len(result.data) <= 4096 { return result.data, nil }
-			if next < len(providers) { launch() }
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			if result.err == nil && len(result.data) >= 12 && len(result.data) <= 4096 {
+				return result.data, nil
+			}
+			if next < len(providers) {
+				launch()
+			}
 		case <-timer.C:
-			if next < len(providers) { launch() }
+			if next < len(providers) {
+				launch()
+			}
 		}
 	}
 	if err := ctx.Err(); err != nil {
@@ -716,15 +814,22 @@ func (t *proxyTunnel) close() {
 	}
 	t.closed = true
 	listener := t.listener
- h3:=t.h3;t.h3=nil
- selected:=t.selected;t.selected=nil
+	h3 := t.h3
+	t.h3 = nil
+	selected := t.selected
+	t.selected = nil
 	sockets := make([]io.Closer, 0, len(t.sockets))
 	for s := range t.sockets {
 		sockets = append(sockets, s)
 	}
 	t.sockets = map[io.Closer]struct{}{}
 	t.mu.Unlock()
- if h3!=nil{h3.close()};if selected!=nil{selected.close()}
+	if h3 != nil {
+		h3.close()
+	}
+	if selected != nil {
+		selected.close()
+	}
 	if listener != nil {
 		listener.Close()
 	}
