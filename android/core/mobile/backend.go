@@ -553,11 +553,12 @@ func (b *Backend) renew(t *proxyTunnel) {
 			continue
 		}
 		b.action.Lock()
-		token, _, err := b.pass(t.ctx)
+		token, headers, err := b.pass(t.ctx)
 		if err == nil {
 			t.setToken(token)
 		}
 		b.action.Unlock()
+		if quotaEmpty(quotaHeaders(headers)){go b.rejectedAccount(t,429,headers);return}
 		if err != nil {
 			b.failTunnel(t, "Proxy pass renewal failed. Reconnect after checking your account.")
 			return

@@ -333,7 +333,6 @@ func (t *proxyTunnel) open(ctx context.Context, address string) (net.Conn, error
 	req.Host = address
 	req.ContentLength = -1
  req.Header.Set("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:158.0) Gecko/20100101 Firefox/158.0")
- t.mu.Lock();token:=t.token;t.mu.Unlock();req.Header.Set("Proxy-Authorization","Bearer "+token)
  timer:=time.AfterFunc(15*time.Second,cancel)
  response,err:=t.roundTrip(child,req)
 	timer.Stop()

@@ -122,6 +122,7 @@ func protocolTunnel(t *testing.T) (*proxyTunnel, *httptest.Server) {
 	host, port, _ := net.SplitHostPort(strings.TrimPrefix(proxyServer.URL, "https://"))
 	n, _ := strconv.Atoi(port)
 	settings := defaults()
+ settings["transport"]="h2"
 	settings["socksPort"] = 0
 	tunnel := newTunnel(b, settings, object{"host": host, "port": n}, "fixture-pass", context.Background())
 	t.Cleanup(tunnel.close)

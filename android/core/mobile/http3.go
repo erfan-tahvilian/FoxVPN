@@ -40,8 +40,10 @@ func(t *proxyTunnel)roundTrip(ctx context.Context,req *http.Request)(*http.Respo
  if mode!="h2"&&!fallback{
   var client *http3.ClientConn;var err error
   if yes(obj(t.settings,"upstream"),"enabled"){err=errors.New("HTTP/3 requires direct UDP. Disable the upstream proxy or choose Automatic")}else{client,err=t.h3Session(ctx)}
-  if err==nil{return client.RoundTrip(req)}
+  if err==nil{t.authorizeConnect(req);return client.RoundTrip(req)}
   if mode=="h3"||ctx.Err()!=nil||t.ctx.Err()!=nil{return nil,err};t.mu.Lock();t.h3fallback=true;t.mu.Unlock();t.b.log("info","HTTP/3 unavailable. Using HTTP/2 over TLS.")
  }
- session,err:=t.session(ctx);if err!=nil{return nil,err};return session.RoundTrip(req)
+ session,err:=t.session(ctx);if err!=nil{return nil,err};t.authorizeConnect(req);return session.RoundTrip(req)
 }
+
+func(t *proxyTunnel)authorizeConnect(req *http.Request){t.mu.Lock();token:=t.token;t.mu.Unlock();req.Header.Set("Proxy-Authorization","Bearer "+token)}
