@@ -4,7 +4,7 @@
   <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/readme/hero-dark-mobile.webp">
   <source media="(max-width: 600px)" srcset="docs/readme/hero-light-mobile.webp">
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.webp">
-  <img src="docs/readme/hero-light.webp" width="1440" alt="Fox VPN. Your connection Your control An independent client built on Firefox VPN infrastructure for desktop and phone. Windows, macOS, Android and Linux.">
+  <img src="docs/readme/hero-light.webp" width="1440" alt="Fox VPN. Your connection Your control An independent client built on Firefox VPN infrastructure for desktop and phone. Windows, macOS, Linux and Android.">
 </picture>
 
 <p align="center">
