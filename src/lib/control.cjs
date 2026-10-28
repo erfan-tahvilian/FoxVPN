@@ -12,13 +12,13 @@ function solvePow(base, hash) {
   throw Error('Unable to complete the server proof-of-work challenge.');
 }
 class Control {
-  constructor() { this.cookies = new Map(); }
+  constructor({transport = (...args)=>fetch(...args)} = {}) { this.cookies = new Map(); this.transport=transport; }
   async fetch(url, options = {}) {
     const u = new URL(url);
     const cookies = [...this.cookies.values()].filter(c => u.hostname === c.domain || u.hostname.endsWith('.'+c.domain)).map(c => c.pair).join('; ');
-    // Fastly binds verification to the user agent as well as the exit IP.
+    // Keep account API and verification requests on a consistent client profile.
     const agent = ['api.accounts.firefox.com','accounts.firefox.com'].includes(u.hostname) ? BROWSER_UA : UA;
-    const response = await fetch(url, {...options, redirect:'error', signal:AbortSignal.timeout(30000), headers:{'User-Agent':agent, Accept:'application/json', ...(cookies ? {Cookie:cookies} : {}), ...options.headers}});
+    const response = await this.transport(url, {...options, redirect:'error', signal:AbortSignal.timeout(30000), headers:{'User-Agent':agent, Accept:'application/json', ...(cookies ? {Cookie:cookies} : {}), ...options.headers}});
     for (const raw of response.headers.getSetCookie()) {
       const pair = raw.split(';')[0];
       const domain = (raw.match(/;\s*domain=([^;]+)/i)?.[1] || u.hostname).replace(/^\./,'');
@@ -40,7 +40,7 @@ class Control {
     this.verifying = (async()=>{
       // A previous clearance can hide the challenge page even when the API
       // rejects that clearance. Keep the main session while verifying afresh.
-      const solver = new Control();
+      const solver = new Control({transport:this.transport});
       await solver.solveChallenge();
       for (const [key,cookie] of solver.cookies) this.cookies.set(key,cookie);
     })();

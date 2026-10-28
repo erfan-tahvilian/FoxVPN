@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Erfan Tahvilian
 const {app,BrowserWindow,ipcMain,safeStorage,nativeTheme,dialog,Tray,Menu,shell,screen}=require('electron');
 const {nativeImage}=require('electron');
+const {net:electronNet}=require('electron');
 const fs=require('node:fs');
 const path=require('node:path');
 const dns=require('node:dns').promises;
@@ -11,6 +12,9 @@ const {Store}=require('./lib/store.cjs');
 const {TrafficLedger}=require('./lib/traffic.cjs');
 const {AccountCoordinator,knownEmpty,quotaFromPass}=require('./lib/accounts.cjs');
 const {Control,Guardian}=require('./lib/control.cjs');
+// Chromium uses the operating system's network/proxy stack consistently for
+// account verification, sign-in and token renewal. Do not mix it with Node fetch.
+function makeControl(){return new Control({transport:(...args)=>electronNet.fetch(...args)});}
 const {Auth}=require('./lib/auth.cjs');
 const {Tunnel}=require('./lib/tunnel.cjs');
 const {AdaptiveTunnel}=require('./lib/h3-tunnel.cjs');
@@ -26,11 +30,11 @@ const mac=process.platform==='darwin',linux=process.platform==='linux';
 const osName=mac?'macOS':linux?'Linux':'Windows';
 const multiAccount=true;
 let accountCoordinator,traffic,loginGuardian,loginAccountId,switchingAccount=false,trafficSaveWarning=false;const accountGuardians=new Map();
-function accountGuardian(id){if(!accountGuardians.has(id)){const http=new Control();accountGuardians.set(id,new Guardian(http,new Auth(http,store.accountStore(id))));}return accountGuardians.get(id);}
+function accountGuardian(id){if(!accountGuardians.has(id)){const http=makeControl();accountGuardians.set(id,new Guardian(http,new Auth(http,store.accountStore(id))));}return accountGuardians.get(id);}
 function syncGuardian(){if(multiAccount&&store.activeAccountId)guardian=accountGuardian(store.activeAccountId);}
 function observeTraffic(){if(multiAccount&&traffic&&tunnel)traffic.observe(tunnel.up,tunnel.down);}
 async function refreshAccount(id){const data=await accountCoordinator.refresh(id);if(store.activeAccountId===id)quota=store.activeAccount?.quota||null;emit();return data;}
-function beginLogin(){loginAccountId=null;const http=new Control(),sink={auth:null,setAuth(auth){if(!auth)return;loginAccountId=store.addAccount(auth,connection==='disconnected');this.auth=auth;}};loginGuardian=new Guardian(http,new Auth(http,sink));return loginGuardian.auth;}
+function beginLogin(){loginAccountId=null;const http=makeControl(),sink={auth:null,setAuth(auth){if(!auth)return;loginAccountId=store.addAccount(auth,connection==='disconnected');this.auth=auth;}};loginGuardian=new Guardian(http,new Auth(http,sink));return loginGuardian.auth;}
 function completeLogin(result){if(loginAccountId){syncGuardian();if(connection==='disconnected')quota=store.activeAccount?.quota||null;const id=loginAccountId;loginGuardian=null;loginAccountId=null;if(store.activeAccountId!==id)void refreshAccount(id).catch(()=>{});}return result;}
 let macEngine;
 let window,tray,trayPopup,store,guardian,tunnel,pendingTunnel,engine,refreshTimer,busy=false,quitting=false,generation=0;
@@ -200,7 +204,7 @@ else {
   app.whenReady().then(()=>{
     if(mac)Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Fox VPN',submenu:[{role:'about'},{type:'separator'},{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'},{role:'quit'}]},{label:'File',submenu:[{label:'Close Window',accelerator:'Command+W',click:()=>{if(window&&!window.isDestroyed())window.close();}}]},{role:'editMenu'},{role:'windowMenu'}]));
     store=new Store(app.getPath('userData'),safeStorage);servers=store.servers;if(multiAccount){traffic=new TrafficLedger(store.traffic,value=>store.setTraffic(value));accountCoordinator=new AccountCoordinator(store,accountGuardian);quota=store.activeAccount?.quota||null;}
-    const control=new Control();guardian=new Guardian(control,new Auth(control,store));
+    const control=makeControl();guardian=new Guardian(control,new Auth(control,store));
     syncGuardian();createWindow();tray=new Tray(mac||linux?nativeImage.createFromPath(icon).resize({width:22,height:22}):icon);tray.setToolTip('Fox VPN');
     trayPopup=new TrayPopup({state:trayState,command:trayCommand,bounds:()=>{const bounds=tray.getBounds();if(mac)return bounds;const point=screen.getCursorScreenPoint();return point.x>=bounds.x-8&&point.x<=bounds.x+bounds.width+8&&point.y>=bounds.y-8&&point.y<=bounds.y+bounds.height+8?bounds:{...point,width:0,height:0};}});
     bindTrayActions(tray,trayPopup,showWindow,error=>log('warn',error.message));emit();

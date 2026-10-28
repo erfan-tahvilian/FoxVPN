@@ -31,7 +31,9 @@ test('service verification uses a fresh cookie jar, consistent account agent and
     throw Error('Unexpected request');
   };
   try {
-    const c=new Control();c.cookies.set('old',{domain:'accounts.firefox.com',pair:'clearance=stale'});
+    const transport=global.fetch;
+    global.fetch=()=>{throw Error('Account verification unexpectedly changed network transports');};
+    const c=new Control({transport});c.cookies.set('old',{domain:'accounts.firefox.com',pair:'clearance=stale'});
     await Promise.all([c.challenge(),c.challenge()]);assert.equal(verifications,1);
     assert(!calls.some(c=>c.options.headers.Cookie?.includes('stale')));
     const result=await c.json('https://api.accounts.firefox.com/v1/account/login',{method:'POST',body:'{}'});
