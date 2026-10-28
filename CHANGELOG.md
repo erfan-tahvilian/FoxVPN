@@ -2,6 +2,11 @@
 
 ## v1.0.0 - 2026-10-11
 
+### Maintenance update - 2026-10-29
+
+- Improved Firefox account service verification and sign-in reliability.
+- Preserved email and authenticator verification during sign-in.
+
 Initial release for Windows, macOS and Android.
 
 - Native Windows x64, x86 and ARM64 packages.

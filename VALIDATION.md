@@ -1,5 +1,15 @@
 # v1.0.0 verification record
 
+## Account service verification - 2026-10-29
+
+The desktop account client now keeps verification, sign-in and token renewal on Chromium's network stack. Both cores decode nested challenge JSON without executing downloaded JavaScript and start verification with a separate cookie jar. A failed script download reports its HTTP status rather than a JavaScript-format error.
+
+All 51 desktop Node tests and Electron renderer, main-process, tray and account checks passed. The opt-in live service check reached the account API and received error 102 for a random reserved diagnostic address. The updated Windows x64 application was installed and its account-control source verified; the owner then confirmed successful sign-in with a real email verification code. Earlier candidate builds that still failed verification were not published.
+
+The Android core race tests, package checks, all-architecture native-library checks, 16 KB alignment checks and emulator integration tests passed in [Android build 40771366432](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/40771366432). These Android changes cover account headers, fresh verification cookies and JSON decoding; Android retains its protected Go network transport. Real Android sign-in with this update and physical macOS/Linux account checks remain unverified.
+
+See [service verification engineering notes](docs/development/service-verification.md) for the implementation and live-check limits. There is no evidence that password hashing, email-code verification or authenticator verification changed at the service.
+
 ## Monthly account allowance in Overview - 2026-10-24
 
 The shared Overview displays service-reported monthly usage, remaining allowance and a renewal date only when a valid future date is available. Account information loads once per signed-in application session and can be refreshed manually. Unknown data is not shown as zero usage; exhausted and unlimited allowances have distinct states. The display uses account quota rather than per-session traffic totals.

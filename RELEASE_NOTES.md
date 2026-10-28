@@ -2,6 +2,8 @@
 
 An independent VPN client for Windows, macOS, Linux and Android, built on Mozilla Firefox VPN infrastructure and Fastly edge servers.
 
+- **Account sign-in:** Improved service verification while preserving email and authenticator-code authentication.
+
 - **Multiple Firefox accounts:** Choose the active account or switch automatically after confirmed data-allowance exhaustion. Accounts retain separate allowances.
 - **Persistent traffic statistics:** View monthly allowance, last-session transfers and cumulative traffic on this device.
 - **Flexible app routing:** Choose which apps use the VPN with selected-app and exclusion modes, a searchable app picker and synchronized manual identifiers.
