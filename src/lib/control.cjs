@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Erfan Tahvilian
 const crypto = require('node:crypto');
+const {parseChallengeInit} = require('./service-challenge.cjs');
 const UA = 'MozillaVPN/2.35.0 (sys:linux; iap:true)';
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -15,7 +16,9 @@ class Control {
   async fetch(url, options = {}) {
     const u = new URL(url);
     const cookies = [...this.cookies.values()].filter(c => u.hostname === c.domain || u.hostname.endsWith('.'+c.domain)).map(c => c.pair).join('; ');
-    const response = await fetch(url, {...options, redirect:'error', signal:AbortSignal.timeout(30000), headers:{'User-Agent':UA, Accept:'application/json', ...(cookies ? {Cookie:cookies} : {}), ...options.headers}});
+    // Fastly binds verification to the user agent as well as the exit IP.
+    const agent = ['api.accounts.firefox.com','accounts.firefox.com'].includes(u.hostname) ? BROWSER_UA : UA;
+    const response = await fetch(url, {...options, redirect:'error', signal:AbortSignal.timeout(30000), headers:{'User-Agent':agent, Accept:'application/json', ...(cookies ? {Cookie:cookies} : {}), ...options.headers}});
     for (const raw of response.headers.getSetCookie()) {
       const pair = raw.split(';')[0];
       const domain = (raw.match(/;\s*domain=([^;]+)/i)?.[1] || u.hostname).replace(/^\./,'');
@@ -33,16 +36,27 @@ class Control {
     return {data, headers:response.headers};
   }
   async challenge() {
+    if (this.verifying) return this.verifying;
+    this.verifying = (async()=>{
+      // A previous clearance can hide the challenge page even when the API
+      // rejects that clearance. Keep the main session while verifying afresh.
+      const solver = new Control();
+      await solver.solveChallenge();
+      for (const [key,cookie] of solver.cookies) this.cookies.set(key,cookie);
+    })();
+    try { return await this.verifying; } finally { this.verifying=null; }
+  }
+  async solveChallenge() {
     for(const base of ['https://api.accounts.firefox.com', 'https://accounts.firefox.com']) {
       const headers = {'User-Agent':BROWSER_UA, Accept:'text/html'};
       const page = await (await this.fetch(base+'/', {headers})).text();
       const prefix = page.match(/\/_fs-ch-[A-Za-z0-9]+/)?.[0];
       if (!prefix || !page.includes('Client Challenge')) continue;
       const root = base+prefix;
-      const script = await (await this.fetch(root+'/script.js?reload=true', {headers})).text();
-      const matches = [...script.matchAll(/init\((\[[^\]]*\]),\s*"([^"]+)",\s*"([^"]+)"/g)];
-      if (!matches.length) throw Error('The service challenge format changed. Try again later.');
-      let challenges = JSON.parse(matches.at(-1)[1]), token = matches.at(-1)[2];
+      const scriptResponse = await this.fetch(root+'/script.js?reload=true', {headers});
+      if (!scriptResponse.ok) { await scriptResponse.arrayBuffer(); throw Error(`Service verification could not load (HTTP ${scriptResponse.status}). Try again.`); }
+      const script = await scriptResponse.text();
+      let {challenges,token} = parseChallengeInit(script,prefix);
       for(let round=0; round<3; round++) {
         const answers = [];
         for(const c of challenges) {

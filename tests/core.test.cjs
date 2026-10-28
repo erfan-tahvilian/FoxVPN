@@ -8,6 +8,41 @@ const os=require('node:os');
 const path=require('node:path');
 const {Auth,hkdf,authPW,hawk}=require('../src/lib/auth.cjs');
 const {candidates,solvePow}=require('../src/lib/control.cjs');
+const {Control}=require('../src/lib/control.cjs');
+const {parseChallengeInit}=require('../src/lib/service-challenge.cjs');
+test('service challenge reads nested JSON, escaped delimiters and the final matching call without executing code',()=>{
+  const tasks=[{ty:'clientmetrics',data:{items:[[1,2]],text:'brackets ] and escaped " quotes'}}];
+  const script='init([],"old","/_fs-ch-test");\ninit ( '+JSON.stringify(tasks)+', "token", "/_fs-ch-test", true);';
+  assert.deepEqual(parseChallengeInit(script,'/_fs-ch-test'),{challenges:tasks,token:'token'});
+  for (const invalid of ['init([],"t","/_fs-ch-test")','init([{"ty":"pow"}],"t","/other")','init([runUntrustedCode()],"t","/_fs-ch-test")','init([{"ty":"pow"}],"t","/_fs-ch-test" + runUntrustedCode())']) assert.throws(()=>parseChallengeInit(invalid,'/_fs-ch-test'));
+});
+test('service verification uses a fresh cookie jar, consistent account agent and shared in-flight verification',async()=>{
+  const original=global.fetch,calls=[];
+  let verifications=0;
+  global.fetch=async(address,options)=>{
+    const url=new URL(address);calls.push({url,options});
+    if(url.hostname==='api.accounts.firefox.com') {
+      if(options.method!=='POST')return new Response('{}');
+      return options.headers.Cookie?.includes('clearance=accepted') ? new Response('{"ok":true}') : new Response('',{status:406});
+    }
+    if(url.pathname==='/')return new Response('<title>Client Challenge</title><script src="/_fs-ch-test/script.js"></script>');
+    if(url.pathname.endsWith('/script.js'))return new Response('init ([{"ty":"clientmetrics","data":{"nested":[[1,2]]}}], "token", "/_fs-ch-test", true)');
+    if(url.pathname.endsWith('/fst-post-back')){verifications++;return new Response('{"status":"success"}',{headers:{'Set-Cookie':'clearance=accepted; Domain=firefox.com; Path=/; HttpOnly'}});}
+    throw Error('Unexpected request');
+  };
+  try {
+    const c=new Control();c.cookies.set('old',{domain:'accounts.firefox.com',pair:'clearance=stale'});
+    await Promise.all([c.challenge(),c.challenge()]);assert.equal(verifications,1);
+    assert(!calls.some(c=>c.options.headers.Cookie?.includes('stale')));
+    const result=await c.json('https://api.accounts.firefox.com/v1/account/login',{method:'POST',body:'{}'});
+    assert.equal(result.data.ok,true);
+    assert.equal(new Set(calls.map(c=>c.options.headers['User-Agent'])).size,1);
+  } finally {global.fetch=original;}
+});
+test('an HTTP error loading verification is not reported as changed challenge syntax',async()=>{
+  const c=new Control();c.fetch=async url=>new Response(url.endsWith('/')?'<title>Client Challenge</title>/_fs-ch-test':'',{status:url.endsWith('/')?200:400});
+  await assert.rejects(c.solveChallenge(),/could not load \(HTTP 400\)/);
+});
 const {DEFAULTS,validate,engineConfig}=require('../src/lib/settings.cjs');
 const {Store}=require('../src/lib/store.cjs');
 test('HKDF expansion follows RFC 5869 semantics with a zero salt',()=>{

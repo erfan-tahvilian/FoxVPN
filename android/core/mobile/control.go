@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"regexp"
 	"strings"
@@ -73,6 +74,9 @@ func (b *Backend) fetch(ctx context.Context, address, method string, body []byte
 		return nil, nil, 0, err
 	}
 	req.Header.Set("User-Agent", apiAgent)
+	if req.URL.Hostname() == "api.accounts.firefox.com" || req.URL.Hostname() == "accounts.firefox.com" {
+		req.Header.Set("User-Agent", accountAgent)
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	for k, v := range headers {
@@ -352,7 +356,6 @@ func (b *Backend) refreshServers(ctx context.Context) ([]object, error) {
 }
 
 var challengePath = regexp.MustCompile(`/_fs-ch-[A-Za-z0-9]+`)
-var challengeInit = regexp.MustCompile(`init\((\[[^\]]*\]),\s*"([^"]+)",\s*"([^"]+)"`)
 
 func solvePow(base, hash string) (string, error) {
 	alphabet := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -368,7 +371,19 @@ func solvePow(base, hash string) (string, error) {
 	return "", errors.New("Unable to complete service verification")
 }
 func (b *Backend) challenge(ctx context.Context) error {
-	headers := http.Header{"User-Agent": []string{"Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36"}, "Accept": []string{"text/html"}}
+	jar, err := cookiejar.New(nil)
+	if err != nil { return err }
+	// Reuse the physical-network transport but start with a fresh challenge jar.
+	solver := &Backend{client: &http.Client{Transport:b.client.Transport, Jar:jar, Timeout:b.client.Timeout, CheckRedirect:b.client.CheckRedirect}}
+	if err := solver.solveChallenge(ctx); err != nil { return err }
+	for _, address := range []string{"https://api.accounts.firefox.com/", "https://accounts.firefox.com/"} {
+		u, _ := url.Parse(address)
+		b.client.Jar.SetCookies(u, jar.Cookies(u))
+	}
+	return nil
+}
+func (b *Backend) solveChallenge(ctx context.Context) error {
+	headers := http.Header{"User-Agent": []string{accountAgent}, "Accept": []string{"text/html"}}
 	for _, base := range []string{"https://api.accounts.firefox.com", "https://accounts.firefox.com"} {
 		page, _, _, err := b.fetch(ctx, base+"/", "GET", nil, headers)
 		if err != nil {
@@ -379,20 +394,15 @@ func (b *Backend) challenge(ctx context.Context) error {
 			continue
 		}
 		root := base + path
-		script, _, _, err := b.fetch(ctx, root+"/script.js?reload=true", "GET", nil, headers)
+		script, _, status, err := b.fetch(ctx, root+"/script.js?reload=true", "GET", nil, headers)
 		if err != nil {
 			return err
 		}
-		matches := challengeInit.FindAllStringSubmatch(string(script), -1)
-		if len(matches) == 0 {
-			return errors.New("Service verification is currently unavailable")
+		if status != http.StatusOK { return fmt.Errorf("Service verification could not load (HTTP %d). Try again", status) }
+		challenges, token, err := parseChallengeInit(string(script), path)
+		if err != nil {
+			return err
 		}
-		match := matches[len(matches)-1]
-		var challenges []object
-		if json.Unmarshal([]byte(match[1]), &challenges) != nil {
-			return errors.New("Invalid service verification")
-		}
-		token := match[2]
 		for round := 0; round < 3; round++ {
 			answers := []object{}
 			for _, c := range challenges {
