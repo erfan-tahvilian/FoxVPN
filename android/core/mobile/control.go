@@ -372,10 +372,14 @@ func solvePow(base, hash string) (string, error) {
 }
 func (b *Backend) challenge(ctx context.Context) error {
 	jar, err := cookiejar.New(nil)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	// Reuse the physical-network transport but start with a fresh challenge jar.
-	solver := &Backend{client: &http.Client{Transport:b.client.Transport, Jar:jar, Timeout:b.client.Timeout, CheckRedirect:b.client.CheckRedirect}}
-	if err := solver.solveChallenge(ctx); err != nil { return err }
+	solver := &Backend{client: &http.Client{Transport: b.client.Transport, Jar: jar, Timeout: b.client.Timeout, CheckRedirect: b.client.CheckRedirect}}
+	if err := solver.solveChallenge(ctx); err != nil {
+		return err
+	}
 	for _, address := range []string{"https://api.accounts.firefox.com/", "https://accounts.firefox.com/"} {
 		u, _ := url.Parse(address)
 		b.client.Jar.SetCookies(u, jar.Cookies(u))
@@ -398,7 +402,9 @@ func (b *Backend) solveChallenge(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		if status != http.StatusOK { return fmt.Errorf("Service verification could not load (HTTP %d). Try again", status) }
+		if status != http.StatusOK {
+			return fmt.Errorf("Service verification could not load (HTTP %d). Try again", status)
+		}
 		challenges, token, err := parseChallengeInit(string(script), path)
 		if err != nil {
 			return err

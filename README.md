@@ -215,6 +215,8 @@ Fox VPN is an independent client built on Mozilla's Firefox VPN infrastructure, 
 
 For device coverage, automated checks and remaining manual tests, read the [verification record](VALIDATION.md).
 
+Service verification happens before account authentication. A service verification error does not, by itself, mean your password is incorrect. When reporting a sign-in problem, include the exact error and your operating system; never share passwords, verification codes or session tokens.
+
 <a name="built-in-the-open"></a>
 
 ## 🛠️ Built in the open
