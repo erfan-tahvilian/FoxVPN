@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Losslessly recompress unsigned release APKs; never modify DEX or native code."""
+"""Losslessly recompress unsigned Android APKs; never modify DEX or native code."""
 import copy
 import hashlib
 import json

@@ -95,7 +95,7 @@ jobs:
         # Recompression preserves every entry, including native libraries and DEX.
         # Validation below checks all resulting architectures again.
         run: |
-          python scripts/compact-apk.py
+          python scripts/compact-android.py
           python scripts/validate-android.py > android/app/build/reports/package-validation.json
       - name: Enable emulator acceleration
         run: |

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import zipfile
 
-spec = importlib.util.spec_from_file_location("compact", Path(__file__).parents[1] / "scripts/compact-apk.py")
+spec = importlib.util.spec_from_file_location("compact", Path(__file__).parents[1] / "scripts/compact-android.py")
 compact = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(compact)
 
