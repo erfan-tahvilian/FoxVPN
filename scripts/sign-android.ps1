@@ -33,6 +33,7 @@ if($foxRun.head_sha -ne (git rev-parse HEAD).Trim()){
 $foxBuild = Join-Path $foxRoot ('.tools/android-build-' + $RunId)
 $foxSigningTools = Join-Path $foxRoot '.tools/android-signing-tools'
 $foxOutput = Join-Path $foxRoot 'dist/android'
+$foxVersion=(Get-Content (Join-Path $foxRoot 'package.json') -Raw | ConvertFrom-Json).version
 $foxKeystore = Join-Path $foxRoot '.tools/android-release.jks'
 $foxPasswordFile = Join-Path $foxRoot '.tools/android-key-password.dpapi'
 if (!(Test-Path -LiteralPath $foxKeystore) -or !(Test-Path -LiteralPath $foxPasswordFile)) { throw 'Local Android signing identity is unavailable; refusing to create a replacement.' }
@@ -67,7 +68,7 @@ try {
     foreach ($foxAbi in $Architectures) {
         $foxInputs = @(Get-ChildItem -LiteralPath $foxBuild -Recurse -File -Filter ('app-' + $foxAbi + '-release-unsigned.apk'))
         if ($foxInputs.Count -ne 1) { throw ('Expected one verified Android package for ' + $foxAbi) }
-        $foxApk = Join-Path $foxOutput ('FoxVPN-1.0.0-Android-' + $foxAbi + '.apk')
+        $foxApk = Join-Path $foxOutput ('FoxVPN-' + $foxVersion + '-Android-' + $foxAbi + '.apk')
         & $foxJava -jar $foxSigner sign --ks $foxKeystore --ks-key-alias foxvpn --ks-pass env:FOX_ANDROID_SIGNING_PASS --key-pass env:FOX_ANDROID_SIGNING_PASS --min-sdk-version 26 --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out $foxApk $foxInputs[0].FullName
         if ($LASTEXITCODE -ne 0) { throw ('Signing failed for ' + $foxAbi) }
         $foxVerification = & $foxJava -jar $foxSigner verify --verbose --print-certs $foxApk

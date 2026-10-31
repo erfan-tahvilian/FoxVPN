@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Publish complete release and retain latest downloads
+on:
+  workflow_dispatch:
+    inputs:
+      desktop_run_id:
+        description: Successful desktop staging workflow
+        required: true
+        type: string
+      android_run_id:
+        description: Successful signed Android staging workflow
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FOX_DESKTOP_RUN: ${{ inputs.desktop_run_id }}
+      FOX_ANDROID_RUN: ${{ inputs.android_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify successful staging and matching source
+        run: |
+          for kind in desktop android; do
+            if [ "$kind" = desktop ]; then run="$FOX_DESKTOP_RUN"; expected='.github/workflows/publish.yml'; else run="$FOX_ANDROID_RUN"; expected='.github/workflows/publish-android.yml'; fi
+            [[ "$run" =~ ^[0-9]+$ ]]
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" > /tmp/stage.json
+            test "$(jq -r .conclusion /tmp/stage.json)" = success
+            test "$(jq -r .path /tmp/stage.json)" = "$expected"
+            git diff --exit-code "$(jq -r .head_sha /tmp/stage.json)" HEAD -- src android assets licenses package.json package-lock.json release-notes.json scripts .github/scripts .github/workflows
+          done
+      - name: Validate every asset, publish, then remove superseded release entries
+        run: node .github/scripts/release-tools.cjs finalize

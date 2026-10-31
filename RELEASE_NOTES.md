@@ -1,6 +1,15 @@
-# Fox VPN v1.0.0
+# Fox VPN v1.0.1
 
 An independent VPN client for Windows, macOS, Linux and Android, built on Mozilla Firefox VPN infrastructure and Fastly edge servers.
+
+## New in 1.0.1
+
+- **Updates matched to your device:** Receive a notification when a newer stable release is available, with a direct download for your platform, architecture and supported package type. Downloads start only when you choose them.
+- **Release highlights:** See the improvements for your platform once when you first open an updated version.
+- **Responsive Android controls:** Select a location while real-delay checks run, or connect immediately and cancel the remaining background checks.
+- **Android back navigation:** Close an open dialog first, return to Overview from other pages, then leave the app.
+
+## Included features
 
 - **Account sign-in:** Improved service verification while preserving email and authenticator-code authentication.
 

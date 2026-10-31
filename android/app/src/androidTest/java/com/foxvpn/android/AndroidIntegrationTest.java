@@ -46,9 +46,30 @@ public class AndroidIntegrationTest {
         return null;
     }
     private void ready()throws Exception{
+        ready(false);
+    }
+    private void ready(boolean allowHighlights)throws Exception{
+        if(!allowHighlights)InstrumentationRegistry.getInstrumentation().getTargetContext().getSharedPreferences("interface",Context.MODE_PRIVATE).edit().putString("releaseNotesSeen",BuildConfig.VERSION_NAME).commit();
         long deadline=System.currentTimeMillis()+20000;
-        while(System.currentTimeMillis()<deadline){if("true".equals(js("!!window.fox && !!document.getElementById('connect') && typeof currentState!=='undefined' && currentState!==null")))return;Thread.sleep(250);}
+        while(System.currentTimeMillis()<deadline){if("true".equals(js("!!window.fox && !!document.getElementById('connect') && typeof currentState!=='undefined' && currentState!==null"))){if(!allowHighlights)js("document.getElementById('release-highlights')?.close()");return;}Thread.sleep(250);}
         fail("Android interface did not initialize");
+    }
+    @Test public void releaseHighlightsAreShownOncePerVersion()throws Exception{
+        Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        activity.finishActivity();context.getSharedPreferences("interface",Context.MODE_PRIVATE).edit().remove("releaseNotesSeen").commit();activity.launchActivity(null);ready(true);
+        long deadline=System.currentTimeMillis()+6000;while(!"true".equals(js("Boolean(document.getElementById('release-highlights')?.open)"))&&System.currentTimeMillis()<deadline)Thread.sleep(100);
+        assertEquals("true",js("document.getElementById('release-highlights').textContent.includes('Responsive location checks')"));
+        js("document.querySelector('#release-highlights button').click()");
+        deadline=System.currentTimeMillis()+5000;while(!BuildConfig.VERSION_NAME.equals(context.getSharedPreferences("interface",Context.MODE_PRIVATE).getString("releaseNotesSeen",""))&&System.currentTimeMillis()<deadline)Thread.sleep(100);
+        assertEquals(BuildConfig.VERSION_NAME,context.getSharedPreferences("interface",Context.MODE_PRIVATE).getString("releaseNotesSeen",""));
+        activity.finishActivity();activity.launchActivity(null);ready(true);Thread.sleep(1200);assertEquals("true",js("!document.getElementById('release-highlights')"));
+    }
+    @Test public void backClosesDialogsThenReturnsToOverview()throws Exception{
+        ready();js("navigate('settings');let d=document.createElement('dialog');d.id='back-test';document.body.append(d);d.showModal()");
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(()->activity.getActivity().onBackPressed());
+        assertEquals("false",js("document.getElementById('back-test').open"));assertEquals("\"settings\"",js("page"));
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(()->activity.getActivity().onBackPressed());
+        assertEquals("\"home\"",js("page"));assertEquals("false",js("window.handleAndroidBack()"));js("document.getElementById('back-test').remove()");
     }
     @Test public void connectionNotificationStatistics(){
         assertEquals("Downloaded: 1.0 MB\nUploaded: 2.0 KB",ConnectionStats.details(1048576,2048));

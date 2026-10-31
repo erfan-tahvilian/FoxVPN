@@ -40,7 +40,8 @@
       "licenses/**/*",
       "LICENSE",
       "COPYRIGHT",
-      "package.json"
+      "package.json",
+      "release-notes.json"
     ],
     "extraResources": [
       {

@@ -24,7 +24,7 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final int VPN_PERMISSION = 1, NOTIFICATION_PERMISSION = 2, EXPORT = 3;
     private static final String ORIGIN = "https://appassets.androidplatform.net";
-    private static final Set<String> ACTIONS = Set.of("checkUpdates","downloadUpdate","state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","locationSort","selectAccount","removeAccount","accountPreferences","cancelAccountLogin");
+    private static final Set<String> ACTIONS = Set.of("releaseNotes","ackReleaseNotes","checkUpdates","downloadUpdate","state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","locationSort","selectAccount","removeAccount","accountPreferences","cancelAccountLogin");
     private static final Set<String> LOCATION_SORTS = Set.of("ping-asc","ping-desc","name-asc","name-desc");
     WebView web;
     private boolean loaded, pendingConnect;
@@ -159,6 +159,17 @@ public final class MainActivity extends Activity {
                 try {
                     JSONArray args=new JSONArray(arguments);
                     switch(channel){
+                        case "releaseNotes":
+                            String notesText;
+                            try(java.io.InputStream input=getAssets().open("release-notes.json")){java.io.ByteArrayOutputStream content=new java.io.ByteArrayOutputStream();byte[] block=new byte[4096];int count;while((count=input.read(block))!=-1){if(content.size()+count>65536)throw new java.io.IOException("Release highlights are too large.");content.write(block,0,count);}notesText=content.toString("UTF-8");}
+                            JSONObject notes=new JSONObject(notesText);if(!BuildConfig.VERSION_NAME.equals(notes.getString("version")))throw new IllegalStateException("Release highlights do not match this version.");
+                            JSONArray entries=notes.getJSONArray("items"),items=new JSONArray();
+                            for(int n=0;n<entries.length();n++){JSONObject item=entries.getJSONObject(n);JSONArray platforms=item.getJSONArray("platforms");for(int p=0;p<platforms.length();p++)if("android".equals(platforms.getString(p))){items.put(new JSONObject().put("title",item.getString("title")).put("description",item.getString("description")));break;}}
+                            JSONObject highlights=new JSONObject().put("version",BuildConfig.VERSION_NAME).put("seen",BuildConfig.VERSION_NAME.equals(getSharedPreferences("interface",MODE_PRIVATE).getString("releaseNotesSeen",""))).put("items",items);
+                            respond(id,new JSONObject().put("ok",true).put("data",highlights).toString());break;
+                        case "ackReleaseNotes":
+                            if(!getSharedPreferences("interface",MODE_PRIVATE).edit().putString("releaseNotesSeen",BuildConfig.VERSION_NAME).commit())throw new java.io.IOException("Could not save release highlights.");
+                            respond(id,envelope(true,null));break;
                         case "checkUpdates":respond(id,checkUpdates(args.optBoolean(0,false)));break;
                         case "downloadUpdate":
                             JSONObject update=new JSONObject(app().backend.call("updateURL",new JSONArray().put(installedArchitecture()).toString()));

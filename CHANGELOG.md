@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.1 - 2026-10-31
+
+- Device-matched update notifications with direct downloads.
+- One-time release highlights after installing a new version.
+- Responsive Android location selection and connection during latency checks.
+- Android back navigation through dialogs and Overview.
+- Complete, versioned releases with only the latest binary downloads retained.
+
 ## v1.0.0 - 2026-10-11
 
 ### Maintenance update - 2026-10-29

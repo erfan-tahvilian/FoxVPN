@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-name: Publish signed Android packages
+name: Stage signed Android packages
 on:
   workflow_dispatch:
     inputs:
@@ -21,13 +21,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Read release version
+        run: node .github/scripts/release-tools.cjs metadata >> "$GITHUB_ENV"
       - name: Verify build source
         run: |
           [[ "$FOX_BUILD_RUN" =~ ^[0-9]+$ ]]
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$FOX_BUILD_RUN" > /tmp/build.json
           test "$(jq -r .conclusion /tmp/build.json)" = success
           test "$(jq -r .path /tmp/build.json)" = .github/workflows/android.yml
-          git diff --exit-code "$(jq -r .head_sha /tmp/build.json)" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml ':(exclude)android/core/apple/**'
+          git diff --exit-code "$(jq -r .head_sha /tmp/build.json)" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml ':(exclude)android/core/apple/**'
       - uses: actions/download-artifact@v4
         with:
           name: Android-unsigned-build
@@ -44,6 +46,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '22'
+      - name: Prepare versioned draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/release-tools.cjs ensure-draft
       - name: Generate single-use signing transport key
         run: node .github/scripts/android-transfer.cjs generate "$RUNNER_TEMP/fox-sign"
       - uses: actions/upload-artifact@v4
@@ -55,12 +61,12 @@ jobs:
         run: |
           asset="android-signing-envelope-$GITHUB_RUN_ID.json"
           for attempt in $(seq 1 180); do
-            if gh release download v1.0.0 --pattern "$asset" --dir "$RUNNER_TEMP/fox-sign" 2>/dev/null; then break; fi
+            if gh release download "$FOX_TAG" --pattern "$asset" --dir "$RUNNER_TEMP/fox-sign" 2>/dev/null; then break; fi
             sleep 5
           done
           test -s "$RUNNER_TEMP/fox-sign/$asset"
           mv "$RUNNER_TEMP/fox-sign/$asset" "$RUNNER_TEMP/fox-sign/envelope.json"
-          gh release delete-asset v1.0.0 "$asset" --yes
+          gh release delete-asset "$FOX_TAG" "$asset" --yes
           node .github/scripts/android-transfer.cjs decrypt "$RUNNER_TEMP/fox-sign"
       - name: Sign and verify all architectures
         run: |
@@ -69,7 +75,7 @@ jobs:
           mkdir signed
           for arch in arm64-v8a armeabi-v7a x86_64 x86 universal; do
             input="unsigned/app-$arch-release-unsigned.apk"
-            output="signed/FoxVPN-1.0.0-Android-$arch.apk"
+            output="signed/FoxVPN-$FOX_VERSION-Android-$arch.apk"
             test -s "$input"
             java -jar signing-tools/apksigner.jar sign --ks "$RUNNER_TEMP/fox-sign/release.jks" --ks-key-alias foxvpn --ks-pass "file:$RUNNER_TEMP/fox-sign/password" --key-pass "file:$RUNNER_TEMP/fox-sign/key-password" --min-sdk-version 26 --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out "$output" "$input"
             java -jar signing-tools/apksigner.jar verify --verbose --print-certs "$output" > /tmp/verify.txt
@@ -77,9 +83,9 @@ jobs:
           done
           (cd signed && sha256sum *.apk > SHA256SUMS-Android.txt)
       - name: Publish signed packages
-        run: gh release upload v1.0.0 signed/* --clobber
+        run: gh release upload "$FOX_TAG" signed/* --clobber
       - name: Remove transient signing material
         if: always()
         run: |
           rm -rf "$RUNNER_TEMP/fox-sign"
-          gh release delete-asset v1.0.0 "android-signing-envelope-$GITHUB_RUN_ID.json" --yes 2>/dev/null || true
+          gh release delete-asset "$FOX_TAG" "android-signing-envelope-$GITHUB_RUN_ID.json" --yes 2>/dev/null || true

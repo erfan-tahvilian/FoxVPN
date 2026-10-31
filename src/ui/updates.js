@@ -17,6 +17,7 @@
     const control=document.getElementById('check-updates');if(control){control.disabled=true;control.textContent='Checking…';}
     try{
       const update=await call('checkUpdates',manual);
+      if(update.available&&!manual&&(currentState?.busy||needsCode||document.querySelector('dialog[open]'))){setTimeout(()=>check(false),5000);return;}
       if(update.available&&(manual||offered!==update.latestVersion)){
         offered=update.latestVersion;message.textContent='Get the latest improvements for your device.';version.textContent=`${update.currentVersion} → ${update.latestVersion}`;
         details.textContent=`${bytes(update.size)} download`;download.href=update.url;
@@ -29,8 +30,20 @@
     if(!about){about=document.createElement('div');about.className='settings-card';const heading=document.createElement('h3');heading.textContent='About Fox VPN';const installed=document.createElement('p');installed.dataset.appVersion='';installed.dataset.versionPrefix='Version ';about.append(heading,installed);document.querySelector('.settings-footer').before(about);}
     const button=document.createElement('button');button.id='check-updates';button.type='button';button.className='secondary';button.textContent='Check for updates';button.addEventListener('click',()=>check(true));about.append(button);
     setTimeout(()=>check(false),4000);
+    setTimeout(showReleaseNotes,500);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check(false);});
     window.fox.onState(state=>{for(const label of document.querySelectorAll('[data-app-version]'))label.textContent=(label.dataset.versionPrefix||'v')+state.version;});
   };
   if(document.readyState==='loading')window.addEventListener('DOMContentLoaded',setup);else setup();
+  async function showReleaseNotes(){
+    try{
+      const notes=await call('releaseNotes');if(notes.seen||!notes.items?.length)return;
+      const welcome=document.createElement('dialog');welcome.id='release-highlights';welcome.className='update-dialog';welcome.setAttribute('aria-labelledby','highlights-title');
+      const title=document.createElement('h2');title.id='highlights-title';title.textContent=`What’s new in Fox VPN ${notes.version}`;
+      welcome.append(title);
+      for(const item of notes.items){const article=document.createElement('article'),heading=document.createElement('h3'),description=document.createElement('p');heading.textContent=item.title;description.textContent=item.description;description.className='muted';article.append(heading,description);welcome.append(article);}
+      const done=document.createElement('button');done.className='primary';done.textContent='Continue';done.addEventListener('click',()=>welcome.close());welcome.append(done);
+      welcome.addEventListener('close',()=>{call('ackReleaseNotes').catch(()=>{});welcome.remove();},{once:true});document.body.append(welcome);welcome.showModal();
+    }catch{/* Release highlights must never prevent starting the app. */}
+  }
 })();

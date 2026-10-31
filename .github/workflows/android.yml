@@ -4,7 +4,7 @@ name: Android build
 on:
   push:
     branches: [main]
-    paths: ['android/**', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*android*', '.github/workflows/android.yml']
+    paths: ['package*.json', 'release-notes.json', 'scripts/check-version.cjs', 'android/**', 'src/ui/**', 'assets/**', 'licenses/**', 'LICENSE', 'COPYRIGHT', 'scripts/*android*', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,10 +17,12 @@ jobs:
         with:
           go-version: '1.26.9'
           cache: false
+      - name: Verify version metadata
+        run: node scripts/check-version.cjs
       - name: Verify Android core
         working-directory: android/core
         run: |
-          gofmt -w mobile engine tools.go
+          gofmt -w mobile engine cmd tools.go
           go mod tidy
           go test -race -timeout 90s -v ./mobile
           go vet ./mobile

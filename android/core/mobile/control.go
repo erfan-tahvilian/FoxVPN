@@ -213,7 +213,9 @@ func (b *Backend) complete(ctx context.Context) (object, error) {
 func (b *Backend) token(ctx context.Context, force bool) (string, error) {
 	b.authRefresh.Lock()
 	defer b.authRefresh.Unlock()
-	if err:=ctx.Err();err!=nil{return "",err}
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	id := b.accountID(ctx)
 	b.mu.Lock()
 	profile := b.profileLocked(id)

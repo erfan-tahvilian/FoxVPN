@@ -10,19 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Refresh corresponding project source
+      - name: Read release version
+        run: node .github/scripts/release-tools.cjs metadata >> "$GITHUB_ENV"
+      - name: Prepare versioned draft release
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > FoxVPN-1.0.0-source.tar.gz
-          gh release upload v1.0.0 FoxVPN-1.0.0-source.tar.gz --clobber
-      - name: Verify asset digests and refresh checksum filenames
+        run: node .github/scripts/release-tools.cjs ensure-draft
+      - name: Refresh unpublished source only
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
         run: |
-          gh api "repos/$GH_REPO/releases/tags/v1.0.0" > /tmp/release.json
-          jq -e '[.assets[] | select(.name != "SHA256SUMS.txt") | .digest | test("^sha256:[a-f0-9]{64}$")] | all' /tmp/release.json
-          jq -r '.assets[] | select(.name != "SHA256SUMS.txt") | "\(.digest | sub("^sha256:";""))  \(.name)"' /tmp/release.json | sort -k2 > SHA256SUMS.txt
-          gh release upload v1.0.0 SHA256SUMS.txt --clobber
+          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > "FoxVPN-$FOX_VERSION-source.tar.gz"
+          gh release upload "$FOX_TAG" "FoxVPN-$FOX_VERSION-source.tar.gz" --clobber

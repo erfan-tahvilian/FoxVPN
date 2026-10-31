@@ -11,6 +11,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Read release version
+        run: node .github/scripts/release-tools.cjs metadata >> "$GITHUB_ENV"
       - name: Retrieve and authenticate published APKs
         env:
           GH_TOKEN: ${{ github.token }}
@@ -18,12 +20,12 @@ jobs:
           mkdir -p release-apks test-results/android-install
           tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           test -x "$tools/apksigner"
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.0.0" > /tmp/release.json
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$FOX_TAG" > /tmp/release.json
           for arch in x86_64 universal; do
-            name="FoxVPN-1.0.0-Android-$arch.apk"
+            name="FoxVPN-$FOX_VERSION-Android-$arch.apk"
             digest="$(jq -r --arg name "$name" '.assets[] | select(.name == $name) | .digest' /tmp/release.json)"
             [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
-            gh release download v1.0.0 --pattern "$name" --dir release-apks
+            gh release download "$FOX_TAG" --pattern "$name" --dir release-apks
             echo "${digest#sha256:}  release-apks/$name" | sha256sum --check
             "$tools/apksigner" verify --min-sdk-version 36 --max-sdk-version 36 --print-certs "release-apks/$name" > /tmp/certificate.txt
             # New SDK tools label v3-only checks "V3.0 Signer" instead of "Signer #1".
