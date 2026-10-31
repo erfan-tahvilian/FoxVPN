@@ -28,9 +28,16 @@ def recompress(source, output):
                 raise ValueError("Unsupported APK compression method")
             if info.filename.upper().endswith((".RSA", ".DSA", ".EC", ".SF")) and info.filename.startswith("META-INF/"):
                 raise ValueError("Only unsigned APKs may be recompressed")
-            compact.writestr(copy.copy(info), original.read(info), compresslevel=9)
-    if entries(source) != entries(output):
-        raise ValueError("APK contents or compression semantics changed")
+            target = copy.copy(info)
+            compact.writestr(target, original.read(info), compresslevel=9)
+            # zipfile supplies Unix permissions when an Android entry has zero
+            # attributes. Restore the original value before the central directory
+            # is emitted; APK/JAR entries normally have no Unix attributes.
+            target.external_attr = info.external_attr
+    before, after = entries(source), entries(output)
+    if before != after:
+        changed = [name for name, value in before.items() if after.get(name) != value]
+        raise ValueError("APK contents or compression semantics changed: " + ", ".join(changed[:5]))
 
 
 def main():

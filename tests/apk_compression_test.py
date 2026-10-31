@@ -21,6 +21,8 @@ class CompressionTest(unittest.TestCase):
                 stored.compress_type = zipfile.ZIP_STORED
                 stored.external_attr = 0o100644 << 16
                 apk.writestr(stored, bytes(range(256)) * 10)
+                for info in apk.filelist:
+                    info.external_attr = 0  # Android packaging commonly omits Unix modes.
             compact.recompress(original, result)
             self.assertEqual(compact.entries(original), compact.entries(result))
             self.assertLess(result.stat().st_size, original.stat().st_size)
