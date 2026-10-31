@@ -2,6 +2,13 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {ReleaseNotes}=require('../src/lib/release-notes.cjs');
 const {binaries,validateRelease,olderTags,archivedNotes,archiveRelease}=require('../.github/scripts/release-tools.cjs');
+const {compare}=require('../.github/scripts/release-size-report.cjs');
+test('size report covers every architecture and separates compression from a retired source duplicate',()=>{
+  const before={tag_name:'v1.0.1',assets:binaries('1.0.1').map(name=>({name,size:1000})).concat({name:'FoxVPN-1.0.1-source.tar.gz',size:500})};
+  const after={tag_name:'v1.0.2',assets:binaries('1.0.2').map(name=>({name,size:900}))};
+  const result=compare(before,after);assert.equal(result.rows.length,21);assert.equal(result.totals.savedBytes,2100);assert.equal(result.releaseTotals.savedBytes,2600);assert.equal(result.auxiliary[0].status,'retired');
+  assert.throws(()=>compare(before,{...after,assets:after.assets.slice(1)}),/Missing comparable asset/);
+});
 test('release highlights are acknowledged once per version and filtered for the installed platform',()=>{
   const stateFile=path.join(fs.mkdtempSync(path.join(os.tmpdir(),'fox-notes-')),'state.json'),notes={version:'1.0.1',items:[{platforms:['win32'],title:'Windows improvement',description:'Fixture'},{platforms:['android'],title:'Android improvement',description:'Fixture'}]};
   const store=new ReleaseNotes({notes,version:'1.0.1',platform:'win32',stateFile});assert.equal(store.read().seen,false);assert.deepEqual(store.read().items,[{title:'Windows improvement',description:'Fixture'}]);store.acknowledge();assert.equal(store.read().seen,true);

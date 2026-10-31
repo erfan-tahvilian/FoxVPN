@@ -47,6 +47,8 @@ Licensed under the GNU General Public License, version 3 or later. Independent d
 
 ## Corresponding source
 
+[Detailed package-size comparison](https://github.com/erfan-tahvilian/FoxVPN/blob/main/docs/releases/v1.0.2-size-report.md) | [Release asset audit](https://github.com/erfan-tahvilian/FoxVPN/blob/v1.0.2/docs/releases/v1.0.2-asset-audit.md)
+
 [Fox VPN source ZIP](https://github.com/erfan-tahvilian/FoxVPN/archive/refs/tags/v1.0.2.zip) | [Fox VPN source tar.gz](https://github.com/erfan-tahvilian/FoxVPN/archive/refs/tags/v1.0.2.tar.gz) | [Source and build details](https://github.com/erfan-tahvilian/FoxVPN/blob/v1.0.2/SOURCES.md)
 
 The separate sing-box source archive is included with the release assets. See `SHA256SUMS.txt` for all downloadable assets and `SHA256SUMS-Android.txt` for APK verification.

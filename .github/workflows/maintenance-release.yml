@@ -45,6 +45,9 @@ jobs:
         run: |
           node .github/scripts/release-tools.cjs metadata >> "$GITHUB_ENV"
           test "$FOX_CONFIRM_VERSION" = "$(node -p "require('./package.json').version")"
+          # Without a second custom source archive, maintenance cannot change
+          # runtime/build inputs beyond the immutable published source tag.
+          git diff --exit-code "$FOX_TAG" HEAD -- src android assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json scripts desktop/h3 ':(exclude)android/core/apple/**'
           for kind in WINDOWS MAC LINUX ANDROID; do
             variable="FOX_${kind}_RUN"; run="${!variable}"
             [[ "$run" =~ ^[0-9]+$ ]]
