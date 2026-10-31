@@ -28,6 +28,7 @@ public final class MainActivity extends Activity {
     private static final Set<String> LOCATION_SORTS = Set.of("ping-asc","ping-desc","name-asc","name-desc");
     WebView web;
     private boolean loaded, pendingConnect;
+    private final java.util.ArrayDeque<String> pendingResponses=new java.util.ArrayDeque<>();
     private android.window.OnBackInvokedCallback backCallback;
     private String exportText;
     private FoxApp app() { return (FoxApp) getApplication(); }
@@ -85,6 +86,7 @@ public final class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 if (!url.equals(ORIGIN+"/assets/src/ui/index.html")) return;
                 loaded = true; receive(app().backend.snapshot());
+                while(!pendingResponses.isEmpty())web.evaluateJavascript(pendingResponses.removeFirst(),null);
                 if (pendingConnect) { pendingConnect = false; if (app().state.optBoolean("signedIn")) beginConnect(); else web.evaluateJavascript("navigate('account')",null); }
             }
         });
@@ -108,7 +110,7 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onResume() { super.onResume();app().activity=new java.lang.ref.WeakReference<>(this);if(app().backend!=null)app().backend.setDark(app().isDark());app().main.post(tick); }
     @Override protected void onPause() { app().main.removeCallbacks(tick);super.onPause(); }
-    @Override protected void onDestroy() { if(Build.VERSION.SDK_INT>=33&&backCallback!=null)getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback); app().main.removeCallbacks(tick);if(app().activity.get()==this)app().activity.clear();if(web!=null){web.removeJavascriptInterface("FoxAndroid");web.destroy();}super.onDestroy(); }
+    @Override protected void onDestroy() { if(Build.VERSION.SDK_INT>=33&&backCallback!=null)getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback); app().main.removeCallbacks(tick);if(app().activity.get()==this)app().activity.clear();loaded=false;pendingResponses.clear();if(web!=null){web.removeJavascriptInterface("FoxAndroid");web.destroy();web=null;}super.onDestroy(); }
     void receive(String state) {
         if(!loaded||web==null)return;
         try{
@@ -127,7 +129,7 @@ public final class MainActivity extends Activity {
         }catch(Exception ignored){}
         web.evaluateJavascript("window.fox.receive("+state+")",null);
     }
-    private void respond(String id,String value) { app().main.post(() -> {if(web!=null&&loaded)web.evaluateJavascript("window.fox.resolve("+JSONObject.quote(id)+","+value+")",null);}); }
+    private void respond(String id,String value) { app().main.post(() -> {if(web==null)return;String script="window.fox.resolve("+JSONObject.quote(id)+","+value+")";if(loaded)web.evaluateJavascript(script,null);else pendingResponses.addLast(script);}); }
     private String envelope(boolean ok,String error) {try {JSONObject result=new JSONObject().put("ok",ok).put("data",JSONObject.NULL);if(error!=null)result.put("error",error);return result.toString();}catch(Exception e){return "{\"ok\":false,\"error\":\"Request failed\"}";}}
     String installedArchitecture() throws Exception {
         Set<String> found=new java.util.HashSet<>();

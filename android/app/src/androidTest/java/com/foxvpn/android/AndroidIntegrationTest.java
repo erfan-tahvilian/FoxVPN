@@ -90,6 +90,9 @@ public class AndroidIntegrationTest {
         assertEquals("false",js("document.getElementById('excludedApps').closest('label').hidden"));
         assertEquals("true",js("!!document.getElementById('choose-apps') && !document.querySelector('#settings-form button[type=submit]')"));
         assertEquals("false",js("Array.from(document.querySelectorAll('button')).some(x=>x.textContent==='Add Quick Settings tile')"));
+        js("navigate('settings')");
+        assertEquals("true",js("(()=>{const check=document.getElementById('check-updates'),source=document.getElementById('source');return check.nextElementSibling===source && source.getBoundingClientRect().top>=check.getBoundingClientRect().bottom+13})()"));
+        assertEquals("true",js("document.querySelector('[data-app-about] [data-app-version]').textContent==='Version "+BuildConfig.VERSION_NAME+"'"));
         js("window.fox.call('theme','light')");Thread.sleep(500);
         assertEquals("true",js("document.body.classList.contains('light')"));
         js("window.fox.call('theme','dark')");Thread.sleep(500);
