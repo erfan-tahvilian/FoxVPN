@@ -52,6 +52,15 @@ credential-free probe against the reference's exact QUIC library version.
 This separates a library difference from a network result without installing
 another app, accessing account secrets, or downloading unrelated APKs.
 
+The comparison build from [run 41206011742](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41206011742)
+was then executed on the same phone. With upstream quic-go v0.59.0, Google
+IPv6 completed a verified handshake in 426 ms; both Fastly endpoints timed
+out on both families under the same six-second per-address diagnostic budget.
+Google IPv4 also timed out. Switching to the reference's library therefore
+did not resolve this observed handshake failure. This was a transport probe,
+not a test of the reference application's authenticated VPN or its full
+twenty-second connection/retry policy.
+
 Current pinned reference sources:
 
 - [HTTP/3 handshake and CONNECT](https://github.com/armanlife/firefox-vpn-client/blob/9f8350ce1291b51478f037d2fab8844dee5c0f74/core/internal/proxy/upstream_h3.go)
