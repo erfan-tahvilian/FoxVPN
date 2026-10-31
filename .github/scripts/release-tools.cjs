@@ -12,7 +12,23 @@ function validateRelease(release,v){
   for(const a of release.assets){assert(allowed.has(a.name),`Unexpected or transient asset: ${a.name}`);assert.equal(a.state,'uploaded');assert(a.size>0);assert.match(a.digest,/^sha256:[a-f0-9]{64}$/);}
   return release.assets.filter(a=>a.name!=='SHA256SUMS.txt').sort((a,b)=>a.name.localeCompare(b.name)).map(a=>`${a.digest.slice(7)}  ${a.name}`).join('\n')+'\n';
 }
-function olderTags(releases,v){return releases.filter(r=>r.tag_name!=='v'+v&&/^v\d+\.\d+\.\d+$/.test(r.tag_name)&&newer(v,r.tag_name.slice(1))).map(r=>r.tag_name);}
+function olderTags(releases,v){return releases.filter(r=>!r.draft&&r.tag_name!=='v'+v&&/^v\d+\.\d+\.\d+$/.test(r.tag_name)&&newer(v,r.tag_name.slice(1))).map(r=>r.tag_name);}
+function archivedNotes(body){
+  let downloads=false;const lines=[];
+  for(const line of (body||'').split(/\r?\n/)){
+    if(/^## Downloads\s*$/.test(line)){downloads=true;continue;}
+    if(downloads&&/^## /.test(line))downloads=false;
+    if(!downloads)lines.push(line);
+  }
+  const notice='Installers for older versions are no longer distributed. Download the [latest release](https://github.com/erfan-tahvilian/FoxVPN/releases/latest).';
+  const notes=lines.join('\n').trim();return notes+(notes.includes(notice)?'\n':'\n\n'+notice+'\n');
+}
+function archiveRelease(repo,release,temporary,invoke=gh){
+  assert(Number.isSafeInteger(release.id)&&release.id>0);assert(!release.draft);
+  const body=archivedNotes(release.body);
+  if(body!==release.body){const file=path.join(temporary,`archive-${release.id}.json`);fs.writeFileSync(file,JSON.stringify({body}));invoke('api','--method','PATCH',`repos/${repo}/releases/${release.id}`,'--input',file);}
+  for(const asset of release.assets){assert(Number.isSafeInteger(asset.id)&&asset.id>0);invoke('api','--method','DELETE',`repos/${repo}/releases/assets/${asset.id}`);}
+}
 function gh(...args){return execFileSync('gh',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();}
 function api(endpoint){return JSON.parse(gh('api',endpoint));}
 // GitHub can omit an unpublished draft from the tag endpoint until its tag
@@ -44,9 +60,9 @@ async function main(){
   for(let attempt=0;attempt<6;attempt++){latest=api(`repos/${repo}/releases/latest`);if(latest.id===release.id)break;await new Promise(resolve=>setTimeout(resolve,2000));}
   assert.equal(latest.id,release.id,'The new release is not latest; older downloads were preserved');
   validateRelease(latest,version);
-  const old=olderTags(api(`repos/${repo}/releases?per_page=100`),version);
-  for(const oldTag of old)gh('release','delete',oldTag,'--repo',repo,'--yes');
-  console.log(`Published and verified ${tag}; removed ${old.length} older release entries. Git tags and source history were retained.`);
+  const releases=api(`repos/${repo}/releases?per_page=100`),old=olderTags(releases,version);
+  for(const oldTag of old)archiveRelease(repo,releases.find(r=>r.tag_name===oldTag),temporary);
+  console.log(`Published and verified ${tag}; retired downloads from ${old.length} older releases. Release notes, git tags and source history were retained.`);
 }
 if(require.main===module)main().catch(error=>{console.error(error.message);process.exitCode=1;});
-module.exports={binaries,validateRelease,olderTags};
+module.exports={binaries,validateRelease,olderTags,archivedNotes,archiveRelease};

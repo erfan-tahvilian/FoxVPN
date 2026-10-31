@@ -35,5 +35,5 @@ jobs:
             test "$(jq -r .path /tmp/stage.json)" = "$expected"
             git diff --exit-code "$(jq -r .head_sha /tmp/stage.json)" HEAD -- src android assets licenses package.json package-lock.json release-notes.json scripts .github/scripts .github/workflows
           done
-      - name: Validate every asset, publish, then remove superseded release entries
+      - name: Validate every asset, publish, then retire older downloads and retain release notes
         run: node .github/scripts/release-tools.cjs finalize
