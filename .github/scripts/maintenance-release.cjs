@@ -15,7 +15,8 @@ async function main(){
   fs.writeFileSync(path.join(folder,'SHA256SUMS.txt'),manifest);names.push('SHA256SUMS.txt');
   // All builds, signatures and files are validated before the first replacement.
   // Keep the existing release and its source tag; publish the manifest last.
-  gh('release','upload',tag,...names.map(name=>path.join(folder,name)),'--repo',repo,'--clobber');
+  gh('release','upload',tag,...names.filter(name=>name!=='SHA256SUMS.txt').map(name=>path.join(folder,name)),'--repo',repo,'--clobber');
+  gh('release','upload',tag,path.join(folder,'SHA256SUMS.txt'),'--repo',repo,'--clobber');
   const expected=new Map(names.map(name=>[name,'sha256:'+digest(path.join(folder,name))]));
   let after;
   for(let attempt=0;attempt<6;attempt++){
