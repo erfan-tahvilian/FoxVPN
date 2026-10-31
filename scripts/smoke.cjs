@@ -40,6 +40,10 @@ app.whenReady().then(async()=>{
     assert.equal(await win.webContents.executeJavaScript(`document.querySelector('#theme-toggle use').getAttribute('href')`),'#glyph-moon');
     assert(await win.webContents.executeJavaScript(`[...document.querySelectorAll('[data-theme-logo]')].every(i=>i.getAttribute('src').endsWith('logo.png'))`));
     assert(await win.webContents.executeJavaScript(`(()=>{const r=document.querySelector('.globe-visual svg').getBoundingClientRect();return Math.abs(r.width-r.height)<1})()`));
+    for(const light of [false,true]){
+      await win.webContents.executeJavaScript(`document.body.classList.toggle('light',${light})`);
+      assert(await win.webContents.executeJavaScript(`(()=>{const bg=getComputedStyle(document.body).backgroundColor;const dialogs=[...document.querySelectorAll('dialog')];return dialogs.length>0&&dialogs.every(d=>getComputedStyle(d).backgroundColor===bg&&getComputedStyle(d).color===getComputedStyle(document.body).color);})()`),'Every dialog must match the active application palette');
+    }
     fs.writeFileSync('test-results/overview-light.png',(await win.webContents.capturePage()).toPNG());
     for(const page of ['locations','account','settings','logs']) {
       await win.webContents.executeJavaScript(`document.querySelector('[data-page="${page}"]').click()`);

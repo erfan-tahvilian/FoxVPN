@@ -8,4 +8,18 @@
         <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
     <style name="AppTheme" parent="BaseAppTheme"/>
+    <style name="FoxPickerDark" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/dialog_dark</item>
+        <item name="android:colorBackground">#101117</item>
+        <item name="android:textColorPrimary">#F2F2F6</item>
+        <item name="android:textColorSecondary">#9698AD</item>
+        <item name="android:colorAccent">#FF8B3D</item>
+    </style>
+    <style name="FoxPickerLight" parent="android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/dialog_light</item>
+        <item name="android:colorBackground">#F7F8FA</item>
+        <item name="android:textColorPrimary">#20222F</item>
+        <item name="android:textColorSecondary">#75788D</item>
+        <item name="android:colorAccent">#D95812</item>
+    </style>
 </resources>

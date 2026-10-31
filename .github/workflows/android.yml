@@ -19,6 +19,8 @@ jobs:
           cache: false
       - name: Verify version metadata
         run: node scripts/check-version.cjs
+      - name: Verify lossless APK compression
+        run: python -m unittest discover -s tests -p apk_compression_test.py
       - name: Verify Android core
         working-directory: android/core
         run: |
@@ -90,7 +92,11 @@ jobs:
         working-directory: android
         run: ./gradlew :app:assembleRelease :app:assembleDebug :app:lintRelease --stacktrace
       - name: Verify all native architectures and 16 KB alignment
-        run: python scripts/validate-android.py > android/app/build/reports/package-validation.json
+        # Recompression preserves every entry, including native libraries and DEX.
+        # Validation below checks all resulting architectures again.
+        run: |
+          python scripts/compact-apk.py
+          python scripts/validate-android.py > android/app/build/reports/package-validation.json
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

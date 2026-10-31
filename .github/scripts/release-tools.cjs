@@ -5,7 +5,9 @@ const version=require('../../package.json').version,tag='v'+version;
 function binaries(v){const result=[];for(const [platform,arches,formats]of[['win32',['x64','ia32','arm64'],['exe','zip']],['darwin',['x64','arm64'],['dmg','zip']],['linux',['x64','arm64'],['AppImage','deb','rpm']],['android',['arm64-v8a','armeabi-v7a','x86_64','x86','universal'],['apk']]])for(const arch of arches)for(const format of formats)result.push(assetName(v,{platform,arch,format}));return result;}
 function validateRelease(release,v){
   assert.equal(release.tag_name,'v'+v);assert.equal(release.prerelease,false);
-  const required=[...binaries(v),`FoxVPN-${v}-source.tar.gz`,'sing-box-1.12.0-source.tar.gz','SHA256SUMS-Android.txt'];
+  // Fox VPN source is provided by GitHub's version-tag archives. Keep the
+  // separately bundled GPL dependency source and all installation variants.
+  const required=[...binaries(v),'sing-box-1.12.0-source.tar.gz','SHA256SUMS-Android.txt'];
   const allowed=new Set([...required,'SHA256SUMS.txt']);
   assert.equal(new Set(release.assets.map(a=>a.name)).size,release.assets.length,'Duplicate release asset');
   for(const name of required)assert(release.assets.some(a=>a.name===name),`Missing release asset: ${name}`);
@@ -41,7 +43,9 @@ async function main(){
     try{const latest=api(`repos/${repo}/releases/latest`);assert(newer(version,latest.tag_name.replace(/^v/,'')),'Use a version newer than the published stable release');}catch(error){if(!String(error.stderr).includes('HTTP 404'))throw error;}
     let release=findRelease(repo);
     if(!release){try{gh('release','create',tag,'--repo',repo,'--draft','--target',process.env.GITHUB_SHA||gh('api',`repos/${repo}/commits/main`,'--jq','.sha'),'--title',`Fox VPN ${tag}`,'--notes-file','RELEASE_NOTES.md');}catch(error){if(!findRelease(repo))throw error;}release=findRelease(repo);}
-    assert(release.draft,'Published versions cannot be overwritten. Increase the application version.');return;
+    assert(release.draft,'Published versions cannot be overwritten. Increase the application version.');
+    assert.equal(release.target_commitish,process.env.GITHUB_SHA||gh('api',`repos/${repo}/commits/main`,'--jq','.sha'),'Draft source must match the release commit');
+    return;
   }
   if(mode!=='finalize')throw Error('Unsupported release operation');
   const release=findRelease(repo);assert(release,'Stage the complete release first');

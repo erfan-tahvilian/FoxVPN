@@ -1,24 +1,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Erfan Tahvilian
-name: Refresh release source and checksums
+name: Validate release source policy
 on:
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   checksums:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Read release version
-        run: node .github/scripts/release-tools.cjs metadata >> "$GITHUB_ENV"
-      - name: Prepare versioned draft release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node .github/scripts/release-tools.cjs ensure-draft
-      - name: Refresh unpublished source only
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate assets and source policy
         run: |
-          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > "FoxVPN-$FOX_VERSION-source.tar.gz"
-          gh release upload "$FOX_TAG" "FoxVPN-$FOX_VERSION-source.tar.gz" --clobber
+          node --test tests/release-policy.test.cjs
+          python -m unittest discover -s tests -p source_archive_test.py

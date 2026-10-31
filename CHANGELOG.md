@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.2 - 2026-10-31
+
+- Theme-matched dialogs, app pickers and desktop tray surfaces.
+- Stronger compatible ZIP and APK compression with full payload verification.
+- Native GitHub source archives replace the redundant custom FoxVPN archive; sing-box source and both checksum manifests remain available.
+
 ## v1.0.1 - 2026-10-31
 
 ### Package maintenance update

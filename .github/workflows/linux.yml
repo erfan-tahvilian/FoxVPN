@@ -36,7 +36,7 @@ jobs:
       - name: Prepare desktop test and packaging dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y xvfb dbus-x11 gnome-keyring libsecret-1-0 libgtk-3-0 libnss3 libasound2t64 libfuse2t64 ruby ruby-dev rpm
+          sudo apt-get install -y xvfb dbus-x11 gnome-keyring libsecret-1-0 libgtk-3-0 libnss3 libasound2t64 libfuse2t64 ruby ruby-dev rpm cpio
           sudo gem install fpm --no-document
           # Enable Chromium's user-namespace sandbox on this ephemeral CI host.
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0

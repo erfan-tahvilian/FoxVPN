@@ -29,6 +29,8 @@ async function main(){
     // The builder's standalone 7za reads the embedded application archive
     // directly; it does not decode the outer NSIS plugin/uninstaller streams.
     execFileSync(seven,['x','-t7z',installer,`-o${payload}`,'-y'],{stdio:'pipe'});verify(payload,installer);
+    const zip=path.join(distribution,`FoxVPN-${version}-Windows-${target.label}.zip`),portable=path.join(temporary,'portable');
+    execFileSync(seven,['x','-tzip',zip,`-o${portable}`,'-y'],{stdio:'pipe'});verify(portable,zip);
   }else if(process.platform==='darwin'){
     const dmg=path.join(distribution,`FoxVPN-${version}-macOS-${target.arch}.dmg`),mount=path.join(temporary,'mount');fs.mkdirSync(mount);
     execFileSync('/usr/bin/hdiutil',['attach',dmg,'-nobrowse','-readonly','-mountpoint',mount],{stdio:'pipe'});
@@ -38,6 +40,18 @@ async function main(){
   }else{
     const image=path.join(distribution,`FoxVPN-${version}-Linux-${target.arch}.AppImage`);
     execFileSync(image,['--appimage-extract'],{cwd:temporary,stdio:'pipe',maxBuffer:16*1024*1024});verify(path.join(temporary,'squashfs-root'),image);
+    for(const format of ['deb','rpm']){
+      const file=path.join(distribution,`FoxVPN-${version}-Linux-${target.arch}.${format}`),unpacked=path.join(temporary,format);fs.mkdirSync(unpacked);
+      if(format==='deb')execFileSync('dpkg-deb',['--extract',file,unpacked],{stdio:'pipe'});
+      else{
+        const cpio=path.join(temporary,'payload.cpio'),output=fs.openSync(cpio,'w');
+        try{execFileSync('rpm2cpio',[file],{stdio:['ignore',output,'pipe']});}finally{fs.closeSync(output);}
+        const input=fs.openSync(cpio,'r');
+        try{execFileSync('cpio',['-idm','--quiet','--no-absolute-filenames'],{cwd:unpacked,stdio:[input,'pipe','pipe']});}finally{fs.closeSync(input);}
+      }
+      const opt=path.join(unpacked,'opt'),apps=fs.readdirSync(opt).map(name=>path.join(opt,name)).filter(folder=>fs.existsSync(path.join(folder,'resources/app.asar')));
+      assert.equal(apps.length,1,'Expected exactly one application in the package');verify(apps[0],file);
+    }
   }
   fs.mkdirSync('test-results',{recursive:true});fs.writeFileSync(`test-results/package-roundtrip-${platform}-${target.arch}.json`,JSON.stringify({version,platform,arch:target.arch,results},null,2));
   console.log(`Verified complete payload, symlinks and executable permissions after extracting ${results.length} distribution package(s).`);

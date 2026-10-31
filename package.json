@@ -1,7 +1,7 @@
 {
   "name": "fox-vpn",
   "productName": "Fox VPN",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Independent VPN client built on Mozilla's Firefox VPN infrastructure",
   "author": "Erfan Tahvilian",
   "license": "GPL-3.0-or-later",
@@ -27,6 +27,7 @@
     "flag-icons": "7.5.0"
   },
   "build": {
+    "compression": "maximum",
     "appId": "com.foxvpn.desktop",
     "productName": "Fox VPN",
     "artifactName": "FoxVPN-${version}-${arch}.${ext}",

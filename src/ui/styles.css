@@ -31,3 +31,7 @@ body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:trans
 .update-dialog{width:min(460px,calc(100vw - 40px));padding:28px;border-radius:22px}.update-dialog h2{margin:16px 0 8px}.update-version{font-size:24px;font-weight:700;margin:20px 0 8px;color:var(--accent,#ff8a42)}.update-dialog .button-row{margin-top:24px;gap:12px}.update-download{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;border-radius:12px;text-decoration:none;background:#ff8a42;color:#17120e;font-weight:700}.update-download[aria-disabled=true]{opacity:.6;pointer-events:none}.update-package{font-size:13px}
 
 .update-dialog{max-height:calc(100dvh - 48px);overflow:auto}.update-dialog article{margin:20px 0}.update-dialog article h3{margin:0 0 6px;font-size:16px}.update-dialog article p{margin:0;line-height:1.6}
+/* Modal surfaces inherit the application's active palette, including system theme. */
+dialog,#app-picker,.account-remove-dialog,.select-menu{background:var(--bg);color:var(--text);border:1px solid var(--line);box-shadow:0 24px 80px #0004;color-scheme:inherit}
+#toast{background:var(--bg)}
+dialog::backdrop{background:#0008;backdrop-filter:blur(5px)}

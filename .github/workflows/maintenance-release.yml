@@ -138,7 +138,7 @@ jobs:
             for ext in dmg zip; do cp "verified-build/dist/FoxVPN-$FOX_VERSION-macOS-$arch.$ext" release-assets/; done
             for ext in AppImage deb rpm; do cp "verified-build/dist/FoxVPN-$FOX_VERSION-Linux-$arch.$ext" release-assets/; done
           done
-          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > "release-assets/FoxVPN-$FOX_VERSION-source.tar.gz"
+          # Fox VPN source comes from the exact version tag's GitHub archives.
           gh release download "$FOX_TAG" --pattern sing-box-1.12.0-source.tar.gz --dir release-assets
           (cd release-assets && sha256sum *.apk > SHA256SUMS-Android.txt)
       - name: Validate the complete set, replace packages and verify published checksums

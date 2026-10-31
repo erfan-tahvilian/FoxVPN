@@ -81,10 +81,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node .github/scripts/release-tools.cjs ensure-draft
+      - name: Verify native GitHub source matches the complete exported commit
+        run: python .github/scripts/verify-source.py
+      - name: Inspect historical maintenance source before its duplicate is retired
+        if: env.FOX_VERSION == '1.0.2'
+        run: python .github/scripts/verify-source.py --commit 3dcbb26 --url https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-source.tar.gz --sha256 8d234df535f38a4db9379cbd0a6006738f7b294351637be09ea544d56a7b6f85 --report historical-v101-source-verification.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Source-archive-verification
+          path: test-results/*verification.json
       - name: Prepare release assets
         run: |
           mkdir release-assets
-          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > release-assets/FoxVPN-$FOX_VERSION-source.tar.gz
+          # Native GitHub source archives use the exact release target commit.
+          # Retain the separate sing-box GPL source archive below.
           for arch in x64 x86 arm64; do
             for ext in exe zip; do
               test -s "verified-build/dist/FoxVPN-$FOX_VERSION-Windows-$arch.$ext"
@@ -104,6 +114,7 @@ jobs:
             done
           done
           curl --fail --location --retry 3 'https://codeload.github.com/SagerNet/sing-box/tar.gz/refs/tags/v1.12.0' -o release-assets/sing-box-1.12.0-source.tar.gz
+          echo '1093254161d2dac2175a589eb0b43415b89b3e0c10bb2a09ac230f320d974c82  release-assets/sing-box-1.12.0-source.tar.gz' | sha256sum --check
       - name: Stage verified desktop assets
         env:
           GH_TOKEN: ${{ github.token }}

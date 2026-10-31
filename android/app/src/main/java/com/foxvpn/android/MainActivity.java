@@ -208,7 +208,7 @@ public final class MainActivity extends Activity {
         if (!"disconnected".equals(app().connection()))return;
         JSONObject settings=app().state.optJSONObject("settings");
         if(settings!=null&&!settings.optBoolean("proxyOnly")&&"include".equals(settings.optString("splitMode"))&&(settings.optJSONArray("excludedApps")==null||settings.optJSONArray("excludedApps").length()==0)){
-            new android.app.AlertDialog.Builder(this).setTitle("No apps selected").setMessage("Choose at least one app in Settings > Split tunneling before connecting.").setPositiveButton("Open settings",(dialog,which)->{if(web!=null)web.evaluateJavascript("showSplitSettings()",null);}).setNegativeButton("Cancel",null).show();return;
+            new android.app.AlertDialog.Builder(dialogContext()).setTitle("No apps selected").setMessage("Choose at least one app in Settings > Split tunneling before connecting.").setPositiveButton("Open settings",(dialog,which)->{if(web!=null)web.evaluateJavascript("showSplitSettings()",null);}).setNegativeButton("Cancel",null).show();return;
         }
 
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED&&!getPreferences(MODE_PRIVATE).getBoolean("notificationAsked",false)){
@@ -226,11 +226,14 @@ public final class MainActivity extends Activity {
         if(request==VPN_PERMISSION){if(result==RESULT_OK)FoxVpnService.connect(this);else Toast.makeText(this,"VPN permission is required to connect.",Toast.LENGTH_SHORT).show();}
         if(request==EXPORT&&result==RESULT_OK&&data!=null&&data.getData()!=null&&exportText!=null){String text=exportText;exportText=null;app().actions.execute(() -> {try(java.io.OutputStream stream=getContentResolver().openOutputStream(data.getData())){if(stream==null)throw new java.io.IOException();stream.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));}catch(Exception e){app().main.post(() -> Toast.makeText(this,"Could not export diagnostics.",Toast.LENGTH_SHORT).show());}});}
     }
-    private void chooseApps(){
-        if(!"disconnected".equals(app().connection()))return;
+    private android.view.ContextThemeWrapper dialogContext(){
         String theme=app().state.optJSONObject("settings").optString("theme","system");
         boolean light="light".equals(theme)||"system".equals(theme)&&!app().isDark();
-        android.view.ContextThemeWrapper context=new android.view.ContextThemeWrapper(this,light?android.R.style.Theme_Material_Light_Dialog_Alert:android.R.style.Theme_Material_Dialog_Alert);
+        return new android.view.ContextThemeWrapper(this,light?R.style.FoxPickerLight:R.style.FoxPickerDark);
+    }
+    private void chooseApps(){
+        if(!"disconnected".equals(app().connection()))return;
+        android.view.ContextThemeWrapper context=dialogContext();
         new AppPicker(context,getPackageName(),app().state.optJSONObject("settings").optJSONArray("excludedApps"),"include".equals(app().state.optJSONObject("settings").optString("splitMode")),selected -> {
             web.evaluateJavascript("(()=>{const field=document.getElementById('excludedApps');field.value="+JSONObject.quote(String.join("\n",selected))+";field.dispatchEvent(new Event('change',{bubbles:true}));})()",null);
         }).show();
