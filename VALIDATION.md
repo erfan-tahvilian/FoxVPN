@@ -1,5 +1,13 @@
 # Verification record
 
+## Version 1.0.1 navigation maintenance - 2026-10-31
+
+The owner confirmed the Android concurrent location checks, connection responsiveness, Back navigation and initial release highlights. A subsequent issue left Overview at the previous Locations scroll offset after selecting a country.
+
+The shared navigation path now resets the viewport immediately after changing pages. The regression check creates a long location list in the mobile layout, scrolls down and selects a location: it failed before the fix at approximately 770 px and passes with Overview at 0 px. Existing explicit navigation to Split tunneling remains supported. All 58 Node tests and the renderer smoke checks passed locally, and the updated Windows installation was verified against the source.
+
+At the owner's explicit request, all builds retain version 1.0.1, with Android version code 1000001. The unshipped 1.0.2 preparation was superseded. Maintenance publication requires successful matching builds for all four platforms, verification of all five APK signatures, the complete package set and matching published checksums. Source tags remain unchanged; the corresponding source archive is refreshed with the maintained binaries.
+
 ## Version 1.0.1 - 2026-10-31
 
 - [Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485785), [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485764), [Linux x64/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485792) and [Android](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485838) passed for runtime revision `b0a5ed7`. The Linux ARM64 tray smoke initially exceeded its deadline; rerunning that job passed without changing the runtime or weakening assertions.
