@@ -23,14 +23,16 @@ async function main(){
     assert.equal(path.resolve(snapshot.root),t.outputRoot());expected=snapshot.entries;
   }else expected=contents(t.outputRoot());
   const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'fox-distribution-'));
-  const verify=(folder,file)=>{const actual=contents(folder);for(const [name,value]of Object.entries(expected))assert.deepEqual(actual[name],value,`Distribution changed or omitted ${name}`);results.push({file:path.basename(file),bytes:fs.statSync(file).size,verifiedEntries:Object.keys(expected).length});};
+  const verify=(folder,file,required=expected)=>{const actual=contents(folder);for(const [name,value]of Object.entries(required))assert.deepEqual(actual[name],value,`Distribution changed or omitted ${name}`);results.push({file:path.basename(file),bytes:fs.statSync(file).size,verifiedEntries:Object.keys(required).length});};
   if(process.platform==='win32'){
     const seven=await require('app-builder-lib/out/toolsets/7zip').getPath7za(),installer=path.join(distribution,`FoxVPN-${version}-Windows-${target.label}.exe`),payload=path.join(temporary,'payload');
     // The builder's standalone 7za reads the embedded application archive
     // directly; it does not decode the outer NSIS plugin/uninstaller streams.
     execFileSync(seven,['x','-t7z',installer,`-o${payload}`,'-y'],{stdio:'pipe'});verify(payload,installer);
     const zip=path.join(distribution,`FoxVPN-${version}-Windows-${target.label}.zip`),portable=path.join(temporary,'portable');
-    execFileSync(seven,['x','-tzip',zip,`-o${portable}`,'-y'],{stdio:'pipe'});verify(portable,zip);
+    const snapshot=JSON.parse(fs.readFileSync(`.tools/windows-payload-${target.arch}.json`,'utf8'));assert.equal(path.resolve(snapshot.root),t.outputRoot());
+    const portableExpected=Object.fromEntries(snapshot.names.map(name=>{assert(expected[name],`Original application entry disappeared: ${name}`);return [name,expected[name]];}));
+    execFileSync(seven,['x','-tzip',zip,`-o${portable}`,'-y'],{stdio:'pipe'});verify(portable,zip,portableExpected);
   }else if(process.platform==='darwin'){
     const dmg=path.join(distribution,`FoxVPN-${version}-macOS-${target.arch}.dmg`),mount=path.join(temporary,'mount');fs.mkdirSync(mount);
     execFileSync('/usr/bin/hdiutil',['attach',dmg,'-nobrowse','-readonly','-mountpoint',mount],{stdio:'pipe'});
