@@ -14,7 +14,14 @@ function contents(root){
 }
 async function main(){
   const targets={win32:'windows',darwin:'mac',linux:'linux'},platform=targets[process.platform];assert(platform,'Unsupported distribution host');
-  const t=require(`./${platform}-target.cjs`),target=t.target(),expected=contents(t.outputRoot()),results=[];
+  const t=require(`./${platform}-target.cjs`),target=t.target(),results=[];
+  let expected;
+  if(platform==='linux'){
+    // FPM adds DEB/RPM-only AppArmor and updater metadata to appOutDir after
+    // AppImage creation. Compare the application snapshot taken before targets.
+    const snapshot=JSON.parse(fs.readFileSync(`.tools/linux-payload-${target.arch}.json`,'utf8'));
+    assert.equal(path.resolve(snapshot.root),t.outputRoot());expected=snapshot.entries;
+  }else expected=contents(t.outputRoot());
   const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'fox-distribution-'));
   const verify=(folder,file)=>{const actual=contents(folder);for(const [name,value]of Object.entries(expected))assert.deepEqual(actual[name],value,`Distribution changed or omitted ${name}`);results.push({file:path.basename(file),bytes:fs.statSync(file).size,verifiedEntries:Object.keys(expected).length});};
   if(process.platform==='win32'){
@@ -34,5 +41,7 @@ async function main(){
   }
   fs.mkdirSync('test-results',{recursive:true});fs.writeFileSync(`test-results/package-roundtrip-${platform}-${target.arch}.json`,JSON.stringify({version,platform,arch:target.arch,results},null,2));
   console.log(`Verified complete payload, symlinks and executable permissions after extracting ${results.length} distribution package(s).`);
+  console.log(JSON.stringify({version,platform,arch:target.arch,results}));
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});
+module.exports={contents};
