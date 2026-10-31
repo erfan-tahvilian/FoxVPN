@@ -36,3 +36,7 @@ header{position:relative}
 
 /* Separate account selection from the destructive action on touch screens. */
 .saved-account-actions{gap:16px}
+
+/* About actions each occupy a separate touch-friendly row. */
+[data-app-about] #check-updates{display:block;margin-top:14px}
+[data-app-about] #source{display:flex;margin-top:14px}

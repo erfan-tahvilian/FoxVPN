@@ -4,15 +4,10 @@ An independent VPN client for Windows, macOS, Linux and Android, built on Mozill
 
 ## New in 1.0.2
 
+- **Prompt update checks:** Checks start when the app opens and refresh when the app returns to the foreground. Update prompts wait for any open dialog to close.
 - **Consistent popup appearance:** Update dialogs, release highlights, account dialogs, app selection and desktop tray menus follow the application palette, including dark mode.
 - **Compact archives:** Standard compression settings reduce download overhead while preserving the complete runtime, native VPN components, all supported architectures and portable formats.
 - **Clear source access:** Use GitHub's native source archives for the exact release tag. The separately hosted sing-box source, license notices and both SHA256 manifests are retained.
-
-## Download sizes
-
-Compared with the final 1.0.1 maintenance packages, the 21 application downloads together are 2,366,496 bytes (2.26 MiB, 0.109%) smaller. Including the verified duplicate source archive retirement, attached release files total 8,890,358 bytes (8.48 MiB, 0.407%) less. These totals cover one copy of every architecture and format; individual file differences are documented in the [full report](https://github.com/erfan-tahvilian/FoxVPN/blob/main/docs/releases/v1.0.2-size-report.md), including small increases.
-
-All supported installer and portable variants, both SHA256 manifests and the separately hosted sing-box source remain available.
 
 ## Included features
 
@@ -53,9 +48,8 @@ Licensed under the GNU General Public License, version 3 or later. Independent d
 
 ## Corresponding source
 
-[Detailed package-size comparison](https://github.com/erfan-tahvilian/FoxVPN/blob/main/docs/releases/v1.0.2-size-report.md) | [Release asset audit](https://github.com/erfan-tahvilian/FoxVPN/blob/v1.0.2/docs/releases/v1.0.2-asset-audit.md)
 
-[Fox VPN source ZIP](https://github.com/erfan-tahvilian/FoxVPN/archive/refs/tags/v1.0.2.zip) | [Fox VPN source tar.gz](https://github.com/erfan-tahvilian/FoxVPN/archive/refs/tags/v1.0.2.tar.gz) | [Source and build details](https://github.com/erfan-tahvilian/FoxVPN/blob/v1.0.2/SOURCES.md)
+[Fox VPN source ZIP](https://github.com/erfan-tahvilian/FoxVPN/archive/refs/tags/v1.0.2-maintenance.1.zip) | [Fox VPN source tar.gz](https://github.com/erfan-tahvilian/FoxVPN/archive/refs/tags/v1.0.2-maintenance.1.tar.gz) | [Source and build details](https://github.com/erfan-tahvilian/FoxVPN/blob/v1.0.2-maintenance.1/SOURCES.md)
 
 The separate sing-box source archive is included with the release assets. See `SHA256SUMS.txt` for all downloadable assets and `SHA256SUMS-Android.txt` for APK verification.
 
@@ -75,6 +69,5 @@ Sign in with a Firefox account, complete email or authenticator verification whe
 
 TCP and DNS are supported. General application UDP, including browser QUIC and games, and a persistent kill switch are not supported. HTTP/3 is the transport to the VPN edge and requires working outbound UDP; it does not enable general UDP forwarding. Desktop apps remain in the tray when their window is closed; Android connections remain active in the background.
 
-See the [verification record](https://github.com/erfan-tahvilian/FoxVPN/blob/main/VALIDATION.md) for device test coverage and remaining validation limits.
 
 See the [README](https://github.com/erfan-tahvilian/FoxVPN#readme) for setup, features and licenses.

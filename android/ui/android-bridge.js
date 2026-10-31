@@ -79,7 +79,7 @@
     window.flushSettings=()=>{if(packageTimer){clearTimeout(packageTimer);packageTimer=null;field.dispatchEvent(new Event('change',{bubbles:true}));}return saving;};
     const about=document.createElement('div');about.className='settings-card';about.dataset.appAbout='';
     const heading=document.createElement('h3');heading.textContent='About Fox VPN';
-    const version=document.createElement('p');version.dataset.appVersion='';version.dataset.versionPrefix='Version ';version.textContent='Version 1.0.1';
+    const version=document.createElement('p');version.dataset.appVersion='';version.dataset.versionPrefix='Version ';version.textContent=currentState?.version?'Version '+currentState.version:'';
     const source=document.getElementById('source');source.className='secondary';
     about.append(heading,version,source);document.getElementById('settings-form').insertBefore(about,document.querySelector('.settings-footer'));
     document.querySelector('.account-story>p').textContent='A private connection, wherever you are.';

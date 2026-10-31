@@ -90,7 +90,6 @@ The local SOCKS5 bridge carries authenticated CONNECT streams over HTTP/2, or HT
 
 Platform CI validates generated engine configurations, packaged resources and binary architectures. macOS CI also exercises privileged utun creation and cleanup without changing the runner's default route.
 
-See [VALIDATION.md](VALIDATION.md) for the verification record and remaining manual checks.
 
 ## Android
 

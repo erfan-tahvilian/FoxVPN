@@ -143,7 +143,7 @@ public final class MainActivity extends Activity {
         String arch=installedArchitecture(),key=BuildConfig.VERSION_NAME+":"+arch;
         android.content.SharedPreferences preferences=getSharedPreferences("updates",MODE_PRIVATE);
         long age=System.currentTimeMillis()-preferences.getLong("checked",0);
-        if(!force&&key.equals(preferences.getString("key",""))&&age>=0&&age<6*60*60*1000L){String cached=preferences.getString("result",null);if(cached!=null)return cached;}
+        if(!force&&key.equals(preferences.getString("key",""))&&age>=0&&age<60*1000L){String cached=preferences.getString("result",null);if(cached!=null)return cached;}
         String result=app().backend.call("checkUpdates",new JSONArray().put(arch).put(force).toString());
         if(new JSONObject(result).optBoolean("ok"))preferences.edit().putString("key",key).putString("result",result).putLong("checked",System.currentTimeMillis()).apply();
         return result;

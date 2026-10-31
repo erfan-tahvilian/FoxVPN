@@ -82,7 +82,7 @@ func (b *Backend) checkUpdates(ctx context.Context, arch string, force bool) (ob
 	u := &b.updates
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	if !force && u.arch == arch && len(u.raw) > 0 && time.Since(u.checked) >= 0 && time.Since(u.checked) < 6*time.Hour {
+	if !force && u.arch == arch && len(u.raw) > 0 && time.Since(u.checked) >= 0 && time.Since(u.checked) < time.Minute {
 		return selectAndroidRelease(u.raw, appVersion, arch)
 	}
 	ctx, cancel := context.WithTimeout(ctx, 12*time.Second)

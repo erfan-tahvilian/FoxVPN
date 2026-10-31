@@ -7,6 +7,10 @@ on:
         description: Explicitly confirm the published version to replace
         required: true
         type: string
+      source_ref:
+        description: Immutable maintenance source tag matching this workflow commit
+        required: true
+        type: string
       windows_run:
         description: Successful Windows build
         required: true
@@ -33,6 +37,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       FOX_CONFIRM_VERSION: ${{ inputs.confirm_version }}
+      FOX_SOURCE_REF: ${{ inputs.source_ref }}
       FOX_WINDOWS_RUN: ${{ inputs.windows_run }}
       FOX_MAC_RUN: ${{ inputs.mac_run }}
       FOX_LINUX_RUN: ${{ inputs.linux_run }}
@@ -45,9 +50,12 @@ jobs:
         run: |
           node .github/scripts/release-tools.cjs metadata >> "$GITHUB_ENV"
           test "$FOX_CONFIRM_VERSION" = "$(node -p "require('./package.json').version")"
-          # Without a second custom source archive, maintenance cannot change
-          # runtime/build inputs beyond the immutable published source tag.
-          git diff --exit-code "v$FOX_CONFIRM_VERSION" HEAD -- src android assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json scripts desktop/h3 ':(exclude)android/core/apple/**'
+          # Same-version fixes require a new immutable source snapshot. Keep the
+          # original version tag and verify every exported source file first.
+          [[ "$FOX_SOURCE_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-maintenance\.[1-9][0-9]*$ ]]
+          [[ "$FOX_SOURCE_REF" == "v$FOX_CONFIRM_VERSION-maintenance."* ]]
+          test "$(git rev-parse "refs/tags/$FOX_SOURCE_REF^{commit}")" = "$GITHUB_SHA"
+          python3 .github/scripts/verify-source.py --commit "$FOX_SOURCE_REF" --url "https://codeload.github.com/$GITHUB_REPOSITORY/tar.gz/refs/tags/$FOX_SOURCE_REF"
           for kind in WINDOWS MAC LINUX ANDROID; do
             variable="FOX_${kind}_RUN"; run="${!variable}"
             [[ "$run" =~ ^[0-9]+$ ]]
@@ -141,7 +149,7 @@ jobs:
             for ext in dmg zip; do cp "verified-build/dist/FoxVPN-$FOX_VERSION-macOS-$arch.$ext" release-assets/; done
             for ext in AppImage deb rpm; do cp "verified-build/dist/FoxVPN-$FOX_VERSION-Linux-$arch.$ext" release-assets/; done
           done
-          # Fox VPN source comes from the exact version tag's GitHub archives.
+          # Fox VPN source comes from the verified immutable maintenance tag.
           gh release download "$FOX_TAG" --pattern sing-box-1.12.0-source.tar.gz --dir release-assets
           (cd release-assets && sha256sum *.apk > SHA256SUMS-Android.txt)
       - name: Validate the complete set, replace packages and verify published checksums

@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path');
 const API='https://api.github.com/repos/erfan-tahvilian/FoxVPN/releases/latest';
 const BASE='https://github.com/erfan-tahvilian/FoxVPN/releases/download/';
-const TTL=6*60*60*1000;
+const TTL=60*1000;
 function parts(version){if(!/^(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})\.(0|[1-9]\d{0,5})$/.test(version))throw Error('Invalid release version');return version.split('.').map(Number);}
 function newer(candidate,current){const a=parts(candidate),b=parts(current);for(let i=0;i<3;i++)if(a[i]!==b[i])return a[i]>b[i];return false;}
 function assetName(version,{platform,arch,format}){

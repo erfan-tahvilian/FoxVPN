@@ -1,6 +1,11 @@
 {
   "items": [
     {
+      "platforms": ["win32", "darwin", "linux", "android"],
+      "title": "Prompt update checks",
+      "description": "Update checks start when you open the app and refresh when you return, with downloads matched to your device."
+    },
+    {
       "platforms": [
         "win32",
         "darwin",

@@ -30,3 +30,9 @@ __pycache__/
 *.mobileprovision
 *.p12
 *.p8
+
+# Private sizing and verification reports are delivered in chat.
+/VALIDATION.md
+/docs/releases/*-size-report.*
+/docs/releases/*-asset-audit.md
+/docs/development/package-size.md

@@ -142,7 +142,7 @@ Decide which applications use the VPN. Split tunneling offers two routing modes,
 
 Desktop routing follows application process names; macOS includes app helper processes. Linux app discovery uses desktop launchers; sandboxed or wrapper-launched apps may require entering their actual process names manually. Android routing follows application packages. Local network traffic bypasses the tunnel. See [network support](#network-support) for protocol coverage.
 
-New stable releases appear in the app with a direct download matched to your device. Release highlights appear once after each update. On Android, location checks run without blocking location selection or connecting, and Back returns to Overview before leaving the app.
+Update checks start when the app opens and refresh when it returns to the foreground. New stable releases appear with a direct download matched to your device. Release highlights appear once after each update. On Android, location checks run without blocking location selection or connecting, and Back returns to Overview before leaving the app.
 
 ### More ways to stay in control
 
@@ -224,7 +224,6 @@ Fox VPN is an independent client built on Mozilla's Firefox VPN infrastructure, 
 | Configurable tunneled DNS and upstream proxies | Local network traffic and apps routed directly bypass the tunnel. |
 | App-based routing and proxy-only connections | A persistent kill switch is not available. |
 
-For device coverage, automated checks and remaining manual tests, read the [verification record](VALIDATION.md).
 
 Service verification happens before account authentication. A service verification error does not, by itself, mean your password is incorrect. When reporting a sign-in problem, include the exact error and your operating system; never share passwords, verification codes or session tokens.
 
@@ -237,7 +236,6 @@ Fox VPN is licensed under the **[GNU General Public License, version 3 or later]
 | For developers | For contributors |
 | :--- | :--- |
 | [Build from source](BUILDING.md) - platform prerequisites and build instructions. | [Report a problem](https://github.com/erfan-tahvilian/FoxVPN/issues) - include your OS, architecture and steps to reproduce. |
-| [Verification record](VALIDATION.md) - test coverage and current validation limits. | [Explore the source](https://github.com/erfan-tahvilian/FoxVPN) - review the implementation and contribute improvements. |
 | [Changelog](CHANGELOG.md) - release history. | [Release notes](RELEASE_NOTES.md) - installation and release information. |
 
 Remove account details, tokens, IP addresses and other sensitive information before sharing diagnostic logs.

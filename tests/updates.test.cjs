@@ -23,4 +23,8 @@ test('update checks share requests, reuse their cache and send an ETag on manual
   const updates=new Updates({version:'1.0.1',target,cacheFile,fetch:async(url,options)=>{calls.push({url,options});return calls.length===1?new Response(JSON.stringify(release('1.0.2',target)),{headers:{etag:'"fixture"'}}):new Response(null,{status:304});}});
   const [a,b]=await Promise.all([updates.check(),updates.check()]);assert.deepEqual(a,b);assert.equal(calls.length,1);
   await updates.check();assert.equal(calls.length,1);await updates.check(true);assert.equal(calls.length,2);assert.equal(calls[1].options.headers['If-None-Match'],'"fixture"');assert.equal(calls[1].options.redirect,'error');
+  const cache=JSON.parse(fs.readFileSync(cacheFile));cache.at=Date.now()-61000;fs.writeFileSync(cacheFile,JSON.stringify(cache));
+  await updates.check();assert.equal(calls.length,3,'A minute-old result must be revalidated');
+  const restarted=new Updates({version:'1.0.1',target,cacheFile,fetch:async(url,options)=>{calls.push({url,options});return new Response(null,{status:304});}});
+  await restarted.check(true);assert.equal(calls.length,4,'Startup revalidates even a fresh disk cache');
 });

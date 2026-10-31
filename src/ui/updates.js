@@ -11,28 +11,38 @@
   const download=document.createElement('a');download.className='primary update-download';download.textContent='Download update';
   download.addEventListener('click',async event=>{event.preventDefault();if(download.getAttribute('aria-disabled')==='true')return;download.setAttribute('aria-disabled','true');try{await call('downloadUpdate');dialog.close();}catch(error){toast(error.message);}finally{download.removeAttribute('aria-disabled');}});
   actions.append(later,download);dialog.append(badge,title,message,version,details,actions);document.body.append(dialog);
-  let checking=false,offered=null;
-  async function check(manual){
+  let checking=false,offered=null,pending=null,highlightsLoading=true;
+  function presentPending(){
+    if(!pending||highlightsLoading||currentState?.busy||needsCode||document.querySelector('dialog[open]'))return;
+    const {update,manual}=pending;pending=null;
+    if(!manual&&offered===update.latestVersion)return;
+    offered=update.latestVersion;message.textContent='Get the latest improvements for your device.';version.textContent=`${update.currentVersion} → ${update.latestVersion}`;
+    details.textContent=`${bytes(update.size)} download`;download.href=update.url;dialog.showModal();
+  }
+  async function check(manual,fresh=false){
     if(checking)return;checking=true;
     const control=document.getElementById('check-updates');if(control){control.disabled=true;control.textContent='Checking…';}
     try{
-      const update=await call('checkUpdates',manual);
-      if(update.available&&!manual&&(currentState?.busy||needsCode||document.querySelector('dialog[open]'))){setTimeout(()=>check(false),5000);return;}
+      const update=await call('checkUpdates',manual||fresh);
       if(update.available&&(manual||offered!==update.latestVersion)){
-        offered=update.latestVersion;message.textContent='Get the latest improvements for your device.';version.textContent=`${update.currentVersion} → ${update.latestVersion}`;
-        details.textContent=`${bytes(update.size)} download`;download.href=update.url;
-        if(!dialog.open)dialog.showModal();
+        pending={update,manual};presentPending();
       }else if(manual)toast('You are using the latest version.');
     }catch(error){if(manual)toast(error.message);}finally{checking=false;if(control){control.disabled=false;control.textContent='Check for updates';}}
   }
   const setup=()=>{
     let about=document.querySelector('[data-app-about]');
     if(!about){about=document.createElement('div');about.className='settings-card';const heading=document.createElement('h3');heading.textContent='About Fox VPN';const installed=document.createElement('p');installed.dataset.appVersion='';installed.dataset.versionPrefix='Version ';about.append(heading,installed);document.querySelector('.settings-footer').before(about);}
-    const button=document.createElement('button');button.id='check-updates';button.type='button';button.className='secondary';button.textContent='Check for updates';button.addEventListener('click',()=>check(true));about.append(button);
-    setTimeout(()=>check(false),4000);
-    setTimeout(showReleaseNotes,500);
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check(false);});
-    window.fox.onState(state=>{for(const label of document.querySelectorAll('[data-app-version]'))label.textContent=(label.dataset.versionPrefix||'v')+state.version;});
+    const button=document.createElement('button');button.id='check-updates';button.type='button';button.className='secondary';button.textContent='Check for updates';button.addEventListener('click',()=>check(true));
+    const source=about.querySelector('#source');if(source)source.before(button);else about.append(button);
+    // Start conditional network revalidation immediately, even with a disk cache.
+    check(false,true);
+    showReleaseNotes().finally(()=>{highlightsLoading=false;presentPending();});
+    document.addEventListener('close',presentPending,true);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check(false,true);});
+    window.addEventListener('online',()=>{if(document.visibilityState==='visible')check(false,true);});
+    const syncVersion=state=>{if(state?.version)for(const label of document.querySelectorAll('[data-app-version]'))label.textContent=(label.dataset.versionPrefix||'v')+state.version;};
+    syncVersion(currentState);
+    window.fox.onState(state=>{syncVersion(state);presentPending();});
   };
   if(document.readyState==='loading')window.addEventListener('DOMContentLoaded',setup);else setup();
   async function showReleaseNotes(){
