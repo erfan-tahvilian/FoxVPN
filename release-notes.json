@@ -44,6 +44,15 @@
         "linux",
         "android"
       ]
+    },
+    {
+      "title": "Smaller desktop downloads",
+      "description": "More compact desktop packages with the same connection, account and routing features.",
+      "platforms": [
+        "win32",
+        "darwin",
+        "linux"
+      ]
     }
   ]
 }

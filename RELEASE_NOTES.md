@@ -4,6 +4,8 @@ An independent VPN client for Windows, macOS, Linux and Android, built on Mozill
 
 ## New in 1.0.1
 
+- **Smaller desktop downloads:** Improved standard package compression while retaining the complete application and VPN engine.
+
 - **Consistent page navigation:** Overview opens at the top after choosing a location, keeping connection controls immediately visible on desktop and Android.
 
 - **Updates matched to your device:** Receive a notification when a newer stable release is available, with a direct download for your platform, architecture and supported package type. Downloads start only when you choose them.

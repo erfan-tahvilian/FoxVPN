@@ -2,6 +2,10 @@
 
 ## v1.0.1 - 2026-10-31
 
+### Package maintenance update
+
+- Smaller Windows installers, macOS disk images and Linux AppImages with the complete application payload retained.
+
 ### Navigation maintenance update
 
 - Open Overview at the top after selecting a location on desktop and Android.

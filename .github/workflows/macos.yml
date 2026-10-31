@@ -50,6 +50,8 @@ jobs:
       - run: npm run smoke
       - run: npm run dist:mac
       - run: node scripts/validate-mac-package.cjs
+      - name: Verify compressed disk image and archive payloads
+        run: node scripts/verify-distribution.cjs
       - uses: actions/upload-artifact@v4
         with:
           name: FoxVPN-macOS-${{ matrix.arch }}
@@ -57,3 +59,4 @@ jobs:
             dist/*.dmg
             dist/*.zip
             test-results/*.png
+            test-results/package-roundtrip-*.json
