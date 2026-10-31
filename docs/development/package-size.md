@@ -26,3 +26,19 @@ The optimized installer was extracted. SHA-256 digests matched for all 82 runtim
 `scripts/verify-distribution.cjs` adds native-host round-trip verification to the Windows, macOS and Linux workflows. It extracts the NSIS application payload, mounts the DMG read-only, expands the macOS ZIP and extracts the AppImage. Every original application entry must remain present with matching file content, symlink target and executable permissions. Linux snapshots the application before distribution targets run: DEB/RPM subsequently add format-specific AppArmor and updater metadata to the staging directory, after the AppImage has already been assembled. That later installer metadata is not mistaken for an omitted AppImage runtime file. CI artifacts include small JSON reports with package sizes and verified entry counts.
 
 The controlled experiment does not substitute for matching-architecture CI checks or physical installer acceptance. Final published package sizes are measured from the verified GitHub assets after publication.
+
+## Native build measurements
+
+All matching-architecture payload checks passed in Windows run 41214351463, macOS run 41214351310 and Linux run 41214351421. Download sizes are measured in MiB (1,048,576 bytes).
+
+| Package | Previous | Compact | Reduction |
+| --- | ---: | ---: | ---: |
+| Windows-x64.exe | 121.22 | 109.12 | 9.98% |
+| Windows-x86.exe | 101.98 | 91.72 | 10.06% |
+| Windows-arm64.exe | 113.16 | 101.44 | 10.36% |
+| macOS-x64.dmg | 150.97 | 138.77 | 8.08% |
+| macOS-arm64.dmg | 144.64 | 133.49 | 7.71% |
+| Linux-x64.AppImage | 141.76 | 112.79 | 20.44% |
+| Linux-arm64.AppImage | 141.43 | 105.55 | 25.37% |
+
+Android packaging remains unchanged. Standard portable ZIP archives were not converted to another format. Physical macOS and Linux desktop acceptance is not available; native CI verifies packaging and the complete runtime payload.
