@@ -34,6 +34,8 @@ Sign in with a Firefox account to get started. Service eligibility, availability
 
 Choose the package that matches your operating system and processor. Installers and portable archives are available for desktop; Android packages are signed APKs.
 
+Desktop installers, macOS disk images and Linux AppImages use compact packaging while retaining the complete application and VPN engine. Portable ZIP archives can be larger.
+
 <p align="center">
   <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="300" alt="Windows x64 installer"></picture></a> &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="300" alt="macOS Apple Silicon"></picture></a>
