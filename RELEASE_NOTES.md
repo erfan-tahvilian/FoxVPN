@@ -8,6 +8,12 @@ An independent VPN client for Windows, macOS, Linux and Android, built on Mozill
 - **Compact archives:** Standard compression settings reduce download overhead while preserving the complete runtime, native VPN components, all supported architectures and portable formats.
 - **Clear source access:** Use GitHub's native source archives for the exact release tag. The separately hosted sing-box source, license notices and both SHA256 manifests are retained.
 
+## Download sizes
+
+Compared with the final 1.0.1 maintenance packages, the 21 application downloads together are 2,366,496 bytes (2.26 MiB, 0.109%) smaller. Including the verified duplicate source archive retirement, attached release files total 8,890,358 bytes (8.48 MiB, 0.407%) less. These totals cover one copy of every architecture and format; individual file differences are documented in the [full report](https://github.com/erfan-tahvilian/FoxVPN/blob/main/docs/releases/v1.0.2-size-report.md), including small increases.
+
+All supported installer and portable variants, both SHA256 manifests and the separately hosted sing-box source remain available.
+
 ## Included features
 
 - **Account sign-in:** Improved service verification while preserving email and authenticator-code authentication.

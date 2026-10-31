@@ -114,6 +114,13 @@
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/accounts-dark.png"><img src="docs/screenshots/accounts-light.png" alt="حساب‌های ذخیره‌شده با انتخاب حساب فعال، سهمیهٔ باقی‌مانده و جابه‌جایی خودکار."></picture>
 
+<details>
+<summary>پنجره‌های هماهنگ با پوستهٔ برنامه</summary>
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dialog-dark.png"><img src="docs/screenshots/dialog-light.png" alt="پنجرهٔ حساب با رنگ‌های هماهنگ با پوستهٔ فعال فاکس وی‌پی‌ان."></picture>
+
+</details>
+
 **لوکیشن‌ها**
 
 ![فهرست لوکیشن‌ها با پرچم کشورها، جست‌وجو، نمایش پینگ و گزینه‌های مرتب‌سازی.](docs/screenshots/locations.png)

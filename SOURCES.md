@@ -20,4 +20,4 @@ The archive is approximately 0.66 MiB. It is a separate dependency, not a duplic
 
 ## Historical 1.0.1 maintenance source
 
-The original v1.0.1 tag predates its later maintenance packages. Their exact exported source remains available at [maintenance commit 3dcbb26](https://github.com/erfan-tahvilian/FoxVPN/tree/3dcbb26) and its [native tar.gz archive](https://github.com/erfan-tahvilian/FoxVPN/archive/3dcbb26.tar.gz). The release archive is inspected before the duplicate uploaded copy is retired. Source history and existing tags are retained.
+The original v1.0.1 tag predates its later maintenance packages. Their exact exported source remains available at [maintenance commit 3dcbb26](https://github.com/erfan-tahvilian/FoxVPN/tree/3dcbb26) and its [native tar.gz archive](https://github.com/erfan-tahvilian/FoxVPN/archive/3dcbb26.tar.gz). All 526 exported entries of the historical custom archive were compared against that commit before the uploaded duplicate was retired. Source history and existing tags are retained.

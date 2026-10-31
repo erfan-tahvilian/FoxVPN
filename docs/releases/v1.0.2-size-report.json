@@ -1,0 +1,214 @@
+{
+  "from": "v1.0.1",
+  "to": "v1.0.2",
+  "rows": [
+    {
+      "name": "FoxVPN-1.0.2-Windows-x64.exe",
+      "previousBytes": 114425190,
+      "finalBytes": 114418977,
+      "savedBytes": 6213,
+      "reductionPercent": 0.005429748467098897,
+      "sha256": "sha256:6b04fc6f4a5794d0b496ab8879f0bceac2b0216624203dc7fa601a71d576716f"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Windows-x64.zip",
+      "previousBytes": 172915199,
+      "finalBytes": 172502775,
+      "savedBytes": 412424,
+      "reductionPercent": 0.2385122894835867,
+      "sha256": "sha256:56a8a5141fcb646dcd4a58f364afb6d75d978b6ddb2e97e583b2c57e59b4dc61"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Windows-x86.exe",
+      "previousBytes": 96171792,
+      "finalBytes": 96172961,
+      "savedBytes": -1169,
+      "reductionPercent": -0.0012155331367850563,
+      "sha256": "sha256:b2cd051baf4a811733758ca50193c8b25e71113234e78e9e6a562428631d1708"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Windows-x86.zip",
+      "previousBytes": 145943044,
+      "finalBytes": 145547574,
+      "savedBytes": 395470,
+      "reductionPercent": 0.2709755731831933,
+      "sha256": "sha256:1d8364b25c79a3f93f2e75b58e9d83e3414aed5a2dc1f4d2aadf124932979a81"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Windows-arm64.exe",
+      "previousBytes": 106371709,
+      "finalBytes": 106374834,
+      "savedBytes": -3125,
+      "reductionPercent": -0.002937811218206525,
+      "sha256": "sha256:949014e7c1b324b1c1c8af59898268251bbbed6d52a9015ad5d41d4f39090fb1"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Windows-arm64.zip",
+      "previousBytes": 169171810,
+      "finalBytes": 168759699,
+      "savedBytes": 412111,
+      "reductionPercent": 0.2436050072408636,
+      "sha256": "sha256:6d00955981e6e7cd7a973105b7a367c52df1e2f406035c87bc93f734d59d9bf8"
+    },
+    {
+      "name": "FoxVPN-1.0.2-macOS-x64.dmg",
+      "previousBytes": 145512849,
+      "finalBytes": 145512589,
+      "savedBytes": 260,
+      "reductionPercent": 0.00017867837911688474,
+      "sha256": "sha256:552810b2002181f1fc6cf3b587ff2f6912495af64c24e86e4d24b95b43311d3e"
+    },
+    {
+      "name": "FoxVPN-1.0.2-macOS-x64.zip",
+      "previousBytes": 155844572,
+      "finalBytes": 155527658,
+      "savedBytes": 316914,
+      "reductionPercent": 0.20335260698075516,
+      "sha256": "sha256:01e39c677e1555964b3c22ecd0a138b2515a35d72e3ad9a64f2a5be3ef33022c"
+    },
+    {
+      "name": "FoxVPN-1.0.2-macOS-arm64.dmg",
+      "previousBytes": 139979136,
+      "finalBytes": 139979141,
+      "savedBytes": -5,
+      "reductionPercent": -0.0000035719608956580497,
+      "sha256": "sha256:7b687d69cb28213ad69f552e3e4b028fc2a93d96a1ec794bd6dbc862ff980a88"
+    },
+    {
+      "name": "FoxVPN-1.0.2-macOS-arm64.zip",
+      "previousBytes": 149143172,
+      "finalBytes": 148938011,
+      "savedBytes": 205161,
+      "reductionPercent": 0.13755976706731168,
+      "sha256": "sha256:7521742acea57c5a8ae04ed6835be95ec08f7016a09958ad956c50f9225bfe0d"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Linux-x64.AppImage",
+      "previousBytes": 118264424,
+      "finalBytes": 118264373,
+      "savedBytes": 51,
+      "reductionPercent": 0.000043123703879029586,
+      "sha256": "sha256:a3d67d8e920d90e1cc82b4f7a7651de7440cc7753c85f401a5fb5be4e12b8ee7"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Linux-x64.deb",
+      "previousBytes": 118647604,
+      "finalBytes": 118647208,
+      "savedBytes": 396,
+      "reductionPercent": 0.00033376148076281423,
+      "sha256": "sha256:bd4ecdb0abecb05c108d1d06418902e6b917082d44d7b754cc50a7c4ccb4cfa0"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Linux-x64.rpm",
+      "previousBytes": 104726893,
+      "finalBytes": 104725277,
+      "savedBytes": 1616,
+      "reductionPercent": 0.001543061150491689,
+      "sha256": "sha256:94e374c5ed985246ef83208268f1142e2b11db30c31d6dc65748f2b073d5e786"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Linux-arm64.AppImage",
+      "previousBytes": 110677602,
+      "finalBytes": 110677555,
+      "savedBytes": 47,
+      "reductionPercent": 0.000042465683345759516,
+      "sha256": "sha256:58e46cbddf6f130a6da8de5906328aa5550cb30d7a291ecc07231d2f5d18cd24"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Linux-arm64.deb",
+      "previousBytes": 111998232,
+      "finalBytes": 111998404,
+      "savedBytes": -172,
+      "reductionPercent": -0.00015357385284439133,
+      "sha256": "sha256:18f24259905997b84ae021cb4eccaab44b1aee140cd5cb8f2c7a1ef01c85d8a8"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Linux-arm64.rpm",
+      "previousBytes": 98211741,
+      "finalBytes": 98229853,
+      "savedBytes": -18112,
+      "reductionPercent": -0.018441786914254986,
+      "sha256": "sha256:c4f0142d8f0bb91ec82a59ec5fbf8cfb7644b52aa026ea32c105154d246f959c"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Android-arm64-v8a.apk",
+      "previousBytes": 16567106,
+      "finalBytes": 16505778,
+      "savedBytes": 61328,
+      "reductionPercent": 0.3701793179810644,
+      "sha256": "sha256:ed9464f868fdf64989848e3d77a84528d1a13d7a1adc69fad3bcc919daebdf27"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Android-armeabi-v7a.apk",
+      "previousBytes": 16915268,
+      "finalBytes": 16825268,
+      "savedBytes": 90000,
+      "reductionPercent": 0.5320636953549893,
+      "sha256": "sha256:c243670cf2d32a1ef65e27f0e174fe19735ef2bfea3a6f0d3f855be75699ac26"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Android-x86_64.apk",
+      "previousBytes": 17460031,
+      "finalBytes": 17374127,
+      "savedBytes": 85904,
+      "reductionPercent": 0.49200370835538615,
+      "sha256": "sha256:502c56d9e330a618ce4670f42d1313ede7a87cbec780961fa0d1a3aa2d020d00"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Android-x86.apk",
+      "previousBytes": 17824572,
+      "finalBytes": 17734572,
+      "savedBytes": 90000,
+      "reductionPercent": 0.5049209596729728,
+      "sha256": "sha256:d741d573bd8a08f7e83f033a61726122bf8b0d0a66c7f2d59569a7ec759de838"
+    },
+    {
+      "name": "FoxVPN-1.0.2-Android-universal.apk",
+      "previousBytes": 51715091,
+      "finalBytes": 51403907,
+      "savedBytes": 311184,
+      "reductionPercent": 0.6017276465780559,
+      "sha256": "sha256:656b8b371ea524f1d35fcb63257f71acf73af651ba8d0cf16d9b58b3bbf9a539"
+    }
+  ],
+  "totals": {
+    "previousBytes": 2178487037,
+    "finalBytes": 2176120541,
+    "savedBytes": 2366496
+  },
+  "auxiliary": [
+    {
+      "name": "FoxVPN-1.0.1-source.tar.gz",
+      "status": "retired",
+      "previousBytes": 6523769,
+      "finalBytes": 0,
+      "savedBytes": 6523769
+    },
+    {
+      "name": "SHA256SUMS-Android.txt",
+      "status": "retained",
+      "previousBytes": 498,
+      "finalBytes": 498,
+      "savedBytes": 0
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "status": "retained",
+      "previousBytes": 2300,
+      "finalBytes": 2207,
+      "savedBytes": 93
+    },
+    {
+      "name": "sing-box-1.12.0-source.tar.gz",
+      "status": "retained",
+      "previousBytes": 694862,
+      "finalBytes": 694862,
+      "savedBytes": 0
+    }
+  ],
+  "releaseTotals": {
+    "previousBytes": 2185708466,
+    "finalBytes": 2176818108,
+    "savedBytes": 8890358
+  }
+}

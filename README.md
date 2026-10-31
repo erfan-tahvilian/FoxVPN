@@ -112,6 +112,13 @@ A focused overview of your connection, chosen location, monthly data allowance a
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/accounts-dark.png"><img src="docs/screenshots/accounts-light.png" alt="Saved Firefox accounts with manual selection, available allowances and automatic switching."></picture>
 
+<details>
+<summary>Theme-matched dialogs</summary>
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dialog-dark.png"><img src="docs/screenshots/dialog-light.png" alt="Account dialog using the active Fox VPN palette."></picture>
+
+</details>
+
 **Locations**
 
 ![Fox VPN location browser with country flags, search, latency readings and sorting controls.](docs/screenshots/locations.png)
