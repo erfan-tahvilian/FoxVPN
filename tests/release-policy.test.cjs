@@ -3,6 +3,11 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {ReleaseNotes}=require('../src/lib/release-notes.cjs');
 const {binaries,validateRelease,olderTags,archivedNotes,archiveRelease}=require('../.github/scripts/release-tools.cjs');
 const {compare}=require('../.github/scripts/release-size-report.cjs');
+test('a newly created release is polled with bounded retries until GitHub exposes it',async()=>{
+  const {pollRelease}=require('../.github/scripts/release-tools.cjs');let reads=0,waits=0;const draft={id:123,draft:true};
+  assert.equal(await pollRelease(()=>++reads===3?draft:null,async()=>{waits++;}),draft);assert.equal(reads,3);assert.equal(waits,2);
+  reads=0;waits=0;assert.equal(await pollRelease(()=>{reads++;return null;},async()=>{waits++;}),null);assert.equal(reads,10);assert.equal(waits,9);
+});
 test('size report covers every architecture and separates compression from a retired source duplicate',()=>{
   const before={tag_name:'v1.0.1',assets:binaries('1.0.1').map(name=>({name,size:1000})).concat({name:'FoxVPN-1.0.1-source.tar.gz',size:500})};
   const after={tag_name:'v1.0.2',assets:binaries('1.0.2').map(name=>({name,size:900}))};

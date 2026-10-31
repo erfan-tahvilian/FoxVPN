@@ -36,13 +36,25 @@ function api(endpoint){return JSON.parse(gh('api',endpoint));}
 // GitHub can omit an unpublished draft from the tag endpoint until its tag
 // exists. The authenticated release list includes drafts and their release ID.
 function findRelease(repo){return api(`repos/${repo}/releases?per_page=100`).find(release=>release.tag_name===tag)||null;}
+async function pollRelease(read,wait=()=>new Promise(resolve=>setTimeout(resolve,1000))){
+  for(let attempt=0;attempt<10;attempt++){const release=read();if(release)return release;if(attempt<9)await wait();}
+  return null;
+}
 async function main(){
   const mode=process.argv[2],repo=process.env.GITHUB_REPOSITORY||'erfan-tahvilian/FoxVPN';assert.equal(repo,'erfan-tahvilian/FoxVPN');
   if(mode==='metadata'){console.log(`FOX_VERSION=${version}\nFOX_TAG=${tag}`);return;}
   if(mode==='ensure-draft'){
     try{const latest=api(`repos/${repo}/releases/latest`);assert(newer(version,latest.tag_name.replace(/^v/,'')),'Use a version newer than the published stable release');}catch(error){if(!String(error.stderr).includes('HTTP 404'))throw error;}
     let release=findRelease(repo);
-    if(!release){try{gh('release','create',tag,'--repo',repo,'--draft','--target',process.env.GITHUB_SHA||gh('api',`repos/${repo}/commits/main`,'--jq','.sha'),'--title',`Fox VPN ${tag}`,'--notes-file','RELEASE_NOTES.md');}catch(error){if(!findRelease(repo))throw error;}release=findRelease(repo);}
+    if(!release){
+      let creationError;
+      try{gh('release','create',tag,'--repo',repo,'--draft','--target',process.env.GITHUB_SHA||gh('api',`repos/${repo}/commits/main`,'--jq','.sha'),'--title',`Fox VPN ${tag}`,'--notes-file','RELEASE_NOTES.md');}catch(error){creationError=error;}
+      // A newly created draft can briefly be absent from the release list.
+      // Poll without issuing another create or touching any published release.
+      release=await pollRelease(()=>findRelease(repo));
+      if(!release&&creationError)throw creationError;
+    }
+    assert(release,'The new draft is not yet visible; no packages were published');
     assert(release.draft,'Published versions cannot be overwritten. Increase the application version.');
     assert.equal(release.target_commitish,process.env.GITHUB_SHA||gh('api',`repos/${repo}/commits/main`,'--jq','.sha'),'Draft source must match the release commit');
     return;
@@ -69,4 +81,4 @@ async function main(){
   console.log(`Published and verified ${tag}; retired downloads from ${old.length} older releases. Release notes, git tags and source history were retained.`);
 }
 if(require.main===module)main().catch(error=>{console.error(error.message);process.exitCode=1;});
-module.exports={binaries,validateRelease,olderTags,archivedNotes,archiveRelease};
+module.exports={binaries,validateRelease,olderTags,archivedNotes,archiveRelease,pollRelease};
