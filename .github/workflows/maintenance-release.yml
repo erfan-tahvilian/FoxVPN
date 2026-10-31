@@ -1,0 +1,150 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Refresh all packages at the current version
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_version:
+        description: Explicitly confirm the published version to replace
+        required: true
+        type: string
+      windows_run:
+        description: Successful Windows build
+        required: true
+        type: string
+      mac_run:
+        description: Successful macOS build
+        required: true
+        type: string
+      linux_run:
+        description: Successful Linux build
+        required: true
+        type: string
+      android_run:
+        description: Successful Android build
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FOX_CONFIRM_VERSION: ${{ inputs.confirm_version }}
+      FOX_WINDOWS_RUN: ${{ inputs.windows_run }}
+      FOX_MAC_RUN: ${{ inputs.mac_run }}
+      FOX_LINUX_RUN: ${{ inputs.linux_run }}
+      FOX_ANDROID_RUN: ${{ inputs.android_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify explicit version and successful matching builds
+        run: |
+          node .github/scripts/release-tools.cjs metadata >> "$GITHUB_ENV"
+          test "$FOX_CONFIRM_VERSION" = "$(node -p "require('./package.json').version")"
+          for kind in WINDOWS MAC LINUX ANDROID; do
+            variable="FOX_${kind}_RUN"; run="${!variable}"
+            [[ "$run" =~ ^[0-9]+$ ]]
+            case "$kind" in WINDOWS) workflow=windows;; MAC) workflow=macos;; LINUX) workflow=linux;; ANDROID) workflow=android;; esac
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" > /tmp/build.json
+            test "$(jq -r .conclusion /tmp/build.json)" = success
+            test "$(jq -r .path /tmp/build.json)" = ".github/workflows/$workflow.yml"
+            if [ "$kind" = ANDROID ]; then
+              git diff --exit-code "$(jq -r .head_sha /tmp/build.json)" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml ':(exclude)android/core/apple/**'
+            else
+              git diff --exit-code "$(jq -r .head_sha /tmp/build.json)" HEAD -- src assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json desktop/h3 scripts ':(exclude)scripts/*android*' .github/workflows/windows.yml .github/workflows/macos.yml .github/workflows/linux.yml
+            fi
+          done
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: FoxVPN-Windows-*
+          merge-multiple: true
+          path: verified-build
+          run-id: ${{ inputs.windows_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: FoxVPN-macOS-*
+          merge-multiple: true
+          path: verified-build
+          run-id: ${{ inputs.mac_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: FoxVPN-Linux-*
+          merge-multiple: true
+          path: verified-build
+          run-id: ${{ inputs.linux_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: Android-unsigned-build
+          path: unsigned
+          run-id: ${{ inputs.android_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: Android-signing-tools
+          path: signing-tools
+          run-id: ${{ inputs.android_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '22'
+      - name: Require the existing published release
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$FOX_TAG" > /tmp/release.json
+          test "$(jq -r .draft /tmp/release.json)" = false
+          test "$(jq -r .tag_name /tmp/release.json)" = "$FOX_TAG"
+      - name: Generate single-use signing transport key
+        run: node .github/scripts/android-transfer.cjs generate "$RUNNER_TEMP/fox-sign"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Android-signing-public-key
+          path: ${{ runner.temp }}/fox-sign/public.pem
+          retention-days: 1
+      - name: Receive encrypted signing identity
+        run: |
+          asset="android-signing-envelope-$GITHUB_RUN_ID.json"
+          for attempt in $(seq 1 180); do
+            if gh release download "$FOX_TAG" --pattern "$asset" --dir "$RUNNER_TEMP/fox-sign" 2>/dev/null; then break; fi
+            sleep 5
+          done
+          test -s "$RUNNER_TEMP/fox-sign/$asset"
+          mv "$RUNNER_TEMP/fox-sign/$asset" "$RUNNER_TEMP/fox-sign/envelope.json"
+          gh release delete-asset "$FOX_TAG" "$asset" --yes
+          node .github/scripts/android-transfer.cjs decrypt "$RUNNER_TEMP/fox-sign"
+      - name: Sign and verify all Android architectures
+        run: |
+          set -euo pipefail
+          test "$(sha256sum signing-tools/apksigner.jar | cut -d' ' -f1)" = 00ef9948f843fe395d2440ae3ef41405b8040a6d5d46493bd1902ac0ee6deae7
+          mkdir release-assets
+          for arch in arm64-v8a armeabi-v7a x86_64 x86 universal; do
+            output="release-assets/FoxVPN-$FOX_VERSION-Android-$arch.apk"
+            java -jar signing-tools/apksigner.jar sign --ks "$RUNNER_TEMP/fox-sign/release.jks" --ks-key-alias foxvpn --ks-pass "file:$RUNNER_TEMP/fox-sign/password" --key-pass "file:$RUNNER_TEMP/fox-sign/key-password" --min-sdk-version 26 --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out "$output" "unsigned/app-$arch-release-unsigned.apk"
+            java -jar signing-tools/apksigner.jar verify --verbose --print-certs "$output" > /tmp/verify.txt
+            grep -F "$(tr -d '\r\n' < android/signing-certificate.sha256)" /tmp/verify.txt
+          done
+      - name: Prepare every package and corresponding source
+        run: |
+          for arch in x64 x86 arm64; do
+            for ext in exe zip; do cp "verified-build/dist/FoxVPN-$FOX_VERSION-Windows-$arch.$ext" release-assets/; done
+          done
+          for arch in x64 arm64; do
+            for ext in dmg zip; do cp "verified-build/dist/FoxVPN-$FOX_VERSION-macOS-$arch.$ext" release-assets/; done
+            for ext in AppImage deb rpm; do cp "verified-build/dist/FoxVPN-$FOX_VERSION-Linux-$arch.$ext" release-assets/; done
+          done
+          git archive --format=tar.gz --prefix=FoxVPN/ HEAD > "release-assets/FoxVPN-$FOX_VERSION-source.tar.gz"
+          gh release download "$FOX_TAG" --pattern sing-box-1.12.0-source.tar.gz --dir release-assets
+          (cd release-assets && sha256sum *.apk > SHA256SUMS-Android.txt)
+      - name: Validate the complete set, replace packages and verify published checksums
+        run: node .github/scripts/maintenance-release.cjs
+      - name: Remove transient signing material
+        if: always()
+        run: |
+          rm -rf "$RUNNER_TEMP/fox-sign"
+          gh release delete-asset "$FOX_TAG" "android-signing-envelope-$GITHUB_RUN_ID.json" --yes 2>/dev/null || true

@@ -1,10 +1,12 @@
 # Changelog
 
-## v1.0.2 - 2026-10-31
+## v1.0.1 - 2026-10-31
+
+### Navigation maintenance update
 
 - Open Overview at the top after selecting a location on desktop and Android.
 
-## v1.0.1 - 2026-10-31
+### Release features
 
 - Device-matched update notifications with direct downloads.
 - One-time release highlights after installing a new version.
