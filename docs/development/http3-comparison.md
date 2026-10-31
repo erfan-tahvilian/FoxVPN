@@ -1,5 +1,68 @@
 # HTTP/3 transport comparison
 
+## Current-source review, 2026-10-31
+
+The reference was rechecked at `9f8350ce1291b51478f037d2fab8844dee5c0f74`.
+This section supersedes any earlier description of the current network's behavior below; the older sections record earlier implementation and acceptance checks.
+
+The reference still uses Mozilla Remote Settings CONNECT endpoints, including
+`p.m1.fastly-masque.net:2499` (recommended) and
+`muc139.m1.fastly-masque.net:2499` (Germany). Port 443 is a default only when
+the advertised endpoint has no port. It does not discover an alternative HTTP/3
+relay or disguise QUIC as TCP.
+
+| Handshake or tunnel behavior | Current reference | Fox VPN |
+| --- | --- | --- |
+| Bootstrap | Races Cloudflare, Google and Quad9 RFC 8484 resolvers; asks A first, AAAA only for an empty A answer; optional system fallback | Encrypted bootstrap with physical DNS fallback; retains both address families |
+| QUIC initial packet | 1200-byte payload | 1200-byte payload on desktop and Android |
+| Address attempts | IPv4 preferred, then IPv6; budget divided across addresses with a three-second minimum | Same family preference and bounded attempts; Android protects sockets before binding |
+| TLS | Original endpoint hostname, verified certificate, TLS 1.3 and ALPN `h3` | Same verification requirements |
+| Session | One multiplexed QUIC connection by default, 30-second keepalive | Multiplexed connection, 30-second keepalive |
+| Authentication | Account proxy pass in `Proxy-Authorization`, browser-style User-Agent; ordinary HTTP CONNECT streams | Equivalent authenticated CONNECT semantics |
+| QUIC library | `github.com/quic-go/quic-go v0.59.0` | Desktop v0.64.1; Android sing-box-compatible SagerNet fork v0.52.0-beta.1 |
+| Stream API | `http3.Transport.RoundTrip` with a bounded write buffer | Desktop request-stream API; Android `http3.ClientConn.RoundTrip` |
+| Default protocol | Explicit HTTP/2 by default; HTTP/3 selectable | Automatic races verified HTTPS paths and retains the first healthy transport |
+
+The initial packet size is significant on lower-MTU links. Fox VPN already
+uses the same value. CONNECT headers, body buffering and account authentication
+are processed after QUIC establishes; changing those cannot explain a timeout
+before the first verified handshake.
+
+### Physical phone evidence
+
+On 2026-10-31 a credential-free ARM64 diagnostic ran outside the app's VPN on
+the attached phone's cellular network. It used the Android core's QUIC library,
+trusted CA bundle, original hostname/SNI and a 1200-byte initial packet.
+
+| Destination | IPv4 result | IPv6 result |
+| --- | --- | --- |
+| Fastly recommended, UDP 2499 | Six-second timeout | Six-second timeout |
+| Fastly Germany, UDP 2499 | Six-second timeout | Six-second timeout |
+| Google, UDP 443 | Six-second timeout | Verified handshake in 349 ms |
+
+Both physical address families were present. Trying those Fastly endpoints on
+443 also timed out. Automatic connected using HTTP/2 with exit verification.
+These observations establish that QUIC is not universally unavailable on this
+cellular network, and that the failure can occur without Fox VPN's TUN or
+account flow. They do not distinguish carrier/path filtering from an endpoint
+availability issue, or prove that the reference app succeeds on this network.
+
+The manual `android-network-check.yml` workflow also builds the same
+credential-free probe against the reference's exact QUIC library version.
+This separates a library difference from a network result without installing
+another app, accessing account secrets, or downloading unrelated APKs.
+
+Current pinned reference sources:
+
+- [HTTP/3 handshake and CONNECT](https://github.com/armanlife/firefox-vpn-client/blob/9f8350ce1291b51478f037d2fab8844dee5c0f74/core/internal/proxy/upstream_h3.go)
+- [Bootstrap query behavior](https://github.com/armanlife/firefox-vpn-client/blob/9f8350ce1291b51478f037d2fab8844dee5c0f74/core/internal/resolver/doh.go)
+- [Protocol and resolver defaults](https://github.com/armanlife/firefox-vpn-client/blob/9f8350ce1291b51478f037d2fab8844dee5c0f74/core/internal/config/config.go)
+- [Physical UDP socket binding](https://github.com/armanlife/firefox-vpn-client/blob/9f8350ce1291b51478f037d2fab8844dee5c0f74/core/internal/egress/egress.go)
+
+No reference source code was copied in this recheck.
+
+## Earlier implementation baseline
+
 Reviewed reference: `armanlife/firefox-vpn-client` at commit `13845fafb2a67e2c1ba1e1145537a0a5db16a8d3`.
 Fox VPN baseline: `e10edbf`. Review date: 2026-10-25.
 

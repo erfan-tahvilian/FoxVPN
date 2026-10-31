@@ -20,8 +20,20 @@ jobs:
           GOARCH: arm64
           CGO_ENABLED: '0'
         run: go build -trimpath -ldflags='-s -w' -o networkcheck-arm64 ./cmd/networkcheck
+      - name: Build comparison with the reference client's QUIC library
+        env:
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p "$RUNNER_TEMP/reference-quic"
+          sed 's|github.com/sagernet/quic-go|github.com/quic-go/quic-go|' android/core/cmd/networkcheck/main.go > "$RUNNER_TEMP/reference-quic/main.go"
+          cd "$RUNNER_TEMP/reference-quic"
+          go mod init foxvpn/reference-networkcheck
+          go get github.com/quic-go/quic-go@v0.59.0
+          go build -trimpath -ldflags='-s -w' -o "$GITHUB_WORKSPACE/android/core/networkcheck-reference-arm64" .
       - uses: actions/upload-artifact@v4
         with:
           name: Phone-networkcheck-arm64
-          path: android/core/networkcheck-arm64
+          path: android/core/networkcheck*arm64
           retention-days: 1
