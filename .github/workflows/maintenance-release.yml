@@ -56,7 +56,7 @@ jobs:
             test "$(jq -r .conclusion /tmp/build.json)" = success
             test "$(jq -r .path /tmp/build.json)" = ".github/workflows/$workflow.yml"
             if [ "$kind" = ANDROID ]; then
-              git diff --exit-code "$(jq -r .head_sha /tmp/build.json)" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json scripts/prepare-android.cjs scripts/android-notices.cjs .github/workflows/android.yml ':(exclude)android/core/apple/**'
+              git diff --exit-code "$(jq -r .head_sha /tmp/build.json)" HEAD -- android src/ui assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json 'scripts/*android*' .github/workflows/android.yml ':(exclude)android/core/apple/**'
             else
               git diff --exit-code "$(jq -r .head_sha /tmp/build.json)" HEAD -- src assets licenses LICENSE COPYRIGHT package.json package-lock.json release-notes.json desktop/h3 scripts ':(exclude)scripts/*android*' .github/workflows/windows.yml .github/workflows/macos.yml .github/workflows/linux.yml
             fi
