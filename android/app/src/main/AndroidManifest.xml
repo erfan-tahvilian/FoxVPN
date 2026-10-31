@@ -9,7 +9,7 @@
     <application android:name=".FoxApp" android:label="Fox VPN" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme" android:allowBackup="false" android:usesCleartextTraffic="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:supportsRtl="false">
+        android:supportsRtl="false" android:enableOnBackInvokedCallback="true">
         <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>

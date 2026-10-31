@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Erfan Tahvilian
 (() => {
+  window.handleAndroidBack=()=>{
+    const dialogs=[...document.querySelectorAll('dialog[open]')];
+    if(dialogs.length){dialogs.at(-1).close();return true;}
+    if(document.querySelector('.select-menu:not([hidden])')){document.dispatchEvent(new Event('close-selects'));return true;}
+    if(typeof page!=='undefined'&&page!=='home'){navigate('home');return true;}
+    return false;
+  };
   let sequence=0,switchingAccount=null;const pending=new Map(),listeners=new Set();
   function showAccountProgress(){
     if(!switchingAccount||typeof currentState==='undefined')return;
@@ -70,9 +77,9 @@
     let packageTimer;field.addEventListener('input',()=>{clearTimeout(packageTimer);packageTimer=setTimeout(()=>field.dispatchEvent(new Event('change',{bubbles:true})),500);});
     choose.addEventListener('pointerdown',()=>{if(packageTimer){clearTimeout(packageTimer);field.dispatchEvent(new Event('change',{bubbles:true}));}},true);
     window.flushSettings=()=>{if(packageTimer){clearTimeout(packageTimer);packageTimer=null;field.dispatchEvent(new Event('change',{bubbles:true}));}return saving;};
-    const about=document.createElement('div');about.className='settings-card';
+    const about=document.createElement('div');about.className='settings-card';about.dataset.appAbout='';
     const heading=document.createElement('h3');heading.textContent='About Fox VPN';
-    const version=document.createElement('p');version.textContent='Version 1.0.0';
+    const version=document.createElement('p');version.dataset.appVersion='';version.dataset.versionPrefix='Version ';version.textContent='Version 1.0.1';
     const source=document.getElementById('source');source.className='secondary';
     about.append(heading,version,source);document.getElementById('settings-form').insertBefore(about,document.querySelector('.settings-footer'));
     document.querySelector('.account-story>p').textContent='A private connection, wherever you are.';

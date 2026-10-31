@@ -24,10 +24,11 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final int VPN_PERMISSION = 1, NOTIFICATION_PERMISSION = 2, EXPORT = 3;
     private static final String ORIGIN = "https://appassets.androidplatform.net";
-    private static final Set<String> ACTIONS = Set.of("state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","locationSort","selectAccount","removeAccount","accountPreferences","cancelAccountLogin");
+    private static final Set<String> ACTIONS = Set.of("checkUpdates","downloadUpdate","state","login","verify","logout","servers","ping","account","settings","theme","select","connect","cancel","disconnect","exit","clearLogs","exportLogs","openLink","chooseApps","locationSort","selectAccount","removeAccount","accountPreferences","cancelAccountLogin");
     private static final Set<String> LOCATION_SORTS = Set.of("ping-asc","ping-desc","name-asc","name-desc");
     WebView web;
     private boolean loaded, pendingConnect;
+    private android.window.OnBackInvokedCallback backCallback;
     private String exportText;
     private FoxApp app() { return (FoxApp) getApplication(); }
     private final Runnable tick = new Runnable() {
@@ -90,8 +91,14 @@ public final class MainActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "FoxAndroid");
         app().activity = new java.lang.ref.WeakReference<>(this);
         pendingConnect = getIntent().getBooleanExtra("connect",false);
+        if(Build.VERSION.SDK_INT>=33){backCallback=this::handleBack;getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,backCallback);}
         web.loadUrl(ORIGIN+"/assets/src/ui/index.html");
     }
+    private void handleBack(){
+        if(web==null||!loaded){moveTaskToBack(true);return;}
+        web.evaluateJavascript("Boolean(window.handleAndroidBack&&window.handleAndroidBack())",handled->{if(!"true".equals(handled))moveTaskToBack(true);});
+    }
+    @Override @SuppressWarnings("deprecation") public void onBackPressed(){handleBack();}
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);setIntent(intent);
         if (intent.getBooleanExtra("connect",false)) {
@@ -101,7 +108,7 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onResume() { super.onResume();app().activity=new java.lang.ref.WeakReference<>(this);if(app().backend!=null)app().backend.setDark(app().isDark());app().main.post(tick); }
     @Override protected void onPause() { app().main.removeCallbacks(tick);super.onPause(); }
-    @Override protected void onDestroy() { app().main.removeCallbacks(tick);if(app().activity.get()==this)app().activity.clear();if(web!=null){web.removeJavascriptInterface("FoxAndroid");web.destroy();}super.onDestroy(); }
+    @Override protected void onDestroy() { if(Build.VERSION.SDK_INT>=33&&backCallback!=null)getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback); app().main.removeCallbacks(tick);if(app().activity.get()==this)app().activity.clear();if(web!=null){web.removeJavascriptInterface("FoxAndroid");web.destroy();}super.onDestroy(); }
     void receive(String state) {
         if(!loaded||web==null)return;
         try{
@@ -122,6 +129,25 @@ public final class MainActivity extends Activity {
     }
     private void respond(String id,String value) { app().main.post(() -> {if(web!=null&&loaded)web.evaluateJavascript("window.fox.resolve("+JSONObject.quote(id)+","+value+")",null);}); }
     private String envelope(boolean ok,String error) {try {JSONObject result=new JSONObject().put("ok",ok).put("data",JSONObject.NULL);if(error!=null)result.put("error",error);return result.toString();}catch(Exception e){return "{\"ok\":false,\"error\":\"Request failed\"}";}}
+    String installedArchitecture() throws Exception {
+        Set<String> found=new java.util.HashSet<>();
+        try(java.util.zip.ZipFile apk=new java.util.zip.ZipFile(getApplicationInfo().sourceDir)){
+            java.util.Enumeration<? extends java.util.zip.ZipEntry> entries=apk.entries();
+            while(entries.hasMoreElements()){String name=entries.nextElement().getName();if(name.startsWith("lib/")){String[] parts=name.split("/");if(parts.length>2&&Set.of("arm64-v8a","armeabi-v7a","x86_64","x86").contains(parts[1]))found.add(parts[1]);}}
+        }
+        if(found.size()>1)return "universal";
+        if(found.size()==1)return found.iterator().next();
+        throw new IllegalStateException("Could not identify the installed Android package.");
+    }
+    private String checkUpdates(boolean force) throws Exception {
+        String arch=installedArchitecture(),key=BuildConfig.VERSION_NAME+":"+arch;
+        android.content.SharedPreferences preferences=getSharedPreferences("updates",MODE_PRIVATE);
+        long age=System.currentTimeMillis()-preferences.getLong("checked",0);
+        if(!force&&key.equals(preferences.getString("key",""))&&age>=0&&age<6*60*60*1000L){String cached=preferences.getString("result",null);if(cached!=null)return cached;}
+        String result=app().backend.call("checkUpdates",new JSONArray().put(arch).put(force).toString());
+        if(new JSONObject(result).optBoolean("ok"))preferences.edit().putString("key",key).putString("result",result).putLong("checked",System.currentTimeMillis()).apply();
+        return result;
+    }
     final class Bridge {
         @JavascriptInterface public String getLocationSort() {
             String saved=getSharedPreferences("interface",MODE_PRIVATE).getString("locationSort","ping-asc");
@@ -129,10 +155,17 @@ public final class MainActivity extends Activity {
         }
         @JavascriptInterface public void request(String id,String channel,String arguments) {
             if (id==null||id.length()>64||arguments==null||arguments.length()>131072||!ACTIONS.contains(channel))return;
-            ((channel.equals("servers")||channel.equals("account"))?app().catalog:app().actions).execute(() -> {
+            (channel.equals("ping")?app().probes:(channel.equals("servers")||channel.equals("account")||channel.equals("checkUpdates")||channel.equals("downloadUpdate"))?app().catalog:app().actions).execute(() -> {
                 try {
                     JSONArray args=new JSONArray(arguments);
                     switch(channel){
+                        case "checkUpdates":respond(id,checkUpdates(args.optBoolean(0,false)));break;
+                        case "downloadUpdate":
+                            JSONObject update=new JSONObject(app().backend.call("updateURL",new JSONArray().put(installedArchitecture()).toString()));
+                            if(!update.optBoolean("ok"))throw new IllegalStateException(update.optString("error","No newer update is available."));
+                            Uri download=Uri.parse(update.getString("data"));
+                            if(!"https".equals(download.getScheme())||!"github.com".equals(download.getHost())||!download.getPath().startsWith("/erfan-tahvilian/FoxVPN/releases/download/v")||!download.getPath().endsWith(".apk"))throw new IllegalStateException("Invalid update link.");
+                            app().main.post(()->startActivity(new Intent(Intent.ACTION_VIEW,download)));respond(id,envelope(true,null));break;
                         case "settings":
                             String mode=args.getJSONObject(0).optString("splitMode","exclude");
                             if(!mode.equals("exclude")&&!mode.equals("include"))throw new IllegalArgumentException("Invalid VPN routing mode");

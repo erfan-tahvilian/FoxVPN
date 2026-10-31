@@ -91,6 +91,10 @@ type Backend struct {
 	tunnel                                           *proxyTunnel
 	cancel                                           context.CancelFunc
 	epoch                                            uint64
+	pingCancel                                       context.CancelFunc
+	pingEpoch                                        uint64
+	updates                                          releaseUpdates
+	authRefresh                                      sync.Mutex
 }
 
 func NewBackend(host Host, vault string) *Backend {
@@ -156,7 +160,7 @@ func (b *Backend) snapshotLocked() object {
 	if b.auth != nil {
 		email = str(b.auth, "email")
 	}
-	return object{"accounts": b.publicAccountsLocked(), "activeAccountId": b.activeAccountID, "accountPreferences": copyObject(b.accountPreferences), "totalTraffic": copyObject(b.totalTraffic), "sessionDuration": num(b.sessionTraffic, "duration"), "protocol": b.protocolLocked(), "version": "1.0.0", "platform": b.platform, "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
+	return object{"accounts": b.publicAccountsLocked(), "activeAccountId": b.activeAccountID, "accountPreferences": copyObject(b.accountPreferences), "totalTraffic": copyObject(b.totalTraffic), "sessionDuration": num(b.sessionTraffic, "duration"), "protocol": b.protocolLocked(), "version": appVersion, "platform": b.platform, "settings": s, "signedIn": b.auth != nil, "email": email, "servers": b.servers, "logs": b.logs, "latencies": b.latencies, "pinging": b.pinging, "pingingIds": b.pingingIDs, "activeServer": active, "connection": b.connection, "startedAt": b.started, "exit": b.exit, "quota": b.quota, "lastError": b.lastError, "up": up, "down": down, "busy": b.busy, "systemDark": b.systemDark}
 }
 func (b *Backend) Snapshot() string {
 	b.mu.Lock()
@@ -285,6 +289,20 @@ func (b *Backend) Call(channel, argsJSON string) string {
 		result, err := b.refreshProfile(context.Background())
 		return envelope(result, err)
 	}
+	if channel=="checkUpdates" || channel=="updateURL" {
+		arch:="";force:=false
+		if len(args)>0 {arch,_=args[0].(string)}
+		if len(args)>1 {force,_=args[1].(bool)}
+		result,err:=b.checkUpdates(context.Background(),arch,force)
+		if err==nil&&channel=="updateURL" {if !yes(result,"available") {err=errors.New("No newer update is available")}else{return envelope(result["url"],nil)}}
+		return envelope(result,err)
+	}
+	if channel == "ping" {
+		id := ""
+		if len(args)>0 { id,_=args[0].(string) }
+		return envelope(nil,b.ping(context.Background(),id))
+	}
+	if channel=="selectAccount" || channel=="logout" || channel=="removeAccount" || channel=="settings" { b.stopPings() }
 	b.action.Lock()
 	defer b.action.Unlock()
 	arg := func(i int) any {
@@ -452,6 +470,7 @@ func (b *Backend) Call(channel, argsJSON string) string {
 	return envelope(result, err)
 }
 func (b *Backend) connect() error {
+	b.stopPings()
 	b.mu.Lock()
 	if b.connection != "disconnected" {
 		b.mu.Unlock()
@@ -679,12 +698,25 @@ func (b *Backend) EngineConfig() string {
 	v, _ := json.Marshal(c)
 	return string(v)
 }
-func (b *Backend) ping(ctx context.Context, id string) error {
-	token, _, passErr := b.pass(ctx)
-	if passErr != nil {
-		return passErr
-	}
+func (b *Backend) stopPings() {
 	b.mu.Lock()
+	cancel:=b.pingCancel
+	b.pingCancel=nil
+	b.pingEpoch++
+	b.pinging=false
+	b.pingingIDs=[]string{}
+	b.mu.Unlock()
+	if cancel!=nil { cancel(); b.emit() }
+}
+func (b *Backend) ping(ctx context.Context, id string) error {
+	b.mu.Lock()
+	if b.pingCancel!=nil { b.mu.Unlock(); return errors.New("A location check is already running") }
+	if b.connection=="connecting" { b.mu.Unlock(); return errors.New("Wait for the connection to finish before checking locations") }
+	accountID:=b.activeAccountID
+	ctx,cancel:=context.WithCancel(context.WithValue(ctx,accountContextKey{},accountID))
+	b.pingCancel=cancel
+	b.pingEpoch++
+	epoch:=b.pingEpoch
 	settings := copyObject(b.settings)
 	servers := append([]object{}, b.servers...)
 	if id == "" {
@@ -696,7 +728,9 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 	}
 	b.mu.Unlock()
 	b.emit()
-	defer func() { b.mu.Lock(); b.pinging = false; b.pingingIDs = []string{}; b.mu.Unlock(); b.emit() }()
+	defer func() { cancel();b.mu.Lock();if b.pingEpoch==epoch { b.pingCancel=nil;b.pinging=false;b.pingingIDs=[]string{} };b.mu.Unlock();b.emit() }()
+	token, _, passErr := b.pass(ctx)
+	if passErr != nil { if ctx.Err()!=nil {return nil};return passErr }
 	if len(servers) == 0 {
 		var err error
 		servers, err = b.refreshServers(ctx)
@@ -715,8 +749,9 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 		wg.Add(1)
 		go func(server object) {
 			defer wg.Done()
-			limit <- struct{}{}
+			select {case limit <- struct{}{}: case <-ctx.Done():return}
 			defer func() { <-limit }()
+			if ctx.Err()!=nil {return}
 			pctx, cancel := context.WithTimeout(ctx, 35*time.Second)
 			defer cancel()
 			probe := newTunnel(b, settings, server, token, pctx)
@@ -730,7 +765,7 @@ func (b *Backend) ping(ctx context.Context, id string) error {
 				}
 			}
 			b.mu.Lock()
-			if str(b.settings, "transport") == str(settings, "transport") {
+			if ctx.Err()==nil && b.pingEpoch==epoch && b.activeAccountID==accountID && str(b.settings, "transport") == str(settings, "transport") {
 				result := object{"ms": latency, "measuredAt": millis(), "kind": "real-delay", "protocol": strings.ReplaceAll(probe.protocolName(), "http/", "h")}
 				if err != nil {
 					reason := "unavailable"

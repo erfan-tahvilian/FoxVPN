@@ -2,6 +2,9 @@
 // Copyright (C) 2026 Erfan Tahvilian
 plugins { id 'com.android.application' }
 
+def foxVersion = new groovy.json.JsonSlurper().parse(file('../../package.json')).version
+def foxVersionParts = foxVersion.tokenize('.').collect { it.toInteger() }
+
 android {
     namespace 'com.foxvpn.android'
     compileSdk 36
@@ -10,8 +13,8 @@ android {
         applicationId 'com.foxvpn.android'
         minSdk 26
         targetSdk 36
-        versionCode 1
-        versionName '1.0.0'
+        versionCode foxVersionParts[0] * 1000000 + foxVersionParts[1] * 1000 + foxVersionParts[2]
+        versionName foxVersion
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     signingConfigs {

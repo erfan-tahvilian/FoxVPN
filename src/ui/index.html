@@ -31,7 +31,7 @@
     <button data-page="settings" class="nav-item"><svg><use href="#glyph-settings"/></svg>Settings</button>
     <button data-page="logs" class="nav-item"><svg><use href="#glyph-logs"/></svg>Activity log</button>
   </nav>
-  <div class="sidebar-bottom"><button id="source" class="subtle"><svg aria-hidden="true"><use href="#glyph-github"/></svg><span>View on GitHub</span></button><div class="version">Fox VPN <span>v1.0.0</span></div></div>
+  <div class="sidebar-bottom"><button id="source" class="subtle"><svg aria-hidden="true"><use href="#glyph-github"/></svg><span>View on GitHub</span></button><div class="version">Fox VPN <span data-app-version data-version-prefix="v">v1.0.1</span></div></div>
 </aside>
 <div class="workspace">
   <header><div class="breadcrumbs">Workspace <span>/</span> <strong id="page-label">Overview</strong></div><div class="header-actions"><button id="theme-toggle" class="icon-button" title="Toggle appearance" aria-label="Toggle dark and light theme"><svg><use href="#glyph-sun"/></svg></button><span class="header-divider"></span><button id="account-shortcut" class="account-chip"><span class="avatar">F</span><span id="account-name">Sign in</span><svg><use href="#glyph-arrow"/></svg></button></div></header>
@@ -85,4 +85,4 @@
 <dialog id="remove-account-dialog" class="account-remove-dialog"><h2>Remove this account?</h2><p id="remove-account-email"></p><p class="muted">Stored sign-in details will be removed from this device. Your Firefox account will not be deleted.</p><div class="button-row"><button id="keep-account" type="button" class="secondary">Keep account</button><button id="confirm-remove-account" type="button" class="secondary danger">Remove account</button></div></dialog>
 <div id="toast" role="status" hidden></div>
 <script src="desktop.js"></script><script src="usage.js"></script><script src="accounts-ui.js"></script><script src="app.js"></script>
-</body></html>
+<script src="updates.js"></script></body></html>

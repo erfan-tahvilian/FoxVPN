@@ -5,4 +5,4 @@ function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){cons
 for(const dir of ['src','assets','licenses'])walk(dir);for(const file of ['LICENSE','COPYRIGHT'])assert.equal(hash(asar.extractFile(archive,file)),hash(fs.readFileSync(file)));
 for(const file of ['sing-box','fox-h3','LICENSE-sing-box.txt','provenance.txt'])assert.equal(hash(fs.readFileSync(path.join(resources,'engine',file))),hash(fs.readFileSync(path.join(engineRoot(),file))),file);
 for(const file of ['fox-vpn','resources/engine/sing-box','resources/engine/fox-h3']){assert.equal(machine(path.join(root,file)),target().cpu);assert(fs.statSync(path.join(root,file)).mode&0o111);}
-assert.equal(JSON.parse(asar.extractFile(archive,'package.json')).version,'1.0.0');console.log('Linux source, licenses, native ELF architectures, executable permissions and version verified.');
+assert.equal(JSON.parse(asar.extractFile(archive,'package.json')).version,require('../package.json').version);console.log('Linux source, licenses, native ELF architectures, executable permissions and version verified.');

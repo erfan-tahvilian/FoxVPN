@@ -32,6 +32,7 @@ public final class FoxApp extends Application implements Host {
     final Handler main = new Handler(Looper.getMainLooper());
     final ExecutorService actions = Executors.newSingleThreadExecutor();
     final ExecutorService catalog = Executors.newSingleThreadExecutor();
+    final ExecutorService probes = Executors.newSingleThreadExecutor();
     Backend backend;
     volatile FoxVpnService vpn;
     volatile Network network;
