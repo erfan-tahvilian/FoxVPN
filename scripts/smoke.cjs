@@ -132,6 +132,11 @@ app.whenReady().then(async()=>{
     await win.webContents.executeJavaScript(`document.getElementById('selected-location').textContent='United Kingdom';document.getElementById('selected-latency').textContent='Unreachable';new Promise(r=>setTimeout(r,100))`);
     assert(await win.webContents.executeJavaScript(`(()=>{const label=document.getElementById('selected-location'),heading=document.querySelector('.server-selector small');return label.scrollWidth<=label.clientWidth && heading.scrollWidth<=heading.clientWidth})()`),'Android location name and heading should fit on one line');
     fs.writeFileSync('test-results/android-overview-compact.png',(await win.webContents.capturePage()).toPNG());
+    await win.webContents.executeJavaScript(`(()=>{const first=currentState.servers.find(s=>!automaticServer(s));render({...currentState,servers:Array.from({length:30},(_,i)=>({...first,id:'GB/scroll-'+i+'/fixture:443',cityCode:'scroll-'+i,city:'',country:'Location '+i}))});navigate('locations');document.querySelector('.server-row:last-child').scrollIntoView({block:'center',behavior:'instant'});})()`);
+    assert(await win.webContents.executeJavaScript(`window.scrollY>200`),'Location selection should be tested from a scrolled list');
+    await win.webContents.executeJavaScript(`document.querySelector('.server-row:last-child .server-choice').click();new Promise(r=>setTimeout(r,100))`);
+    assert.equal(await win.webContents.executeJavaScript(`page`),'home');
+    assert.equal(await win.webContents.executeJavaScript(`window.scrollY`),0,'Selecting a location must open Overview at the top');
     assert.deepEqual(errors,[]);
     status('PASS: navigation, themes, renderer isolation and console checks');
     console.log('Renderer smoke checks passed: navigation, theme, account form, isolated renderer, no console errors.');

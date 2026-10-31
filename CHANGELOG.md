@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.2 - 2026-10-31
+
+- Open Overview at the top after selecting a location on desktop and Android.
+
 ## v1.0.1 - 2026-10-31
 
 - Device-matched update notifications with direct downloads.

@@ -12,7 +12,7 @@ async function call(channel,...args) {
 function action(fn) {return async event=>{try{await fn(event);}catch(e){toast(e.message);}};}
 function navigate(next) {page=next;document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id===page));
 
-document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));$('page-label').textContent=labels[page];if(page==='locations')renderServers();if(page==='logs')renderLogs();}
+document.querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));$('page-label').textContent=labels[page];if(page==='locations')renderServers();if(page==='logs')renderLogs();window.scrollTo({top:0,left:0,behavior:'instant'});}
 function showSplitSettings(){navigate('settings');const section=$('split-tunneling');section?.scrollIntoView({behavior:'auto',block:'start'});$('choose-apps')?.focus({preventScroll:true});}
 function bytes(n) {n=Number(n)||0;const units=['B','KB','MB','GB','TB'];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++;}return `${n.toFixed(i&&n<10?1:0)} ${units[i]}`;}
 function time(n) {const s=Math.max(0,Math.floor(n/1000));return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(v=>String(v).padStart(2,'0')).join(':');}

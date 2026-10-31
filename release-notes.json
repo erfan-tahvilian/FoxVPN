@@ -1,9 +1,15 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "items": [
-    {"title": "Update notifications", "description": "Discover new releases and download the package that matches your installation.", "platforms": ["win32", "darwin", "linux", "android"]},
-    {"title": "Release highlights", "description": "See a concise overview of improvements the first time you open an updated version.", "platforms": ["win32", "darwin", "linux", "android"]},
-    {"title": "Responsive location checks", "description": "Choose a location or start a connection while latency checks are running.", "platforms": ["android"]},
-    {"title": "Natural back navigation", "description": "Return to Overview before leaving the app.", "platforms": ["android"]}
+    {
+      "title": "Consistent page navigation",
+      "description": "Overview opens at the top after choosing a location, so connection controls are immediately visible.",
+      "platforms": [
+        "win32",
+        "darwin",
+        "linux",
+        "android"
+      ]
+    }
   ]
 }

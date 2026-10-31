@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const appVersion = "1.0.1"
+const appVersion = "1.0.2"
 
 var stableVersion = regexp.MustCompile(`^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})$`)
 var updateDigest = regexp.MustCompile(`^sha256:[a-f0-9]{64}$`)
