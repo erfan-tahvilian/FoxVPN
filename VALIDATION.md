@@ -11,6 +11,8 @@
 
 Update delivery against an actually newer public release requires a subsequent version; the current popup behavior was exercised with controlled release metadata. Physical macOS/Linux VPN forwarding and the new Android UI acceptance remain unconfirmed.
 
+[Publication](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41206950910) completed after all desktop and Android staging checks. The latest release contains 21 binaries, the project and sing-box source archives, and two checksum manifests (25 assets). The previous release entry was removed only after the new latest release was verified; source tags remain. No signing-transfer assets or iOS packages remain. Windows x64 was installed at `D:\Program Files\FoxVPN`; its packaged runtime and version match the workspace. The existing Android signer was verified before an in-place installation on the attached phone (version 1.0.1, code 1000001). The delivered ARM64 APK in `E:\Other\FoxVPN` has SHA-256 `67ef937e2bc2ed7d0c1f1a024493296ce333dea8bbf019b703b592c08fdcb152`.
+
 ## Earlier v1.0.0 validation
 
 ## Account service verification - 2026-10-29
