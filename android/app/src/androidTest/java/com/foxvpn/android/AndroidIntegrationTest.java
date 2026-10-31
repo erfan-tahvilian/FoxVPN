@@ -58,7 +58,7 @@ public class AndroidIntegrationTest {
         Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
         activity.finishActivity();context.getSharedPreferences("interface",Context.MODE_PRIVATE).edit().remove("releaseNotesSeen").commit();activity.launchActivity(null);ready(true);
         long deadline=System.currentTimeMillis()+6000;while(!"true".equals(js("Boolean(document.getElementById('release-highlights')?.open)"))&&System.currentTimeMillis()<deadline)Thread.sleep(100);
-        assertEquals("true",js("document.getElementById('release-highlights').textContent.includes('Responsive location checks')"));
+        assertEquals("true",js("document.getElementById('highlights-title').textContent.includes('Fox VPN "+BuildConfig.VERSION_NAME+"') && [...document.querySelectorAll('#release-highlights article')].some(item=>item.querySelector('h3').textContent.trim() && item.querySelector('p').textContent.trim())"));
         js("document.querySelector('#release-highlights button').click()");
         deadline=System.currentTimeMillis()+5000;while(!BuildConfig.VERSION_NAME.equals(context.getSharedPreferences("interface",Context.MODE_PRIVATE).getString("releaseNotesSeen",""))&&System.currentTimeMillis()<deadline)Thread.sleep(100);
         assertEquals(BuildConfig.VERSION_NAME,context.getSharedPreferences("interface",Context.MODE_PRIVATE).getString("releaseNotesSeen",""));
