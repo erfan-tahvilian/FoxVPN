@@ -15,7 +15,9 @@ function validateRelease(release,v){
 function olderTags(releases,v){return releases.filter(r=>r.tag_name!=='v'+v&&/^v\d+\.\d+\.\d+$/.test(r.tag_name)&&newer(v,r.tag_name.slice(1))).map(r=>r.tag_name);}
 function gh(...args){return execFileSync('gh',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();}
 function api(endpoint){return JSON.parse(gh('api',endpoint));}
-function findRelease(repo){try{return api(`repos/${repo}/releases/tags/${tag}`);}catch(e){if(String(e.stderr).includes('HTTP 404'))return null;throw e;}}
+// GitHub can omit an unpublished draft from the tag endpoint until its tag
+// exists. The authenticated release list includes drafts and their release ID.
+function findRelease(repo){return api(`repos/${repo}/releases?per_page=100`).find(release=>release.tag_name===tag)||null;}
 async function main(){
   const mode=process.argv[2],repo=process.env.GITHUB_REPOSITORY||'erfan-tahvilian/FoxVPN';assert.equal(repo,'erfan-tahvilian/FoxVPN');
   if(mode==='metadata'){console.log(`FOX_VERSION=${version}\nFOX_TAG=${tag}`);return;}

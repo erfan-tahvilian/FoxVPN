@@ -8,7 +8,7 @@
 </picture>
 
 <p align="center">
-  <img src="docs/readme/badge-version.svg" alt="Version 1.0.0" height="22">
+  <img src="docs/readme/badge-version.svg" alt="Version 1.0.1" height="22">
   <img src="docs/readme/badge-windows.svg" alt="Windows: x64, x86 and ARM64" height="22">
   <img src="docs/readme/badge-macos.svg" alt="macOS: Intel and Apple Silicon" height="22">
   <img src="docs/readme/badge-linux.svg" alt="Linux: x64 and ARM64" height="22">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#download"><strong>Download v1.0.0</strong></a> &nbsp; · &nbsp;
+  <a href="#download"><strong>Download v1.0.1</strong></a> &nbsp; · &nbsp;
   <a href="#the-workspace">Explore the app</a> &nbsp; · &nbsp;
   <a href="#get-connected">Get connected</a> &nbsp; · &nbsp;
   <a href="#support-the-project">Support the project</a>
@@ -30,17 +30,17 @@ Sign in with a Firefox account to get started. Service eligibility, availability
 
 ## 📥 Download
 
-**v1.0.0** · [Release notes & all files](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.0) · [SHA-256 checksums](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt)
+**v1.0.1** · [Release notes & all files](https://github.com/erfan-tahvilian/FoxVPN/releases/tag/v1.0.1) · [SHA-256 checksums](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/SHA256SUMS.txt)
 
 Choose the package that matches your operating system and processor. Installers and portable archives are available for desktop; Android packages are signed APKs.
 
 <p align="center">
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="300" alt="Windows x64 installer"></picture></a> &nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="300" alt="macOS Apple Silicon"></picture></a>
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-x64.exe"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-windows-dark.svg"><img src="docs/readme/download-windows-light.svg" width="300" alt="Windows x64 installer"></picture></a> &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-macOS-arm64.dmg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-macos-dark.svg"><img src="docs/readme/download-macos-light.svg" width="300" alt="macOS Apple Silicon"></picture></a>
 </p>
 <p align="center">
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Linux-x64.AppImage"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-linux-dark.svg"><img src="docs/readme/download-linux-light.svg" width="300" alt="Linux x64 AppImage"></picture></a> &nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-android-dark.svg"><img src="docs/readme/download-android-light.svg" width="300" alt="Android ARM64 APK"></picture></a>
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Linux-x64.AppImage"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-linux-dark.svg"><img src="docs/readme/download-linux-light.svg" width="300" alt="Linux x64 AppImage"></picture></a> &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Android-arm64-v8a.apk"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/download-android-dark.svg"><img src="docs/readme/download-android-light.svg" width="300" alt="Android ARM64 APK"></picture></a>
 </p>
 
 Quick downloads for common devices. **Every supported architecture is listed below.**
@@ -49,18 +49,18 @@ Quick downloads for common devices. **Every supported architecture is listed bel
 
 | Platform | Processor | Packages | Best fit |
 | :--- | :---: | :--- | :--- |
-| **Windows**<br><sub>Windows 10+</sub> | **x64** | [![Windows setup x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x64-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.exe) &nbsp; [![Windows portable x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x64-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x64.zip) | Most Intel / AMD PCs |
-|  | **x86** | [![Windows setup x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x86-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.exe) &nbsp; [![Windows portable x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x86-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-x86.zip) | 32-bit Windows PCs |
-|  | **ARM64** | [![Windows setup ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-arm64-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.exe) &nbsp; [![Windows portable ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-arm64-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Windows-arm64.zip) | Windows 11 on ARM |
-| **macOS**<br><sub>macOS 13+</sub> | **Apple Silicon** | [![macOS dmg Apple Silicon](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-arm64-dmg.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.dmg) &nbsp; [![macOS zip Apple Silicon](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-arm64-zip.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-arm64.zip) | M-series Macs |
-|  | **Intel x64** | [![macOS dmg Intel x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-x64-dmg.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.dmg) &nbsp; [![macOS zip Intel x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-x64-zip.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-macOS-x64.zip) | Intel-based Macs |
-| **Linux**<br><sub>64-bit desktop</sub> | **x64** | [![Linux appimage x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-x64-appimage.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Linux-x64.AppImage) &nbsp; [![Linux deb x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-x64-deb.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Linux-x64.deb) &nbsp; [![Linux rpm x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-x64-rpm.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Linux-x64.rpm) | Intel / AMD Linux desktops |
-|  | **ARM64** | [![Linux appimage ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-arm64-appimage.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Linux-arm64.AppImage) &nbsp; [![Linux deb ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-arm64-deb.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Linux-arm64.deb) &nbsp; [![Linux rpm ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-arm64-rpm.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Linux-arm64.rpm) | 64-bit ARM Linux desktops |
-| **Android**<br><sub>Android 8+</sub> | **ARM64** | [![Android apk ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-arm64-v8a-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-arm64-v8a.apk) | Most current Android phones |
-|  | **Universal** | [![Android apk Universal](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-universal-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-universal.apk) | All supported architectures; larger file |
-|  | **ARMv7** | [![Android apk ARMv7](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-armeabi-v7a-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-armeabi-v7a.apk) | 32-bit ARM devices |
-|  | **x86_64** | [![Android apk x86_64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-x86_64-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86_64.apk) | 64-bit Intel devices / emulators |
-|  | **x86** | [![Android apk x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-x86-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/FoxVPN-1.0.0-Android-x86.apk) | 32-bit Intel devices / emulators |
+| **Windows**<br><sub>Windows 10+</sub> | **x64** | [![Windows setup x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x64-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-x64.exe) &nbsp; [![Windows portable x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x64-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-x64.zip) | Most Intel / AMD PCs |
+|  | **x86** | [![Windows setup x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x86-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-x86.exe) &nbsp; [![Windows portable x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-x86-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-x86.zip) | 32-bit Windows PCs |
+|  | **ARM64** | [![Windows setup ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-arm64-setup.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-arm64.exe) &nbsp; [![Windows portable ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Windows-arm64-portable.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Windows-arm64.zip) | Windows 11 on ARM |
+| **macOS**<br><sub>macOS 13+</sub> | **Apple Silicon** | [![macOS dmg Apple Silicon](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-arm64-dmg.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-macOS-arm64.dmg) &nbsp; [![macOS zip Apple Silicon](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-arm64-zip.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-macOS-arm64.zip) | M-series Macs |
+|  | **Intel x64** | [![macOS dmg Intel x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-x64-dmg.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-macOS-x64.dmg) &nbsp; [![macOS zip Intel x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/macOS-x64-zip.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-macOS-x64.zip) | Intel-based Macs |
+| **Linux**<br><sub>64-bit desktop</sub> | **x64** | [![Linux appimage x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-x64-appimage.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Linux-x64.AppImage) &nbsp; [![Linux deb x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-x64-deb.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Linux-x64.deb) &nbsp; [![Linux rpm x64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-x64-rpm.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Linux-x64.rpm) | Intel / AMD Linux desktops |
+|  | **ARM64** | [![Linux appimage ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-arm64-appimage.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Linux-arm64.AppImage) &nbsp; [![Linux deb ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-arm64-deb.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Linux-arm64.deb) &nbsp; [![Linux rpm ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Linux-arm64-rpm.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Linux-arm64.rpm) | 64-bit ARM Linux desktops |
+| **Android**<br><sub>Android 8+</sub> | **ARM64** | [![Android apk ARM64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-arm64-v8a-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Android-arm64-v8a.apk) | Most current Android phones |
+|  | **Universal** | [![Android apk Universal](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-universal-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Android-universal.apk) | All supported architectures; larger file |
+|  | **ARMv7** | [![Android apk ARMv7](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-armeabi-v7a-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Android-armeabi-v7a.apk) | 32-bit ARM devices |
+|  | **x86_64** | [![Android apk x86_64](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-x86_64-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Android-x86_64.apk) | 64-bit Intel devices / emulators |
+|  | **x86** | [![Android apk x86](https://raw.githubusercontent.com/erfan-tahvilian/FoxVPN/main/docs/readme/download-badges/Android-x86-apk.svg)](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/FoxVPN-1.0.1-Android-x86.apk) | 32-bit Intel devices / emulators |
 
 <!-- foxvpn-downloads:end -->
 
@@ -69,7 +69,7 @@ Quick downloads for common devices. **Every supported architecture is listed bel
 <details>
 <summary><strong>Before you install: package trust & verification</strong></summary>
 
-Compare your download's SHA-256 hash with [SHA256SUMS.txt](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/SHA256SUMS.txt).
+Compare your download's SHA-256 hash with [SHA256SUMS.txt](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/SHA256SUMS.txt).
 
 - **Windows:** Packages are currently unsigned. System VPN requires administrator access.
 - **macOS:** Packages are ad-hoc signed and are not notarized. Verify your download before approving first launch in **System Settings → Privacy & Security → Open Anyway**.
@@ -132,6 +132,8 @@ Decide which applications use the VPN. Split tunneling offers two routing modes,
 </picture>
 
 Desktop routing follows application process names; macOS includes app helper processes. Linux app discovery uses desktop launchers; sandboxed or wrapper-launched apps may require entering their actual process names manually. Android routing follows application packages. Local network traffic bypasses the tunnel. See [network support](#network-support) for protocol coverage.
+
+New stable releases appear in the app with a direct download matched to your device. Release highlights appear once after each update. On Android, location checks run without blocking location selection or connecting, and Back returns to Overview before leaving the app.
 
 ### More ways to stay in control
 
@@ -234,7 +236,7 @@ Remove account details, tokens, IP addresses and other sensitive information bef
 <details>
 <summary><strong>Third-party software & corresponding source</strong></summary>
 
-- **sing-box** - GPL-3.0-or-later with its upstream naming condition. The exact corresponding source is included as [sing-box-1.12.0-source.tar.gz](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.0/sing-box-1.12.0-source.tar.gz). See the [notice](licenses/sing-box-NOTICE.txt) and [source build instructions](https://sing-box.sagernet.org/installation/build-from-source/).
+- **sing-box** - GPL-3.0-or-later with its upstream naming condition. The exact corresponding source is included as [sing-box-1.12.0-source.tar.gz](https://github.com/erfan-tahvilian/FoxVPN/releases/download/v1.0.1/sing-box-1.12.0-source.tar.gz). See the [notice](licenses/sing-box-NOTICE.txt) and [source build instructions](https://sing-box.sagernet.org/installation/build-from-source/).
 - **Wintun** - redistributed under the license included with Windows packages. See [Wintun](https://www.wintun.net/).
 - **Electron, Chromium, Node.js and npm dependencies** - notices are included in desktop distributions. Native Android dependency notices are included in APK assets.
 - **HTTP/3 transport** - quic-go, qpack and adapted Firefox VPN client components retain their MIT/BSD notices. See the [transport notice](licenses/http3-NOTICE.txt).
