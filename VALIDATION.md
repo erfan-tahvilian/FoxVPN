@@ -1,4 +1,17 @@
-# v1.0.0 verification record
+# Verification record
+
+## Version 1.0.1 - 2026-10-31
+
+- [Windows x64/x86/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485785), [macOS Intel/Apple Silicon](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485764), [Linux x64/ARM64](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485792) and [Android](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41205485838) passed for runtime revision `b0a5ed7`. The Linux ARM64 tray smoke initially exceeded its deadline; rerunning that job passed without changing the runtime or weakening assertions.
+- All 58 Node tests passed, including 21 update-target mappings, metadata rejection, version ordering, concurrent checks/cache/ETag behavior, per-version release highlights and complete-release publication policy. Local Electron renderer, main-process, tray and account smoke checks passed.
+- A dedicated renderer check exercised first-launch highlights, deferred update presentation while another dialog is open, the matching direct-download URL, version labels and dark/light layouts. Captures use fixture account data and documentation-only IP addresses.
+- Android Go race tests cover selection during a blocked delay request and connection cancelling remaining checks. Native emulator integration checks cover first-launch highlights and Back handling. These do not replace physical acceptance of the updated app's controls.
+- All five APKs were [signed on the runner](https://github.com/erfan-tahvilian/FoxVPN/actions/runs/41206409439) with the existing signing identity, transferred under the owner's prior authorization using an encrypted single-use envelope. Only ARM64 is downloaded for the attached phone.
+- Physical cellular QUIC probes, including a second build using the reference client's upstream quic-go v0.59.0, completed Google IPv6 handshakes but timed out to Fastly recommended/Germany on IPv4 and IPv6. Automatic connected over HTTP/2 with exit verification. See [the pinned source comparison and test limits](docs/development/http3-comparison.md).
+
+Update delivery against an actually newer public release requires a subsequent version; the current popup behavior was exercised with controlled release metadata. Physical macOS/Linux VPN forwarding and the new Android UI acceptance remain unconfirmed.
+
+## Earlier v1.0.0 validation
 
 ## Account service verification - 2026-10-29
 
